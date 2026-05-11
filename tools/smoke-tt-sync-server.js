@@ -21,6 +21,8 @@ const JSON_INDENT = 2;
 const LOCAL_PORT = 0;
 const MIN_FIXTURE_FILE_BYTES = 0;
 const MIN_FIXTURE_FILE_COUNT = 1;
+const REPORT_SCHEMA_VERSION = 1;
+const REPORT_TOOL = 'smoke-tt-sync-server';
 const SMOKE_CONTENT_PREFIX = 'tt-sync-smoke';
 const SMOKE_PATH_PREFIX = 'default-user/chats/tt-sync-smoke';
 const SMOKE_RUN_ID_LENGTH = 12;
@@ -425,6 +427,8 @@ function smokeReport(options) {
         smokePaths: options.fixture.paths,
         startedAt: options.runtime.startedAt,
         status: options.status,
+        schemaVersion: REPORT_SCHEMA_VERSION,
+        tool: REPORT_TOOL,
     };
 }
 

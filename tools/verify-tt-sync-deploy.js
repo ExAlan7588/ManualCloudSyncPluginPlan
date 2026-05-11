@@ -9,6 +9,8 @@ const DEFAULT_SERVICE_PATH = 'deploy/systemd/manual-cloud-tt-sync.service';
 const EXIT_FAILURE = 1;
 const EXIT_SUCCESS = 0;
 const JSON_INDENT = 2;
+const REPORT_SCHEMA_VERSION = 1;
+const REPORT_TOOL = 'verify-tt-sync-deploy';
 const PLACEHOLDER_TOKENS = new Set(['change-me', 'replace-me', 'replace-with-strong-token']);
 const REQUIRED_ENV_KEYS = Object.freeze([
     'TT_SYNC_DATA_DIR',
@@ -173,7 +175,9 @@ function reportFor(options) {
         failed: failed.map(item => item.name),
         ok: failed.length === 0,
         publicUrl: options.publicUrl,
+        schemaVersion: REPORT_SCHEMA_VERSION,
         servicePath: options.servicePath,
+        tool: REPORT_TOOL,
         verifiedAt: new Date().toISOString(),
     };
 }

@@ -218,7 +218,9 @@ export function deployReportFixture() {
         envPath: '/etc/manual-cloud-tt-sync.env',
         ok: true,
         publicUrl: TEST_SYNC_URL,
+        schemaVersion: 1,
         servicePath: '/etc/systemd/system/manual-cloud-tt-sync.service',
+        tool: 'verify-tt-sync-deploy',
         verifiedAt: '2026-05-12T00:00:30+08:00',
     };
 }
@@ -259,6 +261,7 @@ export function smokeReportFixture() {
             push: 'push-plan-fixture',
         },
         serverId: 'minimal-default',
+        schemaVersion: 1,
         smokePath,
         smokePaths: [smokePath],
         status: {
@@ -266,6 +269,7 @@ export function smokeReportFixture() {
             service: 'minimal-tt-sync',
             version: '1.0.0',
         },
+        tool: 'smoke-tt-sync-server',
     };
 }
 

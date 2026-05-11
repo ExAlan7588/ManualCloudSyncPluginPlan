@@ -38,6 +38,7 @@ const tests = [
     ['incremental evidence verifier rejects missing diff conflict surface', testMissingDiffConflictSurface],
     ['incremental evidence verifier rejects mixed event surface evidence', testMixedEventSurfaceEvidence],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
+    ['incremental evidence verifier rejects report provenance mismatch', testReportProvenanceMismatch],
     ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects template deploy paths', testTemplateDeployPaths],
@@ -193,6 +194,20 @@ async function testFailedDeployReportStatus() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('deploy report ok'));
+}
+
+async function testReportProvenanceMismatch() {
+    const evidence = completeEvidence();
+    evidence.deployReport.tool = 'manual-json';
+    evidence.deployReport.schemaVersion = 2;
+    evidence.smokeReport.tool = 'manual-json';
+    evidence.smokeReport.schemaVersion = 2;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report tool'));
+    assert.ok(report.failed.includes('deploy report schema version'));
+    assert.ok(report.failed.includes('smoke report tool'));
+    assert.ok(report.failed.includes('smoke report schema version'));
 }
 
 async function testFailedSmokeRequiredCheck() {

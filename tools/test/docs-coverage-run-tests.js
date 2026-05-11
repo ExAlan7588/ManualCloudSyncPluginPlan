@@ -108,6 +108,11 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('必須使用 HTTPS'), 'README HTTPS final URL policy missing');
     assert.ok(options.verification.includes('必須使用 HTTPS'), 'verification HTTPS final URL policy missing');
     assert.ok(options.plan.includes('URL 使用 HTTPS'), 'plan HTTPS final URL policy missing');
+    assert.ok(options.readme.includes('tool=verify-tt-sync-deploy'), 'README deploy tool provenance missing');
+    assert.ok(options.readme.includes('tool=smoke-tt-sync-server'), 'README smoke tool provenance missing');
+    assert.ok(options.verification.includes('tool=verify-tt-sync-deploy'), 'verification deploy tool provenance missing');
+    assert.ok(options.verification.includes('tool=smoke-tt-sync-server'), 'verification smoke tool provenance missing');
+    assert.ok(options.plan.includes('tool/schemaVersion provenance'), 'plan report provenance missing');
 }
 
 function assertDeviceRequirementDocumented(options) {
