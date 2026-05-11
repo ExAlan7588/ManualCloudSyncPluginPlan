@@ -98,9 +98,10 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('非範例絕對路徑'), 'README real deploy path policy missing');
     assert.ok(options.verification.includes('非範例絕對路徑'), 'verification real deploy path policy missing');
     assert.ok(options.plan.includes('非範例絕對路徑'), 'plan real deploy path policy missing');
-    assert.ok(options.readme.includes('example placeholder domains'), 'README placeholder URL policy missing');
-    assert.ok(options.verification.includes('example placeholder domains'), 'verification placeholder URL policy missing');
-    assert.ok(options.plan.includes('example placeholder domains'), 'plan placeholder URL policy missing');
+    assert.ok(options.readme.includes('placeholder or reserved domains'), 'README placeholder URL policy missing');
+    assert.ok(options.verification.includes('placeholder or reserved domains'), 'verification placeholder URL policy missing');
+    assert.ok(options.plan.includes('placeholder or reserved domains'), 'plan placeholder URL policy missing');
+    assert.ok(options.verification.includes('.test'), 'verification reserved domain examples missing');
 }
 
 function assertDeviceRequirementDocumented(options) {

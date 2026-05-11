@@ -12,7 +12,7 @@ import {
 export const TEST_BULK_FILE_BYTES = 128;
 export const TEST_BULK_FILES = 3;
 export const TEST_MTIME_MS = 1778500000000;
-export const TEST_SYNC_URL = 'https://sync.fixture.test';
+export const TEST_SYNC_URL = 'https://sync-fixture.dev';
 
 const TEST_REAL_LARGE_SYNC_BYTES = 335544320;
 const TEST_SYNC_DURATION_MS = 120000;

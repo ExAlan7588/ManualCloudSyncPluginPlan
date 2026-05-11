@@ -251,23 +251,34 @@ async function testInvalidEvidenceTimestamp() {
 }
 
 async function testPlaceholderEvidenceUrls() {
+    const placeholderUrls = [
+        'https://sync.example.com',
+        'https://sync.example.net',
+        'https://sync.example.org',
+        'https://sync.fixture.test',
+    ];
+    for (const placeholderUrl of placeholderUrls) {
+        const report = await reportWithEvidenceUrl(placeholderUrl);
+        assert.equal(report.ok, false);
+        assert.ok(report.failed.includes('deploy report public URL is not placeholder'));
+        assert.ok(report.failed.includes('smoke endpoint is not placeholder'));
+        assert.ok(report.failed.includes('device evidence server URL is not placeholder'));
+    }
+}
+
+async function reportWithEvidenceUrl(url) {
     const evidence = completeEvidence();
-    const placeholderUrl = 'https://sync.example.com';
-    evidence.deployReport.publicUrl = placeholderUrl;
-    evidence.smokeReport.endpoint = placeholderUrl;
-    evidence.deviceEvidence.server.url = placeholderUrl;
-    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = placeholderUrl;
-    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.desktop.savedServerUrl = placeholderUrl;
-    const report = await verifyIncrementalCloudSyncEvidence(evidence);
-    assert.equal(report.ok, false);
-    assert.ok(report.failed.includes('deploy report public URL is not placeholder'));
-    assert.ok(report.failed.includes('smoke endpoint is not placeholder'));
-    assert.ok(report.failed.includes('device evidence server URL is not placeholder'));
+    evidence.deployReport.publicUrl = url;
+    evidence.smokeReport.endpoint = url;
+    evidence.deviceEvidence.server.url = url;
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = url;
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.desktop.savedServerUrl = url;
+    return verifyIncrementalCloudSyncEvidence(evidence);
 }
 
 async function testMixedServerEvidence() {
     const evidence = completeEvidence();
-    evidence.deviceEvidence.server.url = 'https://other-sync.example.com';
+    evidence.deviceEvidence.server.url = 'https://other-sync-fixture.dev';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('same server URL'));
@@ -275,7 +286,7 @@ async function testMixedServerEvidence() {
 
 async function testSavedPairingUrlMismatch() {
     const evidence = completeEvidence();
-    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = 'https://other-sync.example.com';
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = 'https://other-sync-fixture.dev';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('phone saved server URL matches'));

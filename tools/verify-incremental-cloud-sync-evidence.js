@@ -181,7 +181,7 @@ function deviceChecks(evidence) {
     return [
         check('device evidence testedAt', isTimestamp(evidence?.testedAt), 'device evidence must include a parseable testedAt timestamp'),
         check('device evidence server URL', hasText(evidence?.server?.url), 'device evidence must include server.url'),
-        check('device evidence server URL is not placeholder', isNonPlaceholderUrl(evidence?.server?.url), 'device evidence server.url must not use example placeholder domains'),
+        check('device evidence server URL is not placeholder', isNonPlaceholderUrl(evidence?.server?.url), 'device evidence server.url must not use placeholder or reserved domains'),
         check('mobile build id', hasText(evidence?.tauriTavern?.mobileBuildId), 'mobile build id is required'),
         check('desktop build id', hasText(evidence?.tauriTavern?.desktopBuildId), 'desktop build id is required'),
         check('device coverage', hasDeviceCoverage(evidence), 'at least Android phone and desktop device records with deviceId are required'),
