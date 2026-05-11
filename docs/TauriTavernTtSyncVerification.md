@@ -212,15 +212,15 @@ smoke verifier 會執行真實 HTTP 流程：
 
 ## 10. Final Evidence Gate
 
-收齊 command report、event surface report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
+收齊 `sourceKind=build-artifact` 的實際手機或桌面 build command report、event surface report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
 
 ```bash
 npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --events /tmp/tt-sync-event-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
-command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind` 與 scanned file count。
-每個 command 必須包含 verifier 產生的 trusted `evidence`；build artifact 可用 `build-artifact-string`，source tree 則必須同時有 `tauri-command-declaration` 與 `tauri-handler-registration`。
+command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind=build-artifact` 與 scanned file count。
+每個 command 必須包含 verifier 產生的 trusted `build-artifact-string` evidence。source tree command report 仍可做整合前檢查，但 final evidence gate 不接受 source tree 取代實際 build artifact。
 event surface report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind`、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
@@ -276,7 +276,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
         "reportId": "contract-test-report-id",
         "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_push", "tt_sync_pull", "tt_sync_remove_server"]
       },
-      "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/src/TauriTavern", "sourceKind": "source-tree" }
+      "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern.apk", "sourceKind": "build-artifact" }
     },
     "phoneDesktopPairingSaved": {
       "ok": true,

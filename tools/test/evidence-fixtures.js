@@ -28,7 +28,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
     },
     commandContractVerified: {
         contract: { commands: REQUIRED_TT_SYNC_COMMANDS, reportId: 'contract-test-report-fixture' },
-        commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/src/TauriTavern', sourceKind: 'source-tree' },
+        commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/builds/TauriTavern.apk', sourceKind: 'build-artifact' },
     },
     conflictResolutionVisible: {
         conflict: {
@@ -113,8 +113,8 @@ export function completeEvidence() {
 export function commandReportFixture() {
     return {
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({
-            evidence: [{ file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' }, { file: 'src-tauri/src/main.rs', kind: 'tauri-handler-registration' }],
-            files: ['src-tauri/src/commands.rs', 'src-tauri/src/main.rs'],
+            evidence: [{ file: 'TauriTavern.apk', kind: 'build-artifact-string' }],
+            files: ['TauriTavern.apk'],
             found: true,
             ignoredFiles: [],
             name: command,
@@ -122,6 +122,26 @@ export function commandReportFixture() {
         missingCommands: [],
         ok: true,
         scannedAt: '2026-05-12T00:00:00+08:00',
+        scannedFiles: 1,
+        source: '/builds/TauriTavern.apk',
+        sourceKind: 'build-artifact',
+    };
+}
+
+export function sourceTreeCommandReportFixture() {
+    const report = commandReportFixture();
+    return {
+        ...report,
+        commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({
+            evidence: [
+                { file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' },
+                { file: 'src-tauri/src/main.rs', kind: 'tauri-handler-registration' },
+            ],
+            files: ['src-tauri/src/commands.rs', 'src-tauri/src/main.rs'],
+            found: true,
+            ignoredFiles: [],
+            name: command,
+        })),
         scannedFiles: 2,
         source: '/src/TauriTavern',
         sourceKind: 'source-tree',

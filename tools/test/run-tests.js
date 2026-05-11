@@ -15,6 +15,7 @@ import {
     deviceEvidenceFixture,
     eventReportFixture,
     smokeReportFixture,
+    sourceTreeCommandReportFixture,
     TEST_BULK_FILE_BYTES,
     TEST_BULK_FILES,
     TEST_MTIME_MS,
@@ -27,7 +28,8 @@ const tests = [
     ['incremental evidence verifier labels missing JSON input', testMissingEvidenceJsonFile],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
-    ['incremental evidence verifier rejects source commands without handler evidence', testMissingCommandHandlerEvidence],
+    ['incremental evidence verifier rejects source-tree command report as final evidence', testSourceTreeCommandReportEvidence],
+    ['incremental evidence verifier rejects build-artifact report without build artifact evidence', testBuildArtifactEvidenceKind],
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing event surface evidence', testMissingEventSurfaceEvidence],
     ['incremental evidence verifier rejects failed event surface report', testFailedEventSurfaceEvidence],
@@ -389,7 +391,7 @@ async function testFailedEventSurfaceEvidence() {
 async function testMixedCommandReportEvidence() {
     const evidence = completeEvidence();
     evidence.deviceEvidence.checks.commandContractVerified.commandReport.source = '/builds/other.apk';
-    evidence.deviceEvidence.checks.commandContractVerified.commandReport.sourceKind = 'build-artifact';
+    evidence.deviceEvidence.checks.commandContractVerified.commandReport.sourceKind = 'source-tree';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('same command report source'));
@@ -404,16 +406,26 @@ async function testUntrustedCommandEvidence() {
     assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
 }
 
-async function testMissingCommandHandlerEvidence() {
+async function testSourceTreeCommandReportEvidence() {
     const evidence = completeEvidence();
-    evidence.commandReport.commands[0].evidence = [evidence.commandReport.commands[0].evidence[0]];
-    let report = await verifyIncrementalCloudSyncEvidence(evidence);
+    evidence.commandReport = sourceTreeCommandReportFixture();
+    evidence.deviceEvidence.checks.commandContractVerified.commandReport = {
+        scannedAt: evidence.commandReport.scannedAt,
+        source: evidence.commandReport.source,
+        sourceKind: evidence.commandReport.sourceKind,
+    };
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
-    assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
+    assert.ok(report.failed.includes('command report is build artifact'));
+}
 
-    evidence.commandReport = commandReportFixture();
-    evidence.commandReport.sourceKind = 'build-artifact';
-    report = await verifyIncrementalCloudSyncEvidence(evidence);
+async function testBuildArtifactEvidenceKind() {
+    const evidence = completeEvidence();
+    evidence.commandReport.commands[0].evidence = [
+        { file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' },
+        { file: 'src-tauri/src/main.rs', kind: 'tauri-handler-registration' },
+    ];
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
 }

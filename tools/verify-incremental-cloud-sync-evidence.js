@@ -38,6 +38,7 @@ const TRUSTED_COMMAND_EVIDENCE_KINDS = new Set([
     'tauri-handler-registration',
 ]);
 const COMMAND_SOURCE_KINDS = new Set(['build-artifact', 'source-file', 'source-tree']);
+const FINAL_COMMAND_SOURCE_KIND = 'build-artifact';
 
 export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
@@ -104,6 +105,7 @@ function commandChecks(report) {
         check('command report scannedAt', isTimestamp(report?.scannedAt), 'command report must include a parseable scannedAt timestamp'),
         check('command report source', hasText(report?.source), 'command report must include source path or artifact'),
         check('command report source kind', COMMAND_SOURCE_KINDS.has(report?.sourceKind), 'command report must include sourceKind'),
+        check('command report is build artifact', report?.sourceKind === FINAL_COMMAND_SOURCE_KIND, 'final evidence command report must come from an actual build artifact'),
         check('command report scanned files', Number(report?.scannedFiles) > 0, 'command report must scan at least one file'),
         check('no missing commands', Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, 'missingCommands must be empty'),
         ...REQUIRED_TT_SYNC_COMMANDS.map(command => commandFoundCheck(report, command)),

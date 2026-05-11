@@ -63,6 +63,9 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('--events /tmp/tt-sync-event-report.json'), 'README final evidence event input missing');
     assert.ok(options.verification.includes('--events /tmp/tt-sync-event-report.json'), 'verification final evidence event input missing');
     assert.ok(options.plan.includes('--events <event-report.json>'), 'plan final evidence event input missing');
+    assert.ok(options.readme.includes('sourceKind=build-artifact'), 'README build-artifact final evidence policy missing');
+    assert.ok(options.verification.includes('sourceKind=build-artifact'), 'verification build-artifact final evidence policy missing');
+    assert.ok(options.plan.includes('sourceKind=build-artifact'), 'plan build-artifact final evidence policy missing');
 }
 
 function assertDeviceRequirementDocumented(options) {
