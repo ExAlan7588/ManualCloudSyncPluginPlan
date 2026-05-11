@@ -177,6 +177,7 @@ function deployChecks(report) {
         check('deploy report env path', hasText(report?.envPath), 'deploy report must include envPath'),
         check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
         check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
+        check('deploy report checks passed', reportChecksPassed(report), 'deploy report checks must all be ok=true with name and detail'),
         ...REQUIRED_DEPLOY_CHECKS.map(name => check(`deploy ${name}`, names.has(name), `${name} check is required`)),
     ];
 }
@@ -195,6 +196,7 @@ function smokeChecks(report) {
         check('smoke report is remote', report?.mode === 'remote', 'final evidence requires a remote deployed server smoke report'),
         check('smoke endpoint is non-local', isNonLocalEndpoint(report?.endpoint), 'smoke endpoint must not be localhost or loopback'),
         check('smoke status version', hasText(report?.status?.version), 'smoke report must include status.version'),
+        check('smoke report checks passed', reportChecksPassed(report), 'smoke report checks must all be ok=true with name and detail'),
         ...REQUIRED_SMOKE_CHECKS.map(name => check(`smoke ${name}`, names.has(name), `${name} check is required`)),
     ];
 }
@@ -414,8 +416,20 @@ function fixturePathsIncludePrimary(report) {
 }
 
 function passedCheckNames(report) {
-    const checks = Array.isArray(report?.checks) ? report.checks : [];
-    return new Set(checks.filter(item => item?.ok === true).map(item => item.name));
+    return new Set(reportChecks(report).filter(isPassedReportCheck).map(item => item.name));
+}
+
+function reportChecksPassed(report) {
+    const checks = reportChecks(report);
+    return checks.length > 0 && checks.every(isPassedReportCheck);
+}
+
+function reportChecks(report) {
+    return Array.isArray(report?.checks) ? report.checks : [];
+}
+
+function isPassedReportCheck(item) {
+    return item?.ok === true && hasText(item.name) && hasText(item.detail);
 }
 
 function formatCheckLine(checkItem) {

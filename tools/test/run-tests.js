@@ -101,10 +101,13 @@ const tests = [
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects failed deploy required checks', testFailedDeployRequiredCheck],
+    ['incremental evidence verifier rejects deploy checks without detail', testDeployCheckMissingDetail],
     ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects failed smoke required checks', testFailedSmokeRequiredCheck],
+    ['incremental evidence verifier rejects smoke checks without detail', testSmokeCheckMissingDetail],
+    ['incremental evidence verifier rejects failed extra report checks', testFailedExtraReportCheck],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
@@ -277,6 +280,32 @@ async function testFailedSmokeRequiredCheck() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes(`smoke ${evidence.smokeReport.checks[0].name}`));
+}
+
+async function testDeployCheckMissingDetail() {
+    const evidence = completeEvidence();
+    evidence.deployReport.checks[0].detail = '';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report checks passed'));
+}
+
+async function testSmokeCheckMissingDetail() {
+    const evidence = completeEvidence();
+    evidence.smokeReport.checks[0].detail = '';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('smoke report checks passed'));
+}
+
+async function testFailedExtraReportCheck() {
+    const evidence = completeEvidence();
+    evidence.deployReport.checks.push({ detail: 'fixture', name: 'extra deploy check', ok: false });
+    evidence.smokeReport.checks.push({ detail: 'fixture', name: 'extra smoke check', ok: false });
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report checks passed'));
+    assert.ok(report.failed.includes('smoke report checks passed'));
 }
 
 async function testMixedServerEvidence() {
