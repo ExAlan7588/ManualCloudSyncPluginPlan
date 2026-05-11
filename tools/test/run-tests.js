@@ -68,6 +68,7 @@ const tests = [
     ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
     ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
+    ['incremental evidence verifier rejects missing smoke status version', testMissingSmokeStatusVersion],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
     ['incremental evidence verifier rejects missing device structured fields', testMissingDeviceStructuredFields],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
@@ -245,6 +246,14 @@ async function testMissingSmokeProvenance() {
     assert.ok(report.failed.includes('smoke report plan ids'));
 }
 
+async function testMissingSmokeStatusVersion() {
+    const evidence = completeEvidence();
+    delete evidence.smokeReport.status.version;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('smoke status version'));
+}
+
 async function testMissingSmokeFixtureProvenance() {
     const evidence = completeEvidence();
     delete evidence.smokeReport.fixture;
@@ -374,6 +383,11 @@ function smokeReportFixture() {
         },
         smokePath,
         smokePaths: [smokePath],
+        status: {
+            ok: true,
+            service: 'minimal-tt-sync',
+            version: '1.0.0',
+        },
     };
 }
 
