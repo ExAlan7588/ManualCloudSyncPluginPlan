@@ -54,7 +54,42 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 重開 app 後服務端仍存在。
 - 服務端 `/v2/devices?namespace=...` 能看到兩個不同 device。
 
-## 3. Pull mtime 保留
+## 3. VPS / TT-Sync Server Live Smoke
+
+部署 Minimal TT-Sync server 或上游 TT-Sync server 後，先對實際 URL 跑 smoke verifier：
+
+```bash
+npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
+```
+
+本機開發可明確使用：
+
+```bash
+npm run smoke:tt-sync-server -- --local
+```
+
+smoke verifier 會執行真實 HTTP 流程：
+
+- `GET /v2/status`
+- `POST /v2/pair/complete`
+- `POST /v2/session/open`
+- `POST /v2/sync/push-plan`
+- `PUT /v2/plans/{plan_id}/files/{path_b64}`
+- `GET /v2/plans/{plan_id}/events?once=1`
+- `POST /v2/plans/{plan_id}/commit`
+- `POST /v2/sync/pull-plan`
+- `GET /v2/plans/{plan_id}/files/{path_b64}`
+- `GET /v2/devices?namespace=...`
+- `GET /v2/history?namespace=...`
+
+通過標準：
+
+- 工具 exit code 為 `0`。
+- 報告中的 `ok` 為 `true`。
+- 報告包含 status、pair、session、progress、push commit、pull mtime header、empty diff、device history 檢查。
+- 遠端模式會在 namespace 留下一個唯一 smoke 檔案作為部署證據；工具不會自動執行 mirror delete 清理，以避免誤刪既有遠端資料。
+
+## 4. Pull mtime 保留
 
 前置條件：
 
@@ -73,7 +108,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 裝置 B 檔案 mtime 等於服務端 manifest 的 `modifiedMs`。
 - 再次檢查差異時該檔案不會被誤判為變更。
 
-## 4. Pull 中斷安全
+## 5. Pull 中斷安全
 
 驗證步驟：
 
@@ -88,7 +123,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 後端回報明確錯誤，不顯示成功。
 - 下一次 Pull 能重新開始並完成。
 
-## 5. LAN Sync 與雲端同步互斥
+## 6. LAN Sync 與雲端同步互斥
 
 驗證步驟：
 
@@ -102,7 +137,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 錯誤訊息指出已有同步任務進行中。
 - 兩種同步的狀態檔都沒有被納入 TT-Sync manifest。
 
-## 6. Android 弱網路錯誤可見
+## 7. Android 弱網路錯誤可見
 
 驗證步驟：
 
@@ -116,7 +151,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 不出現成功 toast 或成功狀態。
 - 重試前不需要清除 app data。
 
-## 7. 證據格式
+## 8. 證據格式
 
 每次外部驗證應保存：
 
@@ -124,4 +159,5 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 裝置型號、OS 版本與網路型態。
 - TT-Sync server URL、server commit 或部署版本。
 - `verify-tauritavern` JSON 報告。
+- `smoke:tt-sync-server` JSON 報告。
 - 測試時間與失敗時的錯誤訊息。

@@ -19,6 +19,7 @@ It implements the server-side phase-4 account/device/history/rollback basics, bu
 - Node.js 18 or newer.
 - No third-party runtime dependencies.
 - Start command: `npm run tt-sync:server`.
+- Live smoke command: `npm run smoke:tt-sync-server -- --endpoint <url> --pairing-token <token>`.
 
 Environment variables:
 
@@ -33,6 +34,16 @@ Environment variables:
 | `TT_SYNC_ACCOUNT_PASSWORD` | yes for login | none | Account password for `POST /v2/account/login`. |
 
 If `TT_SYNC_PAIRING_TOKEN` is missing, pairing fails with an explicit 500 error. Existing authenticated namespaces can still use non-pairing endpoints.
+
+## Live Smoke Verification
+
+After deploying the service, run:
+
+```bash
+npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
+```
+
+The smoke verifier performs real HTTP calls for status, pairing, session open, push plan, file upload, progress events, commit, pull plan, file download, mtime header validation, empty diff, devices, and history. Remote mode leaves one unique smoke file in the selected namespace as deployment evidence and does not run automatic mirror-delete cleanup.
 
 ## Pairing URI
 

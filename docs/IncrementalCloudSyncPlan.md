@@ -68,11 +68,12 @@ TT-Sync v2 已經具備很多理想形態：
 - 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
 - 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
 - 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
+- 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke。
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build 是否已包含 `tt_sync_*` commands；需以 `npm run verify:tauritavern -- --source <build>` 產生實際 build 證據。
-- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性仍需部署環境驗證。
+- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據。
 - 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證。
 
 ## 4. 非目標
@@ -244,12 +245,12 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。結果：本 repo 已提供 `npm run verify:tauritavern -- --source <path>` 檢查器；尚未取得實際手機 build 掃描報告。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
 - [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
-- [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template；實際 VPS 啟動仍需在部署環境驗證。
+- [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template 與 live smoke verifier；實際 VPS 啟動仍需在部署環境驗證。
 - [x] 決定第一階段採用「既有 TT-Sync」還是「新增 manual incremental cloud sync」。決策：採用既有 TT-Sync command surface，不在純前端插件內新增假的增量同步。
 
 ### Phase 1：最小可用增量同步
 
-- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server；尚未在真實 VPS 驗證。
+- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server，並提供 `npm run smoke:tt-sync-server -- --endpoint <url>` 驗證部署；尚未取得真實 VPS smoke 報告。
 - [x] 產生配對 URI。結果：`npm run tt-sync:pair` 會依 `TT_SYNC_PAIRING_TOKEN` 產生配對 URI。
 - [ ] 手機與電腦能保存配對服務端。驗證方式已文件化於 `docs/TauriTavernTtSyncVerification.md`；仍需真機 app 後端保存證據。
 - [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
@@ -318,4 +319,4 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 1. 使用 `npm run verify:tauritavern -- --source <path>` 確認手機與桌面 build 是否已有 `tt_sync_*` commands。
 2. 依 `docs/TauriTavernTtSyncVerification.md` 保存配對、mtime、中斷安全、互斥與弱網路證據。
-3. Minimal TT-Sync server 已在本 repo 內提供；真實 VPS 啟動與端到端同步仍以部署環境證據為準。
+3. Minimal TT-Sync server 已在本 repo 內提供；真實 VPS 啟動與端到端同步需保存 `smoke:tt-sync-server` 報告作為部署環境證據。

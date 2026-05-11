@@ -92,6 +92,14 @@ TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:pair
 
 Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，內容包含 phase、files、bytes 與目前路徑；檔案下載會回傳 `X-TT-Sync-Modified-Ms`，讓 TauriTavern 後端可保留 mtime。服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)。
 
+部署後可用 live smoke verifier 對實際端點跑 status、pair、session、Push、progress、Pull、mtime header、empty diff、device/history 檢查：
+
+```bash
+npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
+```
+
+本機開發可明確使用 `--local` 啟動真實 minimal server 做同一套 smoke。遠端模式會在所選 namespace 留下一個唯一 smoke 檔案作為部署證據，不會自動刪除其他遠端資料。
+
 ## WebDAV 使用方式
 
 第一次設定時，預設就是 WebDAV Basic，只需要先填：
