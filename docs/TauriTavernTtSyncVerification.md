@@ -161,3 +161,40 @@ smoke verifier 會執行真實 HTTP 流程：
 - `verify-tauritavern` JSON 報告。
 - `smoke:tt-sync-server` JSON 報告。
 - 測試時間與失敗時的錯誤訊息。
+
+## 9. Final Evidence Gate
+
+收齊 command report、遠端 smoke report 與真機 device evidence 後，執行：
+
+```bash
+npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
+```
+
+final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
+
+device evidence JSON 需包含：
+
+```json
+{
+  "testedAt": "2026-05-12T00:00:00+08:00",
+  "tauriTavern": {
+    "mobileBuildId": "android-build-id",
+    "desktopBuildId": "desktop-build-id"
+  },
+  "devices": [
+    { "platform": "Android 15", "model": "Pixel" },
+    { "platform": "Linux desktop", "model": "Workstation" }
+  ],
+  "checks": {
+    "realLargeFirstSyncCompleted": { "ok": true, "evidence": "300MB first sync report path or run id" },
+    "phoneDesktopPairingSaved": { "ok": true, "evidence": "both devices still list server after restart" },
+    "liveProgressBridgeVisible": { "ok": true, "evidence": "progress event capture or screen recording id" },
+    "pullMtimePreserved": { "ok": true, "evidence": "mtime before/after shell output path" },
+    "pullInterruptionSafe": { "ok": true, "evidence": "interrupted Pull run id and local file hash evidence" },
+    "lanCloudSyncMutex": { "ok": true, "evidence": "mutex rejection log path" },
+    "androidWeakNetworkErrorVisible": { "ok": true, "evidence": "Android weak-network error capture id" }
+  }
+}
+```
+
+每個 check 必須是 `{ "ok": true, "evidence": "..." }`；單純布林值 `true` 不會被接受為完成證據。

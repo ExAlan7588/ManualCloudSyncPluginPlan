@@ -100,6 +100,12 @@ npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-to
 
 本機開發可明確使用 `--local` 啟動真實 minimal server 做同一套 smoke。遠端模式會在所選 namespace 留下一個唯一 smoke 檔案作為部署證據，不會自動刪除其他遠端資料。
 
+收齊 TauriTavern build command report、遠端 smoke report 與真機 device evidence 後，可用 final evidence gate 檢查是否足以關閉增量同步計畫：
+
+```bash
+npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json
+```
+
 ## WebDAV 使用方式
 
 第一次設定時，預設就是 WebDAV Basic，只需要先填：

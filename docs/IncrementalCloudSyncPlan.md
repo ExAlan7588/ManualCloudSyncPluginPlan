@@ -69,12 +69,13 @@ TT-Sync v2 已經具備很多理想形態：
 - 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
 - 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
 - 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke。
+- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 command report、遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate。
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build 是否已包含 `tt_sync_*` commands；需以 `npm run verify:tauritavern -- --source <build>` 產生實際 build 證據。
 - Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據。
-- 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證。
+- 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；全部外部證據需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
 
@@ -320,3 +321,4 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 1. 使用 `npm run verify:tauritavern -- --source <path>` 確認手機與桌面 build 是否已有 `tt_sync_*` commands。
 2. 依 `docs/TauriTavernTtSyncVerification.md` 保存配對、mtime、中斷安全、互斥與弱網路證據。
 3. Minimal TT-Sync server 已在本 repo 內提供；真實 VPS 啟動與端到端同步需保存 `smoke:tt-sync-server` 報告作為部署環境證據。
+4. 使用 `npm run verify:incremental-evidence -- --commands <command-report.json> --smoke <remote-smoke-report.json> --device-evidence <device-evidence.json>` 做最終證據 gate。
