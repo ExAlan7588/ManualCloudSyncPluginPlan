@@ -139,7 +139,23 @@ async function loadReport(options) {
     if (!options.path) {
         throw new Error(`${options.label} path is required`);
     }
-    return JSON.parse(await readFile(options.path, 'utf8'));
+    return parseReportJson({ ...options, text: await readReportFile(options) });
+}
+
+async function readReportFile(options) {
+    try {
+        return await readFile(options.path, 'utf8');
+    } catch (error) {
+        throw new Error(`${options.label} cannot be read: ${options.path}: ${error.message}`);
+    }
+}
+
+function parseReportJson(options) {
+    try {
+        return JSON.parse(options.text);
+    } catch {
+        throw new Error(`${options.label} must be valid JSON: ${options.path}`);
+    }
 }
 
 function commandChecks(report) {

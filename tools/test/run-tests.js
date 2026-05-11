@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { createDeviceEvidenceTemplate } from '../create-device-evidence-template.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
@@ -86,6 +88,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
 const tests = [
     ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
+    ['incremental evidence verifier labels malformed JSON input', testMalformedEvidenceJson],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
     ['incremental evidence verifier rejects source commands without handler evidence', testMissingCommandHandlerEvidence],
@@ -156,6 +159,25 @@ async function testCompleteEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(completeEvidence());
     assert.equal(report.ok, true);
     assert.deepEqual(report.failed, []);
+}
+
+async function testMalformedEvidenceJson() {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-evidence-json-'));
+    try {
+        const commandReportPath = path.join(tempDir, 'command-report.json');
+        await writeFile(commandReportPath, `${String.fromCharCode(123)} broken`);
+        await assert.rejects(
+            verifyIncrementalCloudSyncEvidence({
+                commandReportPath,
+                deployReport: deployReportFixture(),
+                deviceEvidence: deviceEvidenceFixture(),
+                smokeReport: smokeReportFixture(),
+            }),
+            /command report must be valid JSON/,
+        );
+    } finally {
+        await rm(tempDir, { force: true, recursive: true });
+    }
 }
 
 async function testMissingDeviceEvidence() {
