@@ -20,6 +20,7 @@ export const REQUIRED_SMOKE_CHECKS = Object.freeze([
 
 export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ['realLargeFirstSyncCompleted', 'real large first sync completed'],
+    ['commandContractVerified', 'TauriTavern backend command contract verified'],
     ['phoneDesktopPairingSaved', 'phone and desktop save paired server'],
     ['liveProgressBridgeVisible', 'live progress bridge visible in TauriTavern'],
     ['pullMtimePreserved', 'pull preserves local filesystem mtime'],

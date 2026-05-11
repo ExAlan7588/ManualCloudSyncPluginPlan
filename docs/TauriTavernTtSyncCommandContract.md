@@ -302,5 +302,5 @@ A TauriTavern build is not considered compatible until:
 
 - `npm run verify:tauritavern -- --source <build>` passes for the actual source/build artifact.
 - `npm run smoke:tt-sync-server -- --endpoint <url> --pairing-token <token>` passes against the deployed server.
-- Real device evidence confirms pairing persistence, live progress, mtime preservation, interruption safety, LAN/cloud sync mutex behavior, Android weak-network errors, and a large first sync.
+- Real device evidence confirms command contract behavior, pairing persistence, live progress, mtime preservation, interruption safety, LAN/cloud sync mutex behavior, Android weak-network errors, and a large first sync.
 - `npm run verify:incremental-evidence -- --commands <command-report.json> --smoke <remote-smoke-report.json> --device-evidence <device-evidence.json>` passes.

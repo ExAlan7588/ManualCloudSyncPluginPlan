@@ -194,6 +194,7 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
   ],
   "checks": {
     "realLargeFirstSyncCompleted": { "ok": true, "evidence": "300MB first sync report path or run id" },
+    "commandContractVerified": { "ok": true, "evidence": "backend command contract test report path or build verification id" },
     "phoneDesktopPairingSaved": { "ok": true, "evidence": "both devices still list server after restart" },
     "liveProgressBridgeVisible": { "ok": true, "evidence": "progress event capture or screen recording id" },
     "pullMtimePreserved": { "ok": true, "evidence": "mtime before/after shell output path" },
