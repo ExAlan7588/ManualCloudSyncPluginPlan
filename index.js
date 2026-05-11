@@ -1,6 +1,5 @@
 import { invoke } from '/tauri-bridge.js';
 import { renderExtensionTemplateAsync } from '/scripts/extensions.js';
-import { t } from '/scripts/i18n.js';
 import { Popup } from '/scripts/popup.js';
 
 const MODULE_NAME = resolveModuleName(import.meta.url);
@@ -23,12 +22,12 @@ function resolveModuleName(moduleUrl) {
     const marker = '/scripts/extensions/';
     const markerIndex = extensionPath.indexOf(marker);
     if (markerIndex === -1) {
-        throw new Error(`Manual Cloud Sync cannot resolve extension path from: ${moduleUrl}`);
+        throw new Error(`手動雲端同步無法解析擴充路徑：${moduleUrl}`);
     }
 
     const relativePath = decodeURIComponent(extensionPath.slice(markerIndex + marker.length));
     if (!relativePath.endsWith('/index.js')) {
-        throw new Error(`Manual Cloud Sync entry script must be named index.js: ${relativePath}`);
+        throw new Error(`手動雲端同步入口腳本必須命名為 index.js：${relativePath}`);
     }
 
     return relativePath.slice(0, -'/index.js'.length);
@@ -53,7 +52,7 @@ function normalizeError(error) {
         return error;
     }
 
-    return String(error || t`Unknown error`);
+    return String(error || '未知錯誤');
 }
 
 async function invokeCommand(command, args) {
@@ -114,11 +113,11 @@ function fillConfig(view) {
 }
 
 function applySecretPlaceholders(secrets) {
-    $('#mcs_webdav_password').attr('placeholder', secrets.hasWebdavPassword ? t`Saved` : '');
-    $('#mcs_webdav_token').attr('placeholder', secrets.hasWebdavToken ? t`Saved` : '');
-    $('#mcs_s3_access_key').attr('placeholder', secrets.hasS3AccessKey ? t`Saved` : '');
-    $('#mcs_s3_secret_key').attr('placeholder', secrets.hasS3SecretKey ? t`Saved` : '');
-    $('#mcs_s3_session_token').attr('placeholder', secrets.hasS3SessionToken ? t`Saved` : '');
+    $('#mcs_webdav_password').attr('placeholder', secrets.hasWebdavPassword ? '已儲存' : '');
+    $('#mcs_webdav_token').attr('placeholder', secrets.hasWebdavToken ? '已儲存' : '');
+    $('#mcs_s3_access_key').attr('placeholder', secrets.hasS3AccessKey ? '已儲存' : '');
+    $('#mcs_s3_secret_key').attr('placeholder', secrets.hasS3SecretKey ? '已儲存' : '');
+    $('#mcs_s3_session_token').attr('placeholder', secrets.hasS3SessionToken ? '已儲存' : '');
 }
 
 function clearSecretInputs() {
@@ -156,14 +155,14 @@ async function saveConfig() {
 }
 
 async function onSaveClick() {
-    await runAction(t`Cloud sync config saved`, async () => {
+    await runAction('雲端同步設定已儲存', async () => {
         await saveConfig();
         renderQueue([]);
     });
 }
 
 async function onRefreshQueueClick() {
-    await runAction(t`Cloud sync queue refreshed`, async () => {
+    await runAction('雲端同步佇列已更新', async () => {
         await saveConfig();
         const queue = await invokeCommand('cloud_sync_list_queue');
         renderQueue(queue);
@@ -171,7 +170,7 @@ async function onRefreshQueueClick() {
 }
 
 async function onUploadClick() {
-    await runAction(t`Cloud sync upload completed`, async () => {
+    await runAction('雲端同步上傳完成', async () => {
         await saveConfig();
         const result = await invokeCommand('cloud_sync_upload_now');
         renderQueue([result.item]);
@@ -180,14 +179,14 @@ async function onUploadClick() {
 
 async function onDownloadClick() {
     const confirmed = await Popup.show.confirm(
-        t`Confirm cloud sync download`,
-        t`Downloaded data will mirror the remote package and remove local files that are not in it. Continue?`,
+        '確認下載雲端同步資料',
+        '下載後會以遠端同步包鏡像覆蓋本機資料，並刪除同步包中不存在的本機檔案。要繼續嗎？',
     );
     if (!confirmed) {
         return;
     }
 
-    await runAction(t`Cloud sync download completed`, async () => {
+    await runAction('雲端同步下載完成', async () => {
         await saveConfig();
         await invokeCommand('cloud_sync_download_now');
         setTimeout(() => location.reload(), RELOAD_DELAY_MS);
@@ -196,12 +195,12 @@ async function onDownloadClick() {
 
 async function runAction(successMessage, action) {
     if (state.busy) {
-        toastr.warning(t`Cloud sync is already running`);
+        toastr.warning('雲端同步正在執行中');
         return;
     }
 
     setBusy(true);
-    setStatus(t`Working...`);
+    setStatus('處理中...');
     try {
         await action();
         setStatus(successMessage);
@@ -209,7 +208,7 @@ async function runAction(successMessage, action) {
     } catch (error) {
         const message = normalizeError(error);
         setStatus(message);
-        toastr.error(message, t`Cloud sync failed`);
+        toastr.error(message, '雲端同步失敗');
     } finally {
         setBusy(false);
     }
@@ -231,7 +230,7 @@ function renderQueue(queue) {
 function emptyQueueElement() {
     const element = document.createElement('small');
     element.className = 'extensions_info mcs-empty';
-    element.textContent = t`Queue is empty`;
+    element.textContent = '佇列是空的';
     return element;
 }
 
@@ -269,7 +268,7 @@ function deleteButton(fileName) {
     const button = document.createElement('button');
     button.className = 'menu_button menu_button_icon margin0';
     button.type = 'button';
-    button.title = t`Delete remote item`;
+    button.title = '刪除遠端項目';
     button.innerHTML = '<i class="fa-solid fa-trash"></i>';
     button.addEventListener('click', () => onDeleteRemoteItem(fileName));
     return button;
@@ -280,7 +279,7 @@ async function onDeleteRemoteItem(fileName) {
         return;
     }
 
-    await runAction(t`Remote sync item deleted`, async () => {
+    await runAction('遠端同步項目已刪除', async () => {
         await invokeCommand('cloud_sync_delete_remote_item', { fileName });
         const queue = await invokeCommand('cloud_sync_list_queue');
         renderQueue(queue);
@@ -305,7 +304,7 @@ function findExtensionSettingsTarget() {
         }
     }
 
-    throw new Error('Manual Cloud Sync mount target not found: #extensions_settings2 or #extensions_settings');
+    throw new Error('手動雲端同步找不到掛載位置：#extensions_settings2 或 #extensions_settings');
 }
 
 function getOrCreateContainer() {
@@ -324,7 +323,7 @@ function getOrCreateContainer() {
 jQuery(async () => {
     const container = getOrCreateContainer();
     if (container.querySelector(`#${SETTINGS_CONTAINER_ID}`)) {
-        throw new Error('Manual Cloud Sync settings are already mounted');
+        throw new Error('手動雲端同步設定面板已經掛載');
     }
 
     const html = await renderExtensionTemplateAsync(MODULE_NAME, 'settings');

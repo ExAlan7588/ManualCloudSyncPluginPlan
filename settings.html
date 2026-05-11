@@ -1,97 +1,97 @@
 <div id="manual_cloud_sync_settings">
     <div class="inline-drawer">
         <div class="inline-drawer-toggle inline-drawer-header">
-            <b data-i18n="Manual Cloud Sync">Manual Cloud Sync</b>
+            <b>手動雲端同步</b>
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
         <div class="inline-drawer-content">
             <div class="mcs-grid">
                 <label>
-                    <span data-i18n="Backend">Backend</span>
+                    <span>同步後端</span>
                     <select id="mcs_backend" class="text_pole">
                         <option value="web_dav">WebDAV</option>
                         <option value="s3">S3</option>
                     </select>
                 </label>
                 <label>
-                    <span data-i18n="Endpoint">Endpoint</span>
+                    <span>端點 URL</span>
                     <input id="mcs_endpoint" class="text_pole" type="url" autocomplete="off" />
                 </label>
                 <label>
-                    <span data-i18n="Remote Prefix">Remote Prefix</span>
+                    <span>遠端路徑前綴</span>
                     <input id="mcs_remote_prefix" class="text_pole" type="text" autocomplete="off" />
                 </label>
                 <label>
-                    <span data-i18n="Device ID">Device ID</span>
+                    <span>裝置 ID</span>
                     <input id="mcs_device_id" class="text_pole" type="text" autocomplete="off" />
                 </label>
             </div>
 
             <div id="mcs_webdav_fields" class="mcs-grid">
                 <label>
-                    <span data-i18n="Auth Mode">Auth Mode</span>
+                    <span>驗證方式</span>
                     <select id="mcs_webdav_auth_mode" class="text_pole">
-                        <option value="basic">Basic</option>
+                        <option value="basic">Basic 帳密</option>
                         <option value="bearer">Bearer Token</option>
                     </select>
                 </label>
                 <label class="mcs-basic-field">
-                    <span data-i18n="Username">Username</span>
+                    <span>使用者名稱</span>
                     <input id="mcs_webdav_username" class="text_pole" type="text" autocomplete="username" />
                 </label>
                 <label class="mcs-basic-field">
-                    <span data-i18n="Password">Password</span>
+                    <span>密碼</span>
                     <input id="mcs_webdav_password" class="text_pole" type="password" autocomplete="new-password" />
                 </label>
                 <label class="mcs-bearer-field">
-                    <span data-i18n="Token">Token</span>
+                    <span>Token</span>
                     <input id="mcs_webdav_token" class="text_pole" type="password" autocomplete="new-password" />
                 </label>
             </div>
 
             <div id="mcs_s3_fields" class="mcs-grid">
                 <label>
-                    <span data-i18n="Bucket">Bucket</span>
+                    <span>Bucket</span>
                     <input id="mcs_s3_bucket" class="text_pole" type="text" autocomplete="off" />
                 </label>
                 <label>
-                    <span data-i18n="Region">Region</span>
+                    <span>Region</span>
                     <input id="mcs_s3_region" class="text_pole" type="text" autocomplete="off" />
                 </label>
                 <label>
-                    <span data-i18n="Access Key">Access Key</span>
+                    <span>Access Key</span>
                     <input id="mcs_s3_access_key" class="text_pole" type="password" autocomplete="new-password" />
                 </label>
                 <label>
-                    <span data-i18n="Secret Key">Secret Key</span>
+                    <span>Secret Key</span>
                     <input id="mcs_s3_secret_key" class="text_pole" type="password" autocomplete="new-password" />
                 </label>
                 <label>
-                    <span data-i18n="Session Token">Session Token</span>
+                    <span>Session Token</span>
                     <input id="mcs_s3_session_token" class="text_pole" type="password" autocomplete="new-password" />
                 </label>
                 <label class="checkbox_label mcs-checkbox">
                     <input id="mcs_s3_path_style" type="checkbox" />
-                    <span data-i18n="Path Style">Path Style</span>
+                    <span>Path Style</span>
                 </label>
             </div>
 
             <div class="flex-container flexGap5">
                 <button id="mcs_save_config" class="menu_button menu_button_icon" type="button">
                     <i class="fa-solid fa-floppy-disk"></i>
-                    <span data-i18n="Save">Save</span>
+                    <span>儲存</span>
                 </button>
                 <button id="mcs_refresh_queue" class="menu_button menu_button_icon" type="button">
                     <i class="fa-solid fa-arrows-rotate"></i>
-                    <span data-i18n="Refresh Queue">Refresh Queue</span>
+                    <span>重新整理佇列</span>
                 </button>
                 <button id="mcs_upload_now" class="menu_button menu_button_icon" type="button">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span data-i18n="Upload Now">Upload Now</span>
+                    <span>立即上傳</span>
                 </button>
                 <button id="mcs_download_now" class="menu_button menu_button_icon" type="button">
                     <i class="fa-solid fa-cloud-arrow-down"></i>
-                    <span data-i18n="Download Oldest">Download Oldest</span>
+                    <span>下載最舊項目</span>
                 </button>
             </div>
 

@@ -1,5 +1,5 @@
 {
-    "display_name": "Manual Cloud Sync",
+    "display_name": "手動雲端同步",
     "loading_order": 24,
     "requires": [],
     "optional": [],
@@ -7,6 +7,6 @@
     "css": "style.css",
     "author": "ExAlan7588",
     "version": "1.0.0",
-    "description": "Manual WebDAV/S3 cloud handoff sync panel for TauriTavern.",
+    "description": "TauriTavern 的手動 WebDAV/S3 雲端交棒同步面板。",
     "homePage": "https://github.com/ExAlan7588/ManualCloudSyncPluginPlan"
 }
