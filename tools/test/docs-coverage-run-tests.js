@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
+import { REQUIRED_DEVICE_CHECKS } from '../verify-incremental-cloud-sync-evidence.js';
+
+const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContract.md', import.meta.url);
+const INCREMENTAL_PLAN_DOC = new URL('../../docs/IncrementalCloudSyncPlan.md', import.meta.url);
+const README_DOC = new URL('../../README.md', import.meta.url);
+const VERIFICATION_DOC = new URL('../../docs/TauriTavernTtSyncVerification.md', import.meta.url);
+
+const tests = [
+    ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
+];
+
+for (const [name, test] of tests) {
+    try {
+        await test();
+        console.log(`ok - ${name}`);
+    } catch (error) {
+        console.error(`not ok - ${name}`);
+        console.error(error);
+        process.exitCode = 1;
+        break;
+    }
+}
+
+async function testVerificationDocsCoverage() {
+    const contract = await readFile(COMMAND_CONTRACT_DOC, 'utf8');
+    const plan = await readFile(INCREMENTAL_PLAN_DOC, 'utf8');
+    const readme = await readFile(README_DOC, 'utf8');
+    const verification = await readFile(VERIFICATION_DOC, 'utf8');
+    assert.ok(verification.includes('--deploy'), 'final evidence deploy input missing from verification doc');
+    assert.ok(verification.includes('--allow-placeholders'), 'deploy placeholder policy missing from verification doc');
+    assertFinalEvidenceManifestDocumented({ plan, readme, verification });
+    for (const command of REQUIRED_TT_SYNC_COMMANDS) {
+        assert.ok(contract.includes(command), `${command} missing from command contract doc`);
+    }
+    for (const item of REQUIRED_DEVICE_CHECKS) {
+        assertDeviceRequirementDocumented({ item, verification });
+    }
+}
+
+function assertFinalEvidenceManifestDocumented(options) {
+    assert.ok(options.readme.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'README final evidence manifest output missing');
+    assert.ok(options.verification.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'verification final evidence manifest output missing');
+    assert.ok(options.plan.includes('--manifest <final-evidence-report.json>'), 'plan final evidence manifest output missing');
+}
+
+function assertDeviceRequirementDocumented(options) {
+    const [key, _label, fieldSpecs] = options.item;
+    assert.ok(options.verification.includes(key), `${key} missing from verification doc`);
+    for (const fieldSpec of fieldSpecs) {
+        assert.ok(options.verification.includes(fieldSpec[0]), `${fieldSpec[0]} missing from verification doc`);
+    }
+}
