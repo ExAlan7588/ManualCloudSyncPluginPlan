@@ -17,6 +17,7 @@ const tests = [
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
+    ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
 
@@ -107,6 +108,14 @@ async function testLocalSmokeEvidence() {
     assert.ok(report.failed.includes('smoke endpoint is non-local'));
 }
 
+async function testMixedServerEvidence() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.server.url = 'https://other-sync.example.com';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('same server URL'));
+}
+
 async function testDeviceEvidenceTemplateIncomplete() {
     const template = createDeviceEvidenceTemplate({
         desktopBuildId: 'desktop-build-fixture',
@@ -133,6 +142,8 @@ function commandReportFixture() {
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({ files: ['src-tauri/src/commands.rs'], found: true, name: command })),
         missingCommands: [],
         ok: true,
+        scannedFiles: 1,
+        source: '/builds/TauriTavern.apk',
     };
 }
 
@@ -152,6 +163,9 @@ function deviceEvidenceFixture() {
             { model: 'Pixel', platform: 'Android 15' },
             { model: 'Workstation', platform: 'Linux desktop' },
         ],
+        server: {
+            url: 'https://sync.example.com',
+        },
         tauriTavern: {
             desktopBuildId: 'desktop-build-fixture',
             mobileBuildId: 'mobile-build-fixture',

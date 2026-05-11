@@ -39,6 +39,7 @@ export async function verifyIncrementalCloudSyncEvidence(options = {}) {
         ...commandChecks(evidence.commandReport),
         ...smokeChecks(evidence.smokeReport),
         ...deviceChecks(evidence.deviceEvidence),
+        ...consistencyChecks(evidence),
     ];
     return reportFor(checks);
 }
@@ -74,6 +75,8 @@ async function loadReport(options) {
 function commandChecks(report) {
     return [
         check('command report ok', report?.ok === true, 'command report must have ok=true'),
+        check('command report source', hasText(report?.source), 'command report must include source path or artifact'),
+        check('command report scanned files', Number(report?.scannedFiles) > 0, 'command report must scan at least one file'),
         check('no missing commands', Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, 'missingCommands must be empty'),
         ...REQUIRED_TT_SYNC_COMMANDS.map(command => commandFoundCheck(report, command)),
     ];
@@ -99,10 +102,21 @@ function smokeChecks(report) {
 function deviceChecks(evidence) {
     return [
         check('device evidence testedAt', hasText(evidence?.testedAt), 'device evidence must include testedAt'),
+        check('device evidence server URL', hasText(evidence?.server?.url), 'device evidence must include server.url'),
         check('mobile build id', hasText(evidence?.tauriTavern?.mobileBuildId), 'mobile build id is required'),
         check('desktop build id', hasText(evidence?.tauriTavern?.desktopBuildId), 'desktop build id is required'),
         check('device coverage', hasDeviceCoverage(evidence), 'at least Android phone and desktop device records are required'),
         ...REQUIRED_DEVICE_CHECKS.map(item => deviceCheck(evidence, item)),
+    ];
+}
+
+function consistencyChecks(evidence) {
+    return [
+        check(
+            'same server URL',
+            sameEndpoint(evidence.smokeReport?.endpoint, evidence.deviceEvidence?.server?.url),
+            'smoke endpoint and device evidence server.url must match',
+        ),
     ];
 }
 
@@ -139,6 +153,20 @@ function isNonLocalEndpoint(endpoint) {
         return !['127.0.0.1', '::1', 'localhost'].includes(host);
     } catch {
         return false;
+    }
+}
+
+function sameEndpoint(left, right) {
+    const normalizedLeft = normalizeEndpoint(left);
+    const normalizedRight = normalizeEndpoint(right);
+    return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
+}
+
+function normalizeEndpoint(endpoint) {
+    try {
+        return new URL(endpoint).toString().replace(/\/$/, '');
+    } catch {
+        return '';
     }
 }
 

@@ -172,6 +172,7 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
+device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL；command report 也必須包含實際 source 與 scanned file count。
 
 device evidence JSON 需包含：
 
@@ -192,6 +193,9 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
     { "platform": "Android 15", "model": "Pixel" },
     { "platform": "Linux desktop", "model": "Workstation" }
   ],
+  "server": {
+    "url": "https://sync.example.com"
+  },
   "checks": {
     "realLargeFirstSyncCompleted": { "ok": true, "evidence": "300MB first sync report path or run id" },
     "commandContractVerified": { "ok": true, "evidence": "backend command contract test report path or build verification id" },
