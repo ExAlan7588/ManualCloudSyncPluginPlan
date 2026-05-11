@@ -40,6 +40,14 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 插件會直接呼叫上述命令，不會模擬成功；缺少命令時會顯示後端不支援的錯誤。
 
+可用以下命令檢查 TauriTavern source tree、APK/AAB 或桌面 build 是否真的包含這些命令：
+
+```bash
+npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-sync-command-report.json
+```
+
+完整的真機與 VPS 驗證清單請看：[docs/TauriTavernTtSyncVerification.md](docs/TauriTavernTtSyncVerification.md)。
+
 完整 mirror 封存同步需要 TauriTavern 版本提供下列原生命令：
 
 - `cloud_sync_get_config`

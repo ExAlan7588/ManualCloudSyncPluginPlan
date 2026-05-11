@@ -59,7 +59,7 @@ TT-Sync v2 已經具備很多理想形態：
 
 ## 3.1 目前落地狀態（2026-05-11）
 
-本 repo 是 GitHub 前端插件，不包含 `src-tauri` 後端、TT-Sync server、VPS 部署檔或手機 build pipeline。已完成 repo-local 交付：
+本 repo 是 GitHub 前端插件，原本不包含 `src-tauri` 後端、TT-Sync server、VPS 部署檔或手機 build pipeline。已完成 repo-local 交付：
 
 - 新增獨立 `增量 TT-Sync` 面板，和既有全量 zip 交棒同步分離。
 - UI 呼叫真實 `tt_sync_*` command 名稱：`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_check_diff`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_unpair`。
@@ -67,10 +67,11 @@ TT-Sync v2 已經具備很多理想形態：
 - 缺少 TT-Sync 後端命令時顯示明確錯誤，不做 mock success 或靜默降級。
 - 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
 - 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
+- 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
-- 手機/電腦 app build 是否已包含 `tt_sync_*` commands。
+- 手機/電腦 app build 是否已包含 `tt_sync_*` commands；需以 `npm run verify:tauritavern -- --source <build>` 產生實際 build 證據。
 - Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性仍需部署環境驗證。
 - 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證。
 
@@ -240,7 +241,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 0：盤點與決策
 
-- [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。
+- [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。結果：本 repo 已提供 `npm run verify:tauritavern -- --source <path>` 檢查器；尚未取得實際手機 build 掃描報告。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
 - [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
 - [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template；實際 VPS 啟動仍需在部署環境驗證。
@@ -250,7 +251,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 - [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server；尚未在真實 VPS 驗證。
 - [x] 產生配對 URI。結果：`npm run tt-sync:pair` 會依 `TT_SYNC_PAIRING_TOKEN` 產生配對 URI。
-- [ ] 手機與電腦能保存配對服務端。
+- [ ] 手機與電腦能保存配對服務端。驗證方式已文件化於 `docs/TauriTavernTtSyncVerification.md`；仍需真機 app 後端保存證據。
 - [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
 - [x] Pull 只抓變更檔案。結果：server pull-plan 測試覆蓋空 diff 不下載。
 - [x] 進度事件能顯示 files/bytes。結果：Minimal server 提供 `/v2/plans/{plan_id}/events` SSE progress；前端已有 files/bytes 顯示欄位，真機 bridge 仍需裝置驗證。
@@ -298,12 +299,12 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
 - [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
 - [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。
-- [ ] Pull 後本機檔案 mtime 保留。服務端已回傳 `X-TT-Sync-Modified-Ms` 與 `Last-Modified`；本機檔案 mtime 套用仍需 TauriTavern 後端/裝置驗證。
+- [ ] Pull 後本機檔案 mtime 保留。服務端已回傳 `X-TT-Sync-Modified-Ms` 與 `Last-Modified`；本機檔案 mtime 套用仍需依 `docs/TauriTavernTtSyncVerification.md` 在 TauriTavern 後端/裝置驗證。
 - [x] Push commit 前斷線不造成遠端 mirror delete。結果：server test `uncommitted push plan does not delete remote files`。
-- [ ] Pull 寫入中斷不破壞本機既有檔案。
-- [ ] LAN Sync 與雲端同步不能並行。
+- [ ] Pull 寫入中斷不破壞本機既有檔案。驗證方式已文件化；仍需真機中斷測試。
+- [ ] LAN Sync 與雲端同步不能並行。驗證方式已文件化；仍需 TauriTavern runtime 互斥測試。
 - [x] 同步狀態目錄不會被同步。結果：Minimal server 會拒收 LAN Sync、manual/incremental sync 狀態與 iOS policy cache 路徑。
-- [ ] Android 手機弱網路下錯誤可見。
+- [ ] Android 手機弱網路下錯誤可見。驗證方式已文件化；仍需 Android 弱網路測試證據。
 
 ## 12. 開放問題
 
@@ -313,9 +314,8 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - 衝突第一版要阻止同步，還是允許「整批以本機覆蓋」與「整批以遠端覆蓋」？
 - 圖片/附件是否要提供可選同步 scope，讓使用者先只同步聊天與設定？
 
-## 13. 建議下一步
+## 13. 外部驗證入口
 
-1. 先確認手機 build 是否已有 `tt_sync_*` commands。
-2. 找出 TT-Sync 服務端實作與部署方式。
-3. 若 TT-Sync 服務端可用，優先部署到 VPS 做端到端測試。
-4. 若服務端不可用，再補最小 TT-Sync server，而不是繼續擴充全量 zip 插件。
+1. 使用 `npm run verify:tauritavern -- --source <path>` 確認手機與桌面 build 是否已有 `tt_sync_*` commands。
+2. 依 `docs/TauriTavernTtSyncVerification.md` 保存配對、mtime、中斷安全、互斥與弱網路證據。
+3. Minimal TT-Sync server 已在本 repo 內提供；真實 VPS 啟動與端到端同步仍以部署環境證據為準。

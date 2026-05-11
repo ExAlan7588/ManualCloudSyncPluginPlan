@@ -12,7 +12,7 @@ The server exists to satisfy the first-stage incremental sync backend requiremen
 - It commits staged uploads atomically.
 - It exposes errors explicitly and does not return fake success.
 
-It does not implement phase-4 account login, token refresh, device inventory, sync history, rollback points, or semantic merge.
+It implements the server-side phase-4 account/device/history/rollback basics, but it does not implement semantic merge.
 
 ## Runtime
 
