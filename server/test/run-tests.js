@@ -17,7 +17,7 @@ const BULK_FILE_COUNT = 128;
 const tests = [
     ['pair, push, pull, and empty diff', testPushPullEmptyDiff],
     ['only changed files transfer and bundle endpoints work', testChangedFilesAndBundle],
-    ['bundle upload requires valid contentBase64', testBundleRequiresValidContentBase64],
+    ['bundle upload validates file payload', testBundleValidatesFilePayload],
     ['bulk first sync completes', testBulkFirstSync],
     ['uncommitted push plan does not delete remote files', testUncommittedPushKeepsRemote],
     ['conflict blocks commit until decision is provided', testConflictDecision],
@@ -138,11 +138,19 @@ async function testChangedFilesAndBundle() {
     });
 }
 
-async function testBundleRequiresValidContentBase64() {
+async function testBundleValidatesFilePayload() {
     await withServer(async context => {
         const pair = await pairDevice(context);
         const entry = entryFor('', BASE_MTIME);
         const plan = await pushPlan({ baseManifest: [], context, localManifest: [entry], pair });
+        await putBundleExpectError({
+            context,
+            files: [{ contentBase64: '' }],
+            message: /Bundle file path must be a string/,
+            planId: plan.id,
+            status: 400,
+            token: pair.authToken,
+        });
         await putBundleExpectError({
             context,
             files: [{ path: entry.path }],

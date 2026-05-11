@@ -190,7 +190,7 @@ async function stageUploadBundle(context, plan) {
         throw badRequest('Bundle files must be an array');
     }
     for (const file of body.files) {
-        const entry = findPlanEntry(plan.uploads, file.path);
+        const entry = findPlanEntry(plan.uploads, bundleFilePath(file));
         await context.storage.stageFile(plan, entry, decodeBundleContent(file));
     }
 }
@@ -255,6 +255,13 @@ function decodeBundleContent(file) {
         throw badRequest('Bundle file contentBase64 must be valid base64');
     }
     return Buffer.from(file.contentBase64, 'base64');
+}
+
+function bundleFilePath(file) {
+    if (typeof file?.path !== 'string') {
+        throw badRequest('Bundle file path must be a string');
+    }
+    return file.path;
 }
 
 function planSummary(plan) {
