@@ -52,6 +52,7 @@ const tests = [
     ['incremental evidence verifier rejects failed extra report checks', testFailedExtraReportCheck],
     ['incremental evidence verifier rejects invalid timestamps', testInvalidEvidenceTimestamp],
     ['incremental evidence verifier rejects placeholder evidence URLs', testPlaceholderEvidenceUrls],
+    ['incremental evidence verifier rejects cleartext evidence URLs', testCleartextEvidenceUrls],
     ['incremental evidence verifier rejects URL credentials and fragments', testUncleanEvidenceUrls],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
@@ -275,6 +276,14 @@ async function reportWithEvidenceUrl(url) {
     evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = url;
     evidence.deviceEvidence.checks.phoneDesktopPairingSaved.desktop.savedServerUrl = url;
     return verifyIncrementalCloudSyncEvidence(evidence);
+}
+
+async function testCleartextEvidenceUrls() {
+    const report = await reportWithEvidenceUrl('http://sync-fixture.dev');
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report public URL uses HTTPS'));
+    assert.ok(report.failed.includes('smoke endpoint uses HTTPS'));
+    assert.ok(report.failed.includes('device evidence server URL uses HTTPS'));
 }
 
 async function testUncleanEvidenceUrls() {

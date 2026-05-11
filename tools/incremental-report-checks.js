@@ -17,6 +17,7 @@ export function deployChecks(report) {
         check('deploy report real service path', isFinalDeployPath(report?.servicePath), 'final deploy servicePath must be an absolute non-template path'),
         check('deploy report real env path', isFinalDeployPath(report?.envPath), 'final deploy envPath must be an absolute non-template path'),
         check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
+        check('deploy report public URL uses HTTPS', isHttpsEvidenceUrl(report?.publicUrl), 'deploy publicUrl must use HTTPS for final evidence'),
         check('deploy report public URL is not placeholder', isNonPlaceholderUrl(report?.publicUrl), 'deploy publicUrl must not use placeholder or reserved domains'),
         check('deploy report public URL is clean', isCleanEvidenceUrl(report?.publicUrl), 'deploy publicUrl must not include credentials, query, or fragment'),
         check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
@@ -39,6 +40,7 @@ export function smokeChecks(report) {
         check('smoke report fixture paths', fixturePathsIncludePrimary(report), 'smoke report must include smokePaths containing smokePath'),
         check('smoke report is remote', report?.mode === 'remote', 'final evidence requires a remote deployed server smoke report'),
         check('smoke endpoint is non-local', isNonLocalEndpoint(report?.endpoint), 'smoke endpoint must not be localhost or loopback'),
+        check('smoke endpoint uses HTTPS', isHttpsEvidenceUrl(report?.endpoint), 'smoke endpoint must use HTTPS for final evidence'),
         check('smoke endpoint is not placeholder', isNonPlaceholderUrl(report?.endpoint), 'smoke endpoint must not use placeholder or reserved domains'),
         check('smoke endpoint is clean', isCleanEvidenceUrl(report?.endpoint), 'smoke endpoint must not include credentials, query, or fragment'),
         check('smoke status version', hasText(report?.status?.version), 'smoke report must include status.version'),
@@ -59,6 +61,11 @@ export function isNonPlaceholderUrl(value) {
 export function isCleanEvidenceUrl(value) {
     const parsed = parseHttpUrl(value);
     return Boolean(parsed && !parsed.username && !parsed.password && !parsed.search && !parsed.hash);
+}
+
+export function isHttpsEvidenceUrl(value) {
+    const parsed = parseHttpUrl(value);
+    return parsed?.protocol === 'https:';
 }
 
 function matchesHostSet(host, suffixes) {

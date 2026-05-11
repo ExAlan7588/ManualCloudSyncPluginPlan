@@ -105,6 +105,9 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('credentials/query/fragment'), 'README URL cleanliness policy missing');
     assert.ok(options.verification.includes('credentials/query/fragment'), 'verification URL cleanliness policy missing');
     assert.ok(options.plan.includes('credentials/query/fragment'), 'plan URL cleanliness policy missing');
+    assert.ok(options.readme.includes('必須使用 HTTPS'), 'README HTTPS final URL policy missing');
+    assert.ok(options.verification.includes('必須使用 HTTPS'), 'verification HTTPS final URL policy missing');
+    assert.ok(options.plan.includes('URL 使用 HTTPS'), 'plan HTTPS final URL policy missing');
 }
 
 function assertDeviceRequirementDocumented(options) {
