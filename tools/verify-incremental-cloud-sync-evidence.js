@@ -235,6 +235,7 @@ function commandEvidenceConsistencyChecks(evidence) {
     return [
         ...commandReportReferenceChecks({ report: evidence.mobileCommandReport, target: 'mobile', deviceEvidence: evidence.deviceEvidence }),
         ...commandReportReferenceChecks({ report: evidence.desktopCommandReport, target: 'desktop', deviceEvidence: evidence.deviceEvidence }),
+        ...eventReportReferenceChecks(evidence),
         check(
             'command contract covers required commands',
             arrayIncludesAllTexts(deviceCheckValue(evidence, 'commandContractVerified', 'contract.commands'), REQUIRED_TT_SYNC_COMMANDS),
@@ -261,6 +262,15 @@ function commandReportReferenceChecks(options) {
             sameText(options.report?.sourceKind, reference?.sourceKind),
             `${options.target} command report sourceKind and device evidence reference must match`,
         ),
+    ];
+}
+
+function eventReportReferenceChecks(evidence) {
+    const reference = evidence.deviceEvidence?.checks?.commandContractVerified?.eventSurfaceReport;
+    return [
+        check('same event report source', sameText(evidence.eventReport?.source, reference?.source), 'event surface report source and device evidence reference must match'),
+        check('same event report scannedAt', sameText(evidence.eventReport?.scannedAt, reference?.scannedAt), 'event surface report scannedAt and device evidence reference must match'),
+        check('same event report sourceKind', sameText(evidence.eventReport?.sourceKind, reference?.sourceKind), 'event surface report sourceKind and device evidence reference must match'),
     ];
 }
 

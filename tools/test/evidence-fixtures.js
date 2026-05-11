@@ -33,6 +33,11 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
             source: '/builds/TauriTavern-desktop.dmg',
             sourceKind: 'build-artifact',
         },
+        eventSurfaceReport: {
+            scannedAt: '2026-05-12T00:00:10+08:00',
+            source: '/src/TauriTavern',
+            sourceKind: 'source-tree',
+        },
         mobileCommandReport: {
             scannedAt: '2026-05-12T00:00:00+08:00',
             source: '/builds/TauriTavern-mobile.apk',

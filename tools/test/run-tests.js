@@ -36,6 +36,7 @@ const tests = [
     ['incremental evidence verifier rejects failed event surface report', testFailedEventSurfaceEvidence],
     ['incremental evidence verifier rejects source-file event surface evidence', testSourceFileEventSurfaceEvidence],
     ['incremental evidence verifier rejects missing diff conflict surface', testMissingDiffConflictSurface],
+    ['incremental evidence verifier rejects mixed event surface evidence', testMixedEventSurfaceEvidence],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
@@ -421,6 +422,16 @@ async function testMissingDiffConflictSurface() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('event surface preTransferDiffEvent'));
+}
+
+async function testMixedEventSurfaceEvidence() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.commandContractVerified.eventSurfaceReport.source = '/src/other-tauritavern';
+    evidence.deviceEvidence.checks.commandContractVerified.eventSurfaceReport.sourceKind = 'source-file';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('same event report source'));
+    assert.ok(report.failed.includes('same event report sourceKind'));
 }
 
 async function testMixedCommandReportEvidence() {
