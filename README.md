@@ -115,7 +115,7 @@ npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-to
 npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json
 ```
 
-final evidence gate 會確認 command report 有實際 `scannedAt`、source、scanned file 與 trusted command evidence，device evidence 內的 command report reference 與頂層 command report 一致，且 `commandContractVerified.contract.commands` 覆蓋全部 `tt_sync_*` commands；deploy report 是不允許 placeholder 的真實 env 模式且 public URL 與遠端 smoke endpoint 一致，遠端 smoke report 有 `completedAt`、`smokePath`、`deviceId`、`planIds`、`status.version`、fixture files/bytes/paths，device evidence 有 Android/desktop `deviceId` 與每個真機檢查要求的結構化欄位，Pull mtime expected/actual 必須相等，中斷前後 hash 必須相等，且 device evidence 的 server URL 與遠端 smoke endpoint 一致。
+final evidence gate 會確認 command report 有實際 `scannedAt`、source、scanned file 與 trusted command evidence，device evidence 內的 command report reference 與頂層 command report 一致，且 `commandContractVerified.contract.commands` 覆蓋全部 `tt_sync_*` commands；deploy report 是不允許 placeholder 的真實 env 模式且 public URL 與遠端 smoke endpoint 一致，遠端 smoke report 有 `completedAt`、`smokePath`、`deviceId`、`planIds`、`status.version`、fixture files/bytes/paths，device evidence 有 Android/desktop `deviceId` 與每個真機檢查要求的結構化欄位，progress evidence 必須包含 files/bytes/current path，Pull mtime expected/actual 必須相等，中斷前後 hash 必須相等，且 device evidence 的 server URL 與遠端 smoke endpoint 一致。
 
 device evidence 可先用模板產生；模板內所有檢查預設 `ok=false`，不會通過 final evidence gate：
 

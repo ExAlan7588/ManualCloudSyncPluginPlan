@@ -31,7 +31,13 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         mutex: { blockedOperation: 'lan_sync_start while tt_sync_push is active', visibleError: 'Cloud sync already running' },
     },
     liveProgressBridgeVisible: {
-        progress: { eventCount: TEST_BULK_FILES, lastPhase: 'committed' },
+        progress: {
+            bytesTransferred: TEST_BULK_FILES * TEST_BULK_FILE_BYTES,
+            currentPath: 'default-user/chats/progress-fixture.jsonl',
+            eventCount: TEST_BULK_FILES,
+            filesTransferred: TEST_BULK_FILES,
+            lastPhase: 'committed',
+        },
     },
     phoneDesktopPairingSaved: {
         desktop: { savedServerId: 'desktop-server-fixture' },
@@ -72,6 +78,7 @@ const tests = [
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
     ['incremental evidence verifier rejects missing smoke status version', testMissingSmokeStatusVersion],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
+    ['incremental evidence verifier rejects missing progress transfer metrics', testMissingProgressTransferMetrics],
     ['incremental evidence verifier rejects missing device structured fields', testMissingDeviceStructuredFields],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
@@ -264,6 +271,14 @@ async function testMissingSmokeFixtureProvenance() {
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('smoke report fixture files'));
     assert.ok(report.failed.includes('smoke report fixture paths'));
+}
+
+async function testMissingProgressTransferMetrics() {
+    const evidence = completeEvidence();
+    delete evidence.deviceEvidence.checks.liveProgressBridgeVisible.progress.bytesTransferred;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('live progress bridge visible in TauriTavern'));
 }
 
 async function testMissingDeviceStructuredFields() {

@@ -49,7 +49,10 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['phone.savedServerId', FIELD_TEXT],
     ]],
     ['liveProgressBridgeVisible', 'live progress bridge visible in TauriTavern', [
+        ['progress.bytesTransferred', FIELD_POSITIVE_NUMBER],
+        ['progress.currentPath', FIELD_TEXT],
         ['progress.eventCount', FIELD_POSITIVE_NUMBER],
+        ['progress.filesTransferred', FIELD_POSITIVE_NUMBER],
         ['progress.lastPhase', FIELD_TEXT],
     ]],
     ['pullMtimePreserved', 'pull preserves local filesystem mtime', [

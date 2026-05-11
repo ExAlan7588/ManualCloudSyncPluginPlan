@@ -202,7 +202,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
 - `realLargeFirstSyncCompleted`: `metrics.durationMs`, `metrics.fileCount`, `metrics.totalBytes`
 - `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`
 - `phoneDesktopPairingSaved`: `desktop.savedServerId`, `phone.savedServerId`
-- `liveProgressBridgeVisible`: `progress.eventCount`, `progress.lastPhase`
+- `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`
 - `pullInterruptionSafe`: `interruption.afterHash`, `interruption.beforeHash`, `interruption.error`
 - `lanCloudSyncMutex`: `mutex.blockedOperation`, `mutex.visibleError`
@@ -246,7 +246,13 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "liveProgressBridgeVisible": {
       "ok": true,
       "evidence": "progress event capture or screen recording id",
-      "progress": { "eventCount": 12, "lastPhase": "committed" }
+      "progress": {
+        "bytesTransferred": 335544320,
+        "currentPath": "default-user/chats/example.jsonl",
+        "eventCount": 12,
+        "filesTransferred": 128,
+        "lastPhase": "committed"
+      }
     },
     "pullMtimePreserved": {
       "ok": true,
