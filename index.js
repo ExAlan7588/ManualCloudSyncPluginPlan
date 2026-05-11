@@ -52,6 +52,11 @@ function setBusy(busy) {
 }
 
 function normalizeError(error) {
+    const backendMissingMessage = backendCommandMissingMessage(error);
+    if (backendMissingMessage) {
+        return backendMissingMessage;
+    }
+
     if (error instanceof Error && error.message) {
         return error.message;
     }
@@ -61,6 +66,15 @@ function normalizeError(error) {
     }
 
     return String(error || '未知錯誤');
+}
+
+function backendCommandMissingMessage(error) {
+    const message = error instanceof Error ? error.message : String(error || '');
+    if (!/Command cloud_sync_[a-z_]+ not found/.test(message)) {
+        return '';
+    }
+
+    return '目前的 TauriTavern 後端沒有雲端同步原生命令。GitHub 插件只能安裝前端面板，必須使用包含 cloud_sync_* commands 的 TauriTavern build。';
 }
 
 async function invokeCommand(command, args) {
