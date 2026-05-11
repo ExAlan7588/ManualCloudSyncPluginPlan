@@ -8,6 +8,19 @@ const SSE_TYPE = 'text/event-stream; charset=utf-8';
 const DEFAULT_MAX_BODY_BYTES = 512 * 1024 * 1024;
 const PROGRESS_EVENT_INTERVAL_MS = 1000;
 
+const STATIC_ROUTE_HANDLERS = Object.freeze({
+    'GET /v2/status': handleStatus,
+    'POST /v2/pair/complete': handlePair,
+    'POST /v2/account/login': handleAccountLogin,
+    'POST /v2/account/token/refresh': handleTokenRefresh,
+    'POST /v2/session/open': handleSession,
+    'GET /v2/devices': handleDevices,
+    'GET /v2/history': handleHistory,
+    'GET /v2/rollback-points': handleRollbackPoints,
+    'POST /v2/sync/push-plan': context => handlePlan(context, 'push'),
+    'POST /v2/sync/pull-plan': context => handlePlan(context, 'pull'),
+});
+
 export function createHandler(storage) {
     return async (request, response) => {
         try {
@@ -21,38 +34,16 @@ export function createHandler(storage) {
 async function dispatch(context) {
     const url = new URL(context.request.url, 'http://127.0.0.1');
     const route = routeKey(context.request.method, url.pathname);
-    if (route === 'GET /v2/status') {
-        return sendJson(context.response, await context.storage.status());
+    const staticHandler = STATIC_ROUTE_HANDLERS[route];
+    if (staticHandler) {
+        return staticHandler(context, url);
     }
-    if (route === 'POST /v2/pair/complete') {
-        return handlePair(context);
-    }
-    if (route === 'POST /v2/account/login') {
-        return handleAccountLogin(context);
-    }
-    if (route === 'POST /v2/account/token/refresh') {
-        return handleTokenRefresh(context);
-    }
-    if (route === 'POST /v2/session/open') {
-        return handleSession(context);
-    }
-    if (route === 'GET /v2/devices') {
-        return handleDevices(context, url);
-    }
-    if (route === 'GET /v2/history') {
-        return handleHistory(context, url);
-    }
-    if (route === 'GET /v2/rollback-points') {
-        return handleRollbackPoints(context, url);
-    }
+    return dispatchDynamicRoute(context, route, url);
+}
+
+async function dispatchDynamicRoute(context, route, url) {
     if (context.request.method === 'POST' && /^\/v2\/rollback-points\/[^/]+\/restore$/.test(url.pathname)) {
         return handleRollbackRestore(context, url);
-    }
-    if (route === 'POST /v2/sync/push-plan') {
-        return handlePlan(context, 'push');
-    }
-    if (route === 'POST /v2/sync/pull-plan') {
-        return handlePlan(context, 'pull');
     }
     if (isPlanFileRoute(context.request.method, url.pathname)) {
         return handlePlanFile(context, url.pathname);
@@ -67,6 +58,10 @@ async function dispatch(context) {
         return handleCommit(context, url.pathname);
     }
     throw notFound(`Route not found: ${route}`);
+}
+
+async function handleStatus(context) {
+    return sendJson(context.response, await context.storage.status());
 }
 
 async function handlePair(context) {
