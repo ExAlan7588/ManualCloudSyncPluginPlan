@@ -102,6 +102,9 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.verification.includes('placeholder or reserved domains'), 'verification placeholder URL policy missing');
     assert.ok(options.plan.includes('placeholder or reserved domains'), 'plan placeholder URL policy missing');
     assert.ok(options.verification.includes('.test'), 'verification reserved domain examples missing');
+    assert.ok(options.readme.includes('credentials/query/fragment'), 'README URL cleanliness policy missing');
+    assert.ok(options.verification.includes('credentials/query/fragment'), 'verification URL cleanliness policy missing');
+    assert.ok(options.plan.includes('credentials/query/fragment'), 'plan URL cleanliness policy missing');
 }
 
 function assertDeviceRequirementDocumented(options) {

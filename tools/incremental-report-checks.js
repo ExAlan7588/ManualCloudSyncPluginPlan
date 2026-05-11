@@ -18,6 +18,7 @@ export function deployChecks(report) {
         check('deploy report real env path', isFinalDeployPath(report?.envPath), 'final deploy envPath must be an absolute non-template path'),
         check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
         check('deploy report public URL is not placeholder', isNonPlaceholderUrl(report?.publicUrl), 'deploy publicUrl must not use placeholder or reserved domains'),
+        check('deploy report public URL is clean', isCleanEvidenceUrl(report?.publicUrl), 'deploy publicUrl must not include credentials, query, or fragment'),
         check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
         check('deploy report checks passed', reportChecksPassed(report), 'deploy report checks must all be ok=true with name and detail'),
         ...REQUIRED_DEPLOY_CHECKS.map(name => check(`deploy ${name}`, names.has(name), `${name} check is required`)),
@@ -39,6 +40,7 @@ export function smokeChecks(report) {
         check('smoke report is remote', report?.mode === 'remote', 'final evidence requires a remote deployed server smoke report'),
         check('smoke endpoint is non-local', isNonLocalEndpoint(report?.endpoint), 'smoke endpoint must not be localhost or loopback'),
         check('smoke endpoint is not placeholder', isNonPlaceholderUrl(report?.endpoint), 'smoke endpoint must not use placeholder or reserved domains'),
+        check('smoke endpoint is clean', isCleanEvidenceUrl(report?.endpoint), 'smoke endpoint must not include credentials, query, or fragment'),
         check('smoke status version', hasText(report?.status?.version), 'smoke report must include status.version'),
         check('smoke report checks passed', reportChecksPassed(report), 'smoke report checks must all be ok=true with name and detail'),
         ...REQUIRED_SMOKE_CHECKS.map(name => check(`smoke ${name}`, names.has(name), `${name} check is required`)),
@@ -52,6 +54,11 @@ export function isNonPlaceholderUrl(value) {
     }
     const host = parsed.hostname.toLowerCase();
     return !matchesHostSet(host, PLACEHOLDER_HOSTS) && !matchesHostSet(host, RESERVED_HOST_SUFFIXES);
+}
+
+export function isCleanEvidenceUrl(value) {
+    const parsed = parseHttpUrl(value);
+    return Boolean(parsed && !parsed.username && !parsed.password && !parsed.search && !parsed.hash);
 }
 
 function matchesHostSet(host, suffixes) {

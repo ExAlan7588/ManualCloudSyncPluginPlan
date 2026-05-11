@@ -8,7 +8,7 @@ import {
     REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES,
     REQUIRED_TT_SYNC_EVENTS,
 } from './verify-tauritavern-tt-sync-events.js';
-import { deployChecks, isNonPlaceholderUrl, smokeChecks } from './incremental-report-checks.js';
+import { deployChecks, isCleanEvidenceUrl, isNonPlaceholderUrl, smokeChecks } from './incremental-report-checks.js';
 import {
     FIELD_NON_NEGATIVE_NUMBER,
     FIELD_POSITIVE_NUMBER,
@@ -182,6 +182,7 @@ function deviceChecks(evidence) {
         check('device evidence testedAt', isTimestamp(evidence?.testedAt), 'device evidence must include a parseable testedAt timestamp'),
         check('device evidence server URL', hasText(evidence?.server?.url), 'device evidence must include server.url'),
         check('device evidence server URL is not placeholder', isNonPlaceholderUrl(evidence?.server?.url), 'device evidence server.url must not use placeholder or reserved domains'),
+        check('device evidence server URL is clean', isCleanEvidenceUrl(evidence?.server?.url), 'device evidence server.url must not include credentials, query, or fragment'),
         check('mobile build id', hasText(evidence?.tauriTavern?.mobileBuildId), 'mobile build id is required'),
         check('desktop build id', hasText(evidence?.tauriTavern?.desktopBuildId), 'desktop build id is required'),
         check('device coverage', hasDeviceCoverage(evidence), 'at least Android phone and desktop device records with deviceId are required'),
