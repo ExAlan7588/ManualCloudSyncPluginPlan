@@ -180,25 +180,28 @@ function scanBuffer(options) {
 
 function recordCommandHit(options) {
     const evidence = evidenceFor(options);
-    if (evidence.trusted) {
-        options.state.hits.get(options.command).push({ file: options.label, kind: evidence.kind });
-        return;
+    const trusted = evidence.filter(item => item.trusted);
+    for (const item of trusted) {
+        options.state.hits.get(options.command).push({ file: options.label, kind: item.kind });
     }
-    options.state.ignoredHits.get(options.command).push(options.label);
+    if (trusted.length === 0) {
+        options.state.ignoredHits.get(options.command).push(options.label);
+    }
 }
 
 function evidenceFor(options) {
     if (isTrustedBuildArtifact({ buffer: options.buffer, label: options.label, state: options.state })) {
-        return { kind: 'build-artifact-string', trusted: true };
+        return [{ kind: 'build-artifact-string', trusted: true }];
     }
     const text = options.buffer.toString(COMMAND_ENCODING);
+    const evidence = [];
     if (hasTauriCommandDeclaration({ command: options.command, text })) {
-        return { kind: 'tauri-command-declaration', trusted: true };
+        evidence.push({ kind: 'tauri-command-declaration', trusted: true });
     }
     if (hasTauriHandlerRegistration({ command: options.command, text })) {
-        return { kind: 'tauri-handler-registration', trusted: true };
+        evidence.push({ kind: 'tauri-handler-registration', trusted: true });
     }
-    return { kind: 'untrusted-string', trusted: false };
+    return evidence.length > 0 ? evidence : [{ kind: 'untrusted-string', trusted: false }];
 }
 
 function reportFor(state) {
@@ -220,10 +223,16 @@ function commandReport(state, command) {
     return {
         evidence,
         files: evidence.map(item => item.file),
-        found: evidence.length > 0,
+        found: commandEvidenceCoversCommand(evidence),
         ignoredFiles: [...state.ignoredHits.get(command)].sort(compareText),
         name: command,
     };
+}
+
+function commandEvidenceCoversCommand(evidence) {
+    const kinds = new Set(evidence.map(item => item.kind));
+    return kinds.has('build-artifact-string')
+        || (kinds.has('tauri-command-declaration') && kinds.has('tauri-handler-registration'));
 }
 
 function displayPath(state, filePath) {

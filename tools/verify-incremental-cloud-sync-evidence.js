@@ -157,8 +157,8 @@ function commandFoundCheck(report, command) {
         : null;
     return check(
         `command ${command}`,
-        Boolean(item?.found && trustedCommandEvidence(item).length),
-        `${command} must have trusted command evidence`,
+        Boolean(item?.found && commandEvidenceCoversCommand(trustedCommandEvidence(item))),
+        `${command} must have trusted build artifact evidence or source declaration plus handler evidence`,
     );
 }
 
@@ -167,6 +167,12 @@ function trustedCommandEvidence(item) {
         return [];
     }
     return item.evidence.filter(entry => hasText(entry?.file) && TRUSTED_COMMAND_EVIDENCE_KINDS.has(entry?.kind));
+}
+
+function commandEvidenceCoversCommand(evidence) {
+    const kinds = new Set(evidence.map(item => item.kind));
+    return kinds.has('build-artifact-string')
+        || (kinds.has('tauri-command-declaration') && kinds.has('tauri-handler-registration'));
 }
 
 function deployChecks(report) {

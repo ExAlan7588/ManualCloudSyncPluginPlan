@@ -38,6 +38,7 @@ const ZIP_VERSION = 20;
 const tests = [
     ['TauriTavern command verifier passes when commands exist', testVerifierFindsCommands],
     ['TauriTavern command verifier scans compressed zip artifacts', testVerifierScansCompressedZip],
+    ['TauriTavern command verifier rejects unregistered source commands', testVerifierRejectsUnregisteredSourceCommands],
     ['TauriTavern command verifier rejects docs-only command strings', testVerifierRejectsDocsOnly],
     ['TauriTavern command verifier fails when commands are missing', testVerifierMissingCommands],
 ];
@@ -96,6 +97,17 @@ async function testVerifierRejectsDocsOnly() {
     });
 }
 
+async function testVerifierRejectsUnregisteredSourceCommands() {
+    await withVerifierFixture(async root => {
+        const fixtureDir = path.join(root, VERIFIER_FIXTURE_DIR);
+        await mkdir(fixtureDir, { recursive: true });
+        await writeFile(path.join(fixtureDir, VERIFIER_FIXTURE_FILE), declarationSourceFor(REQUIRED_TT_SYNC_COMMANDS));
+        const report = await verifyTauriTavernCommands({ source: root });
+        assert.equal(report.ok, false);
+        assert.deepEqual(report.missingCommands, REQUIRED_TT_SYNC_COMMANDS);
+    });
+}
+
 async function withVerifierFixture(callback) {
     const root = await mkdtemp(path.join(tmpdir(), 'tt-sync-verifier-'));
     try {
@@ -113,7 +125,15 @@ async function writeVerifierFixture(options) {
 }
 
 function verifierSourceFor(commands) {
+    return `${declarationSourceFor(commands)}\n${handlerSourceFor(commands)}\n`;
+}
+
+function declarationSourceFor(commands) {
     return commands.map(command => `#[tauri::command]\npub async fn ${command}() {}\n`).join('\n');
+}
+
+function handlerSourceFor(commands) {
+    return `tauri::generate_handler![${commands.join(', ')}];`;
 }
 
 function zipArtifactFor(options) {

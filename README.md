@@ -46,7 +46,7 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-sync-command-report.json
 ```
 
-verifier 只會把 Tauri command 宣告、handler 註冊或可信 build artifact 內的 command 字串列為 command evidence；README、測試 fixture 或一般文件中的字串會被列為 ignored，不會讓報告通過。
+verifier 只會把可信 build artifact 內的 command 字串，或 source tree 內同時具備 Tauri command 宣告與 handler 註冊的 command 列為完成 evidence；README、測試 fixture 或一般文件中的字串會被列為 ignored，不會讓報告通過。
 
 完整的真機與 VPS 驗證清單請看：[docs/TauriTavernTtSyncVerification.md](docs/TauriTavernTtSyncVerification.md)。
 TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/TauriTavernTtSyncCommandContract.md](docs/TauriTavernTtSyncCommandContract.md)。

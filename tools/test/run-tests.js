@@ -97,6 +97,7 @@ const tests = [
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
+    ['incremental evidence verifier rejects source commands without handler evidence', testMissingCommandHandlerEvidence],
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
@@ -477,6 +478,14 @@ async function testUntrustedCommandEvidence() {
     assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
 }
 
+async function testMissingCommandHandlerEvidence() {
+    const evidence = completeEvidence();
+    evidence.commandReport.commands[0].evidence = [evidence.commandReport.commands[0].evidence[0]];
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
+}
+
 async function testIncompleteCommandContractCoverage() {
     const evidence = completeEvidence();
     evidence.deviceEvidence.checks.commandContractVerified.contract.commands = REQUIRED_TT_SYNC_COMMANDS.slice(1);
@@ -504,8 +513,8 @@ async function testMissingDeviceIds() {
 function commandReportFixture() {
     return {
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({
-            evidence: [{ file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' }],
-            files: ['src-tauri/src/commands.rs'],
+            evidence: [{ file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' }, { file: 'src-tauri/src/main.rs', kind: 'tauri-handler-registration' }],
+            files: ['src-tauri/src/commands.rs', 'src-tauri/src/main.rs'],
             found: true,
             ignoredFiles: [],
             name: command,
@@ -513,7 +522,7 @@ function commandReportFixture() {
         missingCommands: [],
         ok: true,
         scannedAt: '2026-05-12T00:00:00+08:00',
-        scannedFiles: 1,
+        scannedFiles: 2,
         source: '/builds/TauriTavern.apk',
     };
 }

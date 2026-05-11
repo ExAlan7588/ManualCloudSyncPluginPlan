@@ -30,7 +30,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 工具 exit code 為 `0`。
 - 報告中的 `missingCommands` 為空陣列。
 - 每個 command 都有至少一個實際檔案命中。
-- command evidence 來自 Tauri command 宣告、handler 註冊或可信 build artifact；文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
+- command evidence 來自可信 build artifact，或 source tree 內同時具備 Tauri command 宣告與 handler 註冊的 command；文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
 
 失敗時工具會列出缺少的 command 並以非零 exit code 結束；這代表該 build 不能被本插件視為增量同步可用。
 
@@ -182,7 +182,7 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
 command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source 與 scanned file count。
-每個 command 必須包含 verifier 產生的 trusted `evidence`，其 kind 必須是 `tauri-command-declaration`、`tauri-handler-registration` 或 `build-artifact-string`。
+每個 command 必須包含 verifier 產生的 trusted `evidence`；build artifact 可用 `build-artifact-string`，source tree 則必須同時有 `tauri-command-declaration` 與 `tauri-handler-registration`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且所有 deploy checks 都必須有 name/detail 並是 `ok=true`；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
