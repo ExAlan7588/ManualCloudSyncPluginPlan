@@ -30,6 +30,7 @@ export const REQUIRED_DEPLOY_CHECKS = Object.freeze([
 
 const FIELD_POSITIVE_NUMBER = 'positiveNumber';
 const FIELD_TEXT = 'text';
+const FIELD_TEXT_ARRAY = 'textArray';
 
 export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ['realLargeFirstSyncCompleted', 'real large first sync completed', [
@@ -38,6 +39,8 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['metrics.totalBytes', FIELD_POSITIVE_NUMBER],
     ]],
     ['commandContractVerified', 'TauriTavern backend command contract verified', [
+        ['contract.commands', FIELD_TEXT_ARRAY],
+        ['contract.reportId', FIELD_TEXT],
         ['commandReport.scannedAt', FIELD_TEXT],
         ['commandReport.source', FIELD_TEXT],
     ]],
@@ -202,6 +205,11 @@ function consistencyChecks(evidence) {
             'command report scannedAt and device commandContractVerified.commandReport.scannedAt must match',
         ),
         check(
+            'command contract covers required commands',
+            arrayIncludesAllTexts(deviceCheckValue(evidence, 'commandContractVerified', 'contract.commands'), REQUIRED_TT_SYNC_COMMANDS),
+            'commandContractVerified.contract.commands must include every required tt_sync command',
+        ),
+        check(
             'deploy and smoke same URL',
             sameEndpoint(evidence.deployReport?.publicUrl, evidence.smokeReport?.endpoint),
             'deploy publicUrl and smoke endpoint must match',
@@ -248,6 +256,9 @@ function fieldValuePasses(value, type) {
     }
     if (type === FIELD_TEXT) {
         return hasText(value);
+    }
+    if (type === FIELD_TEXT_ARRAY) {
+        return Array.isArray(value) && value.length > 0 && value.every(hasText);
     }
     throw new Error(`Unknown evidence field type: ${type}`);
 }
@@ -311,6 +322,14 @@ function sameText(left, right) {
 
 function sameNumber(left, right) {
     return Number.isFinite(left) && Number.isFinite(right) && left === right;
+}
+
+function arrayIncludesAllTexts(values, requiredValues) {
+    if (!Array.isArray(values)) {
+        return false;
+    }
+    const normalized = new Set(values.filter(hasText).map(value => value.trim()));
+    return requiredValues.every(value => normalized.has(value));
 }
 
 function deviceCheckValue(evidence, checkKey, pathValue) {

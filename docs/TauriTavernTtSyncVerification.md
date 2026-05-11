@@ -183,7 +183,7 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
 command report 必須包含 `scannedAt`、實際 source 與 scanned file count。
 每個 command 必須包含 verifier 產生的 trusted `evidence`，其 kind 必須是 `tauri-command-declaration`、`tauri-handler-registration` 或 `build-artifact-string`。
-device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致。
+device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且包含 direct Node `ExecStart`、hardening、public URL、port、non-placeholder pairing token 與 data dir writable path 檢查；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
 遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、`status.version`、fixture files/bytes 與 smoke paths。
 device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
@@ -200,7 +200,7 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 final evidence gate 會檢查下列 dot-path 欄位：
 
 - `realLargeFirstSyncCompleted`: `metrics.durationMs`, `metrics.fileCount`, `metrics.totalBytes`
-- `commandContractVerified`: `commandReport.scannedAt`, `commandReport.source`
+- `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`
 - `phoneDesktopPairingSaved`: `desktop.savedServerId`, `phone.savedServerId`
 - `liveProgressBridgeVisible`: `progress.eventCount`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`
@@ -231,6 +231,10 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "commandContractVerified": {
       "ok": true,
       "evidence": "backend command contract test report path or build verification id",
+      "contract": {
+        "reportId": "contract-test-report-id",
+        "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_check_diff", "tt_sync_push", "tt_sync_pull", "tt_sync_unpair"]
+      },
       "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern.apk" }
     },
     "phoneDesktopPairingSaved": {

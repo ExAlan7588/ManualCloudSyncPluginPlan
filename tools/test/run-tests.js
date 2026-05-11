@@ -24,6 +24,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         android: { networkProfile: 'Android emulator 3G loss profile', visibleError: 'TT-Sync failed: network timeout' },
     },
     commandContractVerified: {
+        contract: { commands: REQUIRED_TT_SYNC_COMMANDS, reportId: 'contract-test-report-fixture' },
         commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/builds/TauriTavern.apk' },
     },
     lanCloudSyncMutex: {
@@ -58,6 +59,7 @@ const tests = [
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
+    ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
@@ -317,6 +319,14 @@ async function testUntrustedCommandEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
+}
+
+async function testIncompleteCommandContractCoverage() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.commandContractVerified.contract.commands = REQUIRED_TT_SYNC_COMMANDS.slice(1);
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('command contract covers required commands'));
 }
 
 async function testPlaceholderDeployEvidence() {
