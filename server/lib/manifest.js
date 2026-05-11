@@ -7,7 +7,9 @@ export function normalizeManifest(input) {
         throw badRequest('Manifest must be an array');
     }
 
-    return input.map(normalizeEntry).sort(compareEntries);
+    const entries = input.map(normalizeEntry).sort(compareEntries);
+    assertUniquePaths(entries);
+    return entries;
 }
 
 export function normalizeEntry(input) {
@@ -17,7 +19,7 @@ export function normalizeEntry(input) {
     if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
         throw badRequest(`Invalid sizeBytes for ${path}`);
     }
-    if (!Number.isFinite(modifiedMs) || modifiedMs < 0) {
+    if (!Number.isSafeInteger(modifiedMs) || modifiedMs < 0) {
         throw badRequest(`Invalid modifiedMs for ${path}`);
     }
 
@@ -63,4 +65,14 @@ function optionalSha256(value) {
         throw badRequest('sha256 must be a 64-character lowercase hex digest');
     }
     return text;
+}
+
+function assertUniquePaths(entries) {
+    const seen = new Set();
+    for (const entry of entries) {
+        if (seen.has(entry.path)) {
+            throw badRequest(`Duplicate manifest path: ${entry.path}`);
+        }
+        seen.add(entry.path);
+    }
 }

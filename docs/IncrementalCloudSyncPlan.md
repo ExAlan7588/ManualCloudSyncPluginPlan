@@ -138,6 +138,8 @@ TT-Sync v2 已經具備很多理想形態：
 - 快速判定先用 `path + sizeBytes + modifiedMs`。
 - 發現疑似衝突或 mtime 不可信時，再計算 SHA-256。
 - 寫入後必須保留 mtime，否則下一次會重複同步。
+- manifest 內 `path` 必須唯一；重複 path 代表來源掃描錯誤，必須明確失敗，不可默默取最後一筆。
+- `sizeBytes` 與 `modifiedMs` 必須是非負安全整數；非整數 mtime 會讓後續 diff 和 mtime 保留不可追溯。
 
 ### 6.2 Scope 與排除
 
