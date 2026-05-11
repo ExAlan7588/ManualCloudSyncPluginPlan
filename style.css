@@ -5,6 +5,10 @@
     margin: 8px 0;
 }
 
+#manual_cloud_sync_settings [hidden] {
+    display: none !important;
+}
+
 #manual_cloud_sync_settings label {
     display: flex;
     flex-direction: column;
