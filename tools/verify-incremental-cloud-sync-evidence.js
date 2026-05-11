@@ -31,6 +31,7 @@ export const REQUIRED_DEPLOY_CHECKS = Object.freeze([
 const FIELD_POSITIVE_NUMBER = 'positiveNumber';
 const FIELD_TEXT = 'text';
 const FIELD_TEXT_ARRAY = 'textArray';
+const MIN_REAL_LARGE_SYNC_BYTES = 300 * 1024 * 1024;
 
 export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ['realLargeFirstSyncCompleted', 'real large first sync completed', [
@@ -208,6 +209,14 @@ function deviceChecks(evidence) {
 
 function consistencyChecks(evidence) {
     return [
+        ...commandEvidenceConsistencyChecks(evidence),
+        ...serverConsistencyChecks(evidence),
+        ...deviceSemanticConsistencyChecks(evidence),
+    ];
+}
+
+function commandEvidenceConsistencyChecks(evidence) {
+    return [
         check(
             'same command report source',
             sameText(evidence.commandReport?.source, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.source),
@@ -222,6 +231,16 @@ function consistencyChecks(evidence) {
             'command contract covers required commands',
             arrayIncludesAllTexts(deviceCheckValue(evidence, 'commandContractVerified', 'contract.commands'), REQUIRED_TT_SYNC_COMMANDS),
             'commandContractVerified.contract.commands must include every required tt_sync command',
+        ),
+    ];
+}
+
+function serverConsistencyChecks(evidence) {
+    return [
+        check(
+            'real large sync byte target',
+            Number(deviceCheckValue(evidence, 'realLargeFirstSyncCompleted', 'metrics.totalBytes')) >= MIN_REAL_LARGE_SYNC_BYTES,
+            'realLargeFirstSyncCompleted.metrics.totalBytes must be at least 300MiB',
         ),
         check(
             'phone saved server URL matches',
@@ -239,6 +258,16 @@ function consistencyChecks(evidence) {
             'deploy publicUrl and smoke endpoint must match',
         ),
         check(
+            'same server URL',
+            sameEndpoint(evidence.smokeReport?.endpoint, evidence.deviceEvidence?.server?.url),
+            'smoke endpoint and device evidence server.url must match',
+        ),
+    ];
+}
+
+function deviceSemanticConsistencyChecks(evidence) {
+    return [
+        check(
             'pull mtime values match',
             sameNumber(deviceCheckValue(evidence, 'pullMtimePreserved', 'mtime.expectedModifiedMs'), deviceCheckValue(evidence, 'pullMtimePreserved', 'mtime.actualModifiedMs')),
             'pullMtimePreserved expectedModifiedMs and actualModifiedMs must match',
@@ -247,11 +276,6 @@ function consistencyChecks(evidence) {
             'interruption hash unchanged',
             sameText(deviceCheckValue(evidence, 'pullInterruptionSafe', 'interruption.beforeHash'), deviceCheckValue(evidence, 'pullInterruptionSafe', 'interruption.afterHash')),
             'pullInterruptionSafe beforeHash and afterHash must match',
-        ),
-        check(
-            'same server URL',
-            sameEndpoint(evidence.smokeReport?.endpoint, evidence.deviceEvidence?.server?.url),
-            'smoke endpoint and device evidence server.url must match',
         ),
     ];
 }

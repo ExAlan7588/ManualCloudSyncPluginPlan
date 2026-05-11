@@ -16,6 +16,7 @@ const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContrac
 const TEST_BULK_FILE_BYTES = 128;
 const TEST_BULK_FILES = 3;
 const TEST_MTIME_MS = 1778500000000;
+const TEST_REAL_LARGE_SYNC_BYTES = 335544320;
 const TEST_SYNC_DURATION_MS = 120000;
 const VERIFICATION_DOC = new URL('../../docs/TauriTavernTtSyncVerification.md', import.meta.url);
 
@@ -71,7 +72,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         mtime: { actualModifiedMs: TEST_MTIME_MS, expectedModifiedMs: TEST_MTIME_MS },
     },
     realLargeFirstSyncCompleted: {
-        metrics: { durationMs: TEST_SYNC_DURATION_MS, fileCount: TEST_BULK_FILES, totalBytes: TEST_BULK_FILES * TEST_BULK_FILE_BYTES },
+        metrics: { durationMs: TEST_SYNC_DURATION_MS, fileCount: 128, totalBytes: TEST_REAL_LARGE_SYNC_BYTES },
     },
 });
 
@@ -95,6 +96,7 @@ const tests = [
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
+    ['incremental evidence verifier rejects undersized large sync evidence', testUndersizedLargeSyncEvidence],
     ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
     ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
@@ -261,6 +263,14 @@ async function testSavedPairingUrlMismatch() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('phone saved server URL matches'));
+}
+
+async function testUndersizedLargeSyncEvidence() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.realLargeFirstSyncCompleted.metrics.totalBytes = TEST_BULK_FILES * TEST_BULK_FILE_BYTES;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('real large sync byte target'));
 }
 
 async function testMtimeMismatch() {
