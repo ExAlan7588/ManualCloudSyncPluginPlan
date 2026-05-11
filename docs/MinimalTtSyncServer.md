@@ -42,6 +42,8 @@ The repository includes a systemd unit and env template:
 - `deploy/systemd/manual-cloud-tt-sync.service`
 - `deploy/systemd/manual-cloud-tt-sync.env.example`
 
+The systemd unit uses `ExecStart=/usr/bin/node server/tt-sync-server.js serve` so the service does not depend on an npm wrapper at runtime.
+
 Validate the checked-in templates with explicit placeholder allowance:
 
 ```bash
@@ -54,7 +56,7 @@ Validate a real VPS env file without placeholder allowance:
 npm run verify:tt-sync-deploy -- --service /etc/systemd/system/manual-cloud-tt-sync.service --env /etc/manual-cloud-tt-sync.env
 ```
 
-The verifier checks service hardening, `ExecStart`, required env keys, public URL syntax, TCP port syntax, data directory writability, and rejects placeholder pairing tokens unless `--allow-placeholders` is explicit.
+The verifier checks service hardening, direct Node `ExecStart`, required env keys, public URL syntax, TCP port syntax, data directory writability, and rejects placeholder pairing tokens unless `--allow-placeholders` is explicit.
 
 ## Live Smoke Verification
 

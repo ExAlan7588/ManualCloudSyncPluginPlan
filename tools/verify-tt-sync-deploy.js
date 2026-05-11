@@ -77,7 +77,7 @@ function serviceChecks(service) {
     return [
         check('service working directory', hasText(firstValue(service, 'WorkingDirectory')), 'WorkingDirectory must be set'),
         check('service environment file', hasText(firstValue(service, 'EnvironmentFile')), 'EnvironmentFile must be set'),
-        check('service starts npm server', firstValue(service, 'ExecStart').includes('npm run tt-sync:server'), 'ExecStart must run tt-sync:server'),
+        check('service starts node server', startsNodeServer(service), 'ExecStart must run node server/tt-sync-server.js serve'),
         check('service restart policy', firstValue(service, 'Restart') === 'on-failure', 'Restart must be on-failure'),
         check('service user', hasText(firstValue(service, 'User')), 'User must be set'),
         check('service hardening no new privileges', firstValue(service, 'NoNewPrivileges') === 'true', 'NoNewPrivileges=true is required'),
@@ -94,6 +94,11 @@ function envChecks(options) {
         check('env port', isValidPort(firstValue(options.env, 'TT_SYNC_PORT')), 'TT_SYNC_PORT must be a TCP port number'),
         check('env pairing token is not placeholder', tokenAllowed(options), 'TT_SYNC_PAIRING_TOKEN must not be a placeholder in real env files'),
     ];
+}
+
+function startsNodeServer(service) {
+    const command = firstValue(service, 'ExecStart');
+    return command.includes('node') && command.includes('server/tt-sync-server.js') && command.includes('serve');
 }
 
 function consistencyChecks(options) {
