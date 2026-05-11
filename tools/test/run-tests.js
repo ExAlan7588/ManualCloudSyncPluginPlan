@@ -5,6 +5,7 @@ import { smokeTtSyncServer } from '../smoke-tt-sync-server.js';
 import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
+    REQUIRED_DEPLOY_CHECKS,
     REQUIRED_DEVICE_CHECKS,
     REQUIRED_SMOKE_CHECKS,
     verifyIncrementalCloudSyncEvidence,
@@ -55,6 +56,8 @@ const tests = [
     ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
     ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
+    ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
+    ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
@@ -138,6 +141,8 @@ async function testDeployVerifierRejectsPlaceholderToken() {
 async function testVerificationDocsCoverage() {
     const contract = await readFile(COMMAND_CONTRACT_DOC, 'utf8');
     const verification = await readFile(VERIFICATION_DOC, 'utf8');
+    assert.ok(verification.includes('--deploy'), 'final evidence deploy input missing from verification doc');
+    assert.ok(verification.includes('--allow-placeholders'), 'deploy placeholder policy missing from verification doc');
     for (const command of REQUIRED_TT_SYNC_COMMANDS) {
         assert.ok(contract.includes(command), `${command} missing from command contract doc`);
     }
@@ -244,9 +249,27 @@ async function testDeviceEvidenceTemplateIncomplete() {
 function completeEvidence() {
     return {
         commandReport: commandReportFixture(),
+        deployReport: deployReportFixture(),
         deviceEvidence: deviceEvidenceFixture(),
         smokeReport: smokeReportFixture(),
     };
+}
+
+async function testMissingDeployEvidence() {
+    const evidence = completeEvidence();
+    delete evidence.deployReport;
+    await assert.rejects(
+        verifyIncrementalCloudSyncEvidence(evidence),
+        /deploy report path is required/,
+    );
+}
+
+async function testPlaceholderDeployEvidence() {
+    const evidence = completeEvidence();
+    evidence.deployReport.allowPlaceholders = true;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report real env mode'));
 }
 
 function commandReportFixture() {
@@ -257,6 +280,17 @@ function commandReportFixture() {
         scannedAt: '2026-05-12T00:00:00+08:00',
         scannedFiles: 1,
         source: '/builds/TauriTavern.apk',
+    };
+}
+
+function deployReportFixture() {
+    return {
+        allowPlaceholders: false,
+        checks: REQUIRED_DEPLOY_CHECKS.map(name => ({ detail: 'fixture', name, ok: true })),
+        envPath: '/etc/manual-cloud-tt-sync.env',
+        ok: true,
+        servicePath: '/etc/systemd/system/manual-cloud-tt-sync.service',
+        verifiedAt: '2026-05-12T00:00:30+08:00',
     };
 }
 

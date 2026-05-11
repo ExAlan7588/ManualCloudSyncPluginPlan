@@ -18,6 +18,16 @@ export const REQUIRED_SMOKE_CHECKS = Object.freeze([
     'device history',
 ]);
 
+export const REQUIRED_DEPLOY_CHECKS = Object.freeze([
+    'service starts node server',
+    'service hardening no new privileges',
+    'service hardening protect system',
+    'env public URL',
+    'env port',
+    'env pairing token is not placeholder',
+    'service can write data dir',
+]);
+
 const FIELD_POSITIVE_NUMBER = 'positiveNumber';
 const FIELD_TEXT = 'text';
 
@@ -66,6 +76,7 @@ export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
     const checks = [
         ...commandChecks(evidence.commandReport),
+        ...deployChecks(evidence.deployReport),
         ...smokeChecks(evidence.smokeReport),
         ...deviceChecks(evidence.deviceEvidence),
         ...consistencyChecks(evidence),
@@ -86,6 +97,7 @@ export function formatEvidenceReport(report) {
 async function loadEvidence(options) {
     return {
         commandReport: await loadReport({ label: 'command report', object: options.commandReport, path: options.commandReportPath }),
+        deployReport: await loadReport({ label: 'deploy report', object: options.deployReport, path: options.deployReportPath }),
         deviceEvidence: await loadReport({ label: 'device evidence', object: options.deviceEvidence, path: options.deviceEvidencePath }),
         smokeReport: await loadReport({ label: 'smoke report', object: options.smokeReport, path: options.smokeReportPath }),
     };
@@ -117,6 +129,18 @@ function commandFoundCheck(report, command) {
         ? report.commands.find(commandReport => commandReport.name === command)
         : null;
     return check(`command ${command}`, Boolean(item?.found && item.files?.length), `${command} must have file evidence`);
+}
+
+function deployChecks(report) {
+    const names = new Set((report?.checks || []).map(item => item.name));
+    return [
+        check('deploy report ok', report?.ok === true, 'deploy report must have ok=true'),
+        check('deploy report verifiedAt', hasText(report?.verifiedAt), 'deploy report must include verifiedAt'),
+        check('deploy report service path', hasText(report?.servicePath), 'deploy report must include servicePath'),
+        check('deploy report env path', hasText(report?.envPath), 'deploy report must include envPath'),
+        check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
+        ...REQUIRED_DEPLOY_CHECKS.map(name => check(`deploy ${name}`, names.has(name), `${name} check is required`)),
+    ];
 }
 
 function smokeChecks(report) {
@@ -265,6 +289,7 @@ function parseCliOptions() {
         allowPositionals: false,
         options: {
             commands: { type: 'string' },
+            deploy: { type: 'string' },
             'device-evidence': { type: 'string' },
             help: { short: 'h', type: 'boolean' },
             json: { type: 'boolean' },
@@ -276,7 +301,7 @@ function parseCliOptions() {
 
 function usageText() {
     return [
-        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --commands <command-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
+        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --commands <command-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
         '',
         'Validates the external evidence needed to close docs/IncrementalCloudSyncPlan.md without accepting local-only proxy signals.',
     ].join('\n');
@@ -302,6 +327,7 @@ async function runCli() {
 function cliInput(options) {
     return {
         commandReportPath: options.commands,
+        deployReportPath: options.deploy,
         deviceEvidencePath: options['device-evidence'],
         smokeReportPath: options.smoke,
     };

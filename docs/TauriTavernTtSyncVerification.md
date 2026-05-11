@@ -173,14 +173,15 @@ smoke verifier 會執行真實 HTTP 流程：
 
 ## 9. Final Evidence Gate
 
-收齊 command report、遠端 smoke report 與真機 device evidence 後，執行：
+收齊 command report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
 
 ```bash
-npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
+npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
 command report 必須包含 `scannedAt`、實際 source 與 scanned file count。
+deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且包含 direct Node `ExecStart`、hardening、public URL、port、non-placeholder pairing token 與 data dir writable path 檢查。
 遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、fixture files/bytes 與 smoke paths。
 device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL。
 

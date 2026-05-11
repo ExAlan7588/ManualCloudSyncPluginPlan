@@ -20,14 +20,15 @@ const REQUIRED_ENV_KEYS = Object.freeze([
 
 export async function verifyTtSyncDeploy(options = {}) {
     const input = await loadInputs(options);
+    const allowPlaceholders = Boolean(options.allowPlaceholders);
     const service = parseKeyValueLines(input.serviceText);
     const env = parseKeyValueLines(input.envText);
     const checks = [
         ...serviceChecks(service),
-        ...envChecks({ allowPlaceholders: Boolean(options.allowPlaceholders), env }),
+        ...envChecks({ allowPlaceholders, env }),
         ...consistencyChecks({ env, service }),
     ];
-    return reportFor({ checks, envPath: input.envPath, servicePath: input.servicePath });
+    return reportFor({ allowPlaceholders, checks, envPath: input.envPath, servicePath: input.servicePath });
 }
 
 export function formatDeployReport(report) {
@@ -160,6 +161,7 @@ function normalizeAbsolutePath(value) {
 function reportFor(options) {
     const failed = options.checks.filter(item => !item.ok);
     return {
+        allowPlaceholders: options.allowPlaceholders,
         checks: options.checks,
         envPath: options.envPath,
         failed: failed.map(item => item.name),
