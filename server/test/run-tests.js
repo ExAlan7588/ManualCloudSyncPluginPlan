@@ -22,6 +22,7 @@ const tests = [
     ['conflict blocks commit until decision is provided', testConflictDecision],
     ['excluded sync state paths are rejected', testExcludedStatePath],
     ['invalid manifest entries are rejected', testInvalidManifestEntries],
+    ['invalid pairing URIs return bad request', testInvalidPairingUris],
     ['protected endpoints reject missing auth', testProtectedEndpointsRejectMissingAuth],
     ['account device history and rollback endpoints work', testAccountDeviceHistoryRollback],
 ];
@@ -188,6 +189,25 @@ async function testInvalidManifestEntries() {
             pushPlan({ baseManifest: [], context, localManifest: [{ ...entryFor('a', BASE_MTIME), modifiedMs: 1.5 }], pair }),
             /Invalid modifiedMs/,
         );
+    });
+}
+
+async function testInvalidPairingUris() {
+    await withServer(async context => {
+        await postJsonExpectError({
+            body: { deviceName: 'bad-device', pairingUri: 'not a uri' },
+            context,
+            message: /Pairing URI must be a valid tt-sync:\/\/ URI/,
+            route: '/v2/pair/complete',
+            status: 400,
+        });
+        await postJsonExpectError({
+            body: { deviceName: 'bad-device', pairingUri: 'https://example.test/?token=x' },
+            context,
+            message: /Pairing URI must use tt-sync:\/\//,
+            route: '/v2/pair/complete',
+            status: 400,
+        });
     });
 }
 
@@ -397,6 +417,17 @@ async function postJson(options) {
         method: 'POST',
     });
     return parseJsonResponse(response);
+}
+
+async function postJsonExpectError(options) {
+    const response = await fetch(`${options.context.baseUrl}${options.route}`, {
+        body: JSON.stringify(options.body),
+        headers: requestHeaders(options.token || ''),
+        method: 'POST',
+    });
+    const payload = await response.json();
+    assert.equal(response.status, options.status);
+    assert.match(payload.error, options.message);
 }
 
 async function getJson(options) {

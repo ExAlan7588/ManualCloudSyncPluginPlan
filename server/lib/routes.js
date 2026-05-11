@@ -226,7 +226,7 @@ function normalizePairingBody(body) {
 }
 
 function pairingBodyFromUri(body) {
-    const uri = new URL(body.pairingUri);
+    const uri = parsePairingUri(body.pairingUri);
     if (uri.protocol !== 'tt-sync:') {
         throw badRequest('Pairing URI must use tt-sync://');
     }
@@ -236,6 +236,14 @@ function pairingBodyFromUri(body) {
         namespace: safeName(uri.searchParams.get('namespace') || 'default', 'namespace'),
         token: uri.searchParams.get('token') || '',
     };
+}
+
+function parsePairingUri(value) {
+    try {
+        return new URL(String(value || ''));
+    } catch {
+        throw badRequest('Pairing URI must be a valid tt-sync:// URI');
+    }
 }
 
 function planSummary(plan) {
