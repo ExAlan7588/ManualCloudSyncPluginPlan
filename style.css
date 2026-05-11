@@ -1,0 +1,52 @@
+#manual_cloud_sync_settings .mcs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin: 8px 0;
+}
+
+#manual_cloud_sync_settings label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#manual_cloud_sync_settings .mcs-checkbox {
+    align-self: end;
+    flex-direction: row;
+    min-height: 32px;
+}
+
+#manual_cloud_sync_settings .mcs-queue {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+#manual_cloud_sync_settings .mcs-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+#manual_cloud_sync_settings .mcs-item-main {
+    min-width: 0;
+}
+
+#manual_cloud_sync_settings .mcs-item-title {
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}
+
+#manual_cloud_sync_settings .mcs-item-meta {
+    opacity: 0.8;
+    font-size: calc(var(--mainFontSize) * 0.9);
+}
+
+#manual_cloud_sync_settings .mcs-empty {
+    opacity: 0.8;
+}

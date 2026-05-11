@@ -1,0 +1,12 @@
+{
+    "display_name": "Manual Cloud Sync",
+    "loading_order": 24,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Darkatse",
+    "version": "1.0.0",
+    "description": "Manual WebDAV/S3 cloud handoff sync panel for TauriTavern.",
+    "homePage": "https://github.com/ExAlan7588/ManualCloudSyncPluginPlan"
+}
