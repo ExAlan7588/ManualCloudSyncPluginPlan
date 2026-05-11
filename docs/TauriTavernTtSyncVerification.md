@@ -29,7 +29,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 工具 exit code 為 `0`。
 - 報告中的 `missingCommands` 為空陣列。
 - 每個 command 都有至少一個實際檔案命中。
-- command report 必須包含 `sourceKind`。`sourceKind=build-artifact` 時，command evidence 必須來自可信 build artifact；`sourceKind=source-tree` 或 `source-file` 時，command evidence 必須同時包含 Rust Tauri command 宣告與 handler 註冊，包含 `tauri::generate_handler!` 內的 `super::tt_sync_commands::<command>` registry 形式。文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
+- command report 必須包含 `tool=verify-tauritavern-tt-sync`、`schemaVersion=1` 與 `sourceKind`。`sourceKind=build-artifact` 時，command evidence 必須來自可信 build artifact；`sourceKind=source-tree` 或 `source-file` 時，command evidence 必須同時包含 Rust Tauri command 宣告與 handler 註冊，包含 `tauri::generate_handler!` 內的 `super::tt_sync_commands::<command>` registry 形式。文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
 - 目前上游 command surface 沒有獨立 `tt_sync_check_diff`；驗證不要求也不接受把不存在的 dry-run command 當作完成證據。
 
 失敗時工具會列出缺少的 command 並以非零 exit code 結束；這代表該 build 不能被本插件視為增量同步可用。
@@ -41,6 +41,8 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 ```bash
 npm run verify:tauritavern-events -- --source /path/to/TauriTavern --manifest /tmp/tt-sync-event-report.json
 ```
+
+event surface report 必須包含 `tool=verify-tauritavern-events` 與 `schemaVersion=1`。
 
 必要事件：
 
@@ -219,11 +221,11 @@ npm run verify:incremental-evidence -- --mobile-commands /tmp/tt-sync-mobile-com
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
-mobile 與 desktop command reports 都必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind=build-artifact` 與 scanned file count。
+mobile 與 desktop command reports 都必須包含 `tool=verify-tauritavern-tt-sync`、`schemaVersion=1`、可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind=build-artifact` 與 scanned file count。
 每個 mobile/desktop command 都必須包含 verifier 產生的 trusted `build-artifact-string` evidence。source tree command report 仍可做整合前檢查，但 final evidence gate 不接受 source tree 取代實際 build artifact。
-event surface report 必須來自 `sourceKind=source-tree` 的 TauriTavern source tree，並包含可解析 timestamp 的 `scannedAt`、實際 source、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`，以及 `diffConflictSurface` 內的 `preTransferDiffEvent`、`conflictEvent`、`conflictDto`、`conflictDecisionPayload`。
+event surface report 必須包含 `tool=verify-tauritavern-events`、`schemaVersion=1`，來自 `sourceKind=source-tree` 的 TauriTavern source tree，並包含可解析 timestamp 的 `scannedAt`、實際 source、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`，以及 `diffConflictSurface` 內的 `preTransferDiffEvent`、`conflictEvent`、`conflictDto`、`conflictDecisionPayload`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
-device evidence 的 `commandContractVerified.mobileCommandReport.*`、`commandContractVerified.desktopCommandReport.*` 與 `commandContractVerified.eventSurfaceReport.*` 必須和頂層 command/event reports 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands；這就是 final evidence 所要求的 event surface report reference consistency。
+device evidence 的 `commandContractVerified.mobileCommandReport.*`、`commandContractVerified.desktopCommandReport.*` 與 `commandContractVerified.eventSurfaceReport.*` 必須和頂層 command/event reports 一致，包含 `tool`、`schemaVersion`、`source`、`scannedAt`、`sourceKind`，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands；這就是 final evidence 所要求的 event surface report reference consistency。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，`servicePath` / `envPath` 必須是非範例絕對路徑，且所有 deploy checks 都必須有 name/detail 並是 `ok=true`；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
 deploy report 必須包含 `tool=verify-tt-sync-deploy` 與 `schemaVersion=1`；遠端 smoke report 必須包含 `tool=smoke-tt-sync-server` 與 `schemaVersion=1`。
 deploy report 的 `publicUrl`、遠端 smoke endpoint 與 device evidence 的 `server.url` 都必須使用 HTTPS；本機 `--local` smoke 可用 HTTP，但不能關閉 final evidence。
@@ -240,7 +242,7 @@ device evidence JSON 需包含：
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 ```
 
-已有 mobile/desktop command reports 與 event surface report 時，可先預填 report references 與 command names，避免手動複製 `source`、`scannedAt`、`sourceKind` 時出錯；模板仍會保留每個檢查的 `ok=false`：
+已有 mobile/desktop command reports 與 event surface report 時，可先預填 report references 與 command names，避免手動複製 `tool`、`schemaVersion`、`source`、`scannedAt`、`sourceKind` 時出錯；模板仍會保留每個檢查的 `ok=false`：
 
 ```bash
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json --mobile-command-report /tmp/tt-sync-mobile-command-report.json --desktop-command-report /tmp/tt-sync-desktop-command-report.json --event-report /tmp/tt-sync-event-report.json
@@ -251,7 +253,7 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json -
 final evidence gate 會檢查下列 dot-path 欄位：
 
 - `realLargeFirstSyncCompleted`: `metrics.durationMs`, `metrics.fileCount`, `metrics.totalBytes`
-- `commandContractVerified`: `contract.commands`, `contract.reportId`, `mobileCommandReport.scannedAt`, `mobileCommandReport.source`, `mobileCommandReport.sourceKind`, `desktopCommandReport.scannedAt`, `desktopCommandReport.source`, `desktopCommandReport.sourceKind`, `eventSurfaceReport.scannedAt`, `eventSurfaceReport.source`, `eventSurfaceReport.sourceKind`
+- `commandContractVerified`: `contract.commands`, `contract.reportId`, `mobileCommandReport.tool`, `mobileCommandReport.schemaVersion`, `mobileCommandReport.scannedAt`, `mobileCommandReport.source`, `mobileCommandReport.sourceKind`, `desktopCommandReport.tool`, `desktopCommandReport.schemaVersion`, `desktopCommandReport.scannedAt`, `desktopCommandReport.source`, `desktopCommandReport.sourceKind`, `eventSurfaceReport.tool`, `eventSurfaceReport.schemaVersion`, `eventSurfaceReport.scannedAt`, `eventSurfaceReport.source`, `eventSurfaceReport.sourceKind`
 - `phoneDesktopPairingSaved`: `desktop.restartVerifiedAt`, `desktop.savedServerId`, `desktop.savedServerUrl`, `phone.restartVerifiedAt`, `phone.savedServerId`, `phone.savedServerUrl`
 - `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`, `mtime.path`
@@ -286,9 +288,9 @@ final evidence gate 會檢查下列 dot-path 欄位：
         "reportId": "contract-test-report-id",
         "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_push", "tt_sync_pull", "tt_sync_remove_server"]
       },
-      "mobileCommandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern-mobile.apk", "sourceKind": "build-artifact" },
-      "desktopCommandReport": { "scannedAt": "2026-05-12T00:00:20+08:00", "source": "/builds/TauriTavern-desktop.dmg", "sourceKind": "build-artifact" },
-      "eventSurfaceReport": { "scannedAt": "2026-05-12T00:00:10+08:00", "source": "/src/TauriTavern", "sourceKind": "source-tree" }
+      "mobileCommandReport": { "tool": "verify-tauritavern-tt-sync", "schemaVersion": 1, "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern-mobile.apk", "sourceKind": "build-artifact" },
+      "desktopCommandReport": { "tool": "verify-tauritavern-tt-sync", "schemaVersion": 1, "scannedAt": "2026-05-12T00:00:20+08:00", "source": "/builds/TauriTavern-desktop.dmg", "sourceKind": "build-artifact" },
+      "eventSurfaceReport": { "tool": "verify-tauritavern-events", "schemaVersion": 1, "scannedAt": "2026-05-12T00:00:10+08:00", "source": "/src/TauriTavern", "sourceKind": "source-tree" }
     },
     "phoneDesktopPairingSaved": {
       "ok": true,

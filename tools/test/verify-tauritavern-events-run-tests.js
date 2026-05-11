@@ -3,6 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
+    EVENT_SURFACE_REPORT_SCHEMA_VERSION,
+    EVENT_SURFACE_REPORT_TOOL,
     REQUIRED_TT_SYNC_EVENTS,
     REQUIRED_TT_SYNC_EVENT_FIELDS,
     verifyTauriTavernTtSyncEventSurface,
@@ -35,6 +37,8 @@ async function testVerifierAcceptsEvents() {
         await writeEventFixture({ root });
         const report = await verifyTauriTavernTtSyncEventSurface({ source: root });
         assert.equal(report.ok, true);
+        assert.equal(report.tool, EVENT_SURFACE_REPORT_TOOL);
+        assert.equal(report.schemaVersion, EVENT_SURFACE_REPORT_SCHEMA_VERSION);
         assert.deepEqual(report.missingEvents, []);
         assert.deepEqual(report.missingPayloadFields, []);
     });

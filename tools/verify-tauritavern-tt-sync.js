@@ -12,6 +12,8 @@ export const REQUIRED_TT_SYNC_COMMANDS = Object.freeze([
     'tt_sync_pull',
     'tt_sync_remove_server',
 ]);
+export const COMMAND_REPORT_SCHEMA_VERSION = 1;
+export const COMMAND_REPORT_TOOL = 'verify-tauritavern-tt-sync';
 
 const COMMAND_ENCODING = 'utf8';
 const EXIT_FAILURE = 1;
@@ -224,11 +226,13 @@ function reportFor(state) {
         commands,
         missingCommands,
         ok: missingCommands.length === 0,
+        schemaVersion: COMMAND_REPORT_SCHEMA_VERSION,
         scannedAt: new Date().toISOString(),
         scannedFiles: state.scannedFiles,
         skippedSpecialEntries: state.skippedSpecialEntries,
         source: state.source,
         sourceKind: state.sourceKind,
+        tool: COMMAND_REPORT_TOOL,
     };
 }
 

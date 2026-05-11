@@ -66,6 +66,12 @@ function assertEventSurfaceDocumented(options) {
 }
 
 function assertFinalEvidenceManifestDocumented(options) {
+    assertFinalEvidenceCommandDocumented(options);
+    assertFinalEvidencePolicyDocumented(options);
+    assertFinalEvidenceProvenanceDocumented(options);
+}
+
+function assertFinalEvidenceCommandDocumented(options) {
     assert.ok(options.readme.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'README final evidence manifest output missing');
     assert.ok(options.verification.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'verification final evidence manifest output missing');
     assert.ok(options.plan.includes('--manifest <final-evidence-report.json>'), 'plan final evidence manifest output missing');
@@ -89,6 +95,9 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.plan.includes('--mobile-command-report'), 'plan device template mobile report input missing');
     assert.ok(options.readme.includes('command names'), 'README device template command names missing');
     assert.ok(options.verification.includes('command names'), 'verification device template command names missing');
+}
+
+function assertFinalEvidencePolicyDocumented(options) {
     assert.ok(options.readme.includes('sourceKind=build-artifact'), 'README build-artifact final evidence policy missing');
     assert.ok(options.verification.includes('sourceKind=build-artifact'), 'verification build-artifact final evidence policy missing');
     assert.ok(options.plan.includes('sourceKind=build-artifact'), 'plan build-artifact final evidence policy missing');
@@ -108,10 +117,17 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('必須使用 HTTPS'), 'README HTTPS final URL policy missing');
     assert.ok(options.verification.includes('必須使用 HTTPS'), 'verification HTTPS final URL policy missing');
     assert.ok(options.plan.includes('URL 使用 HTTPS'), 'plan HTTPS final URL policy missing');
+}
+
+function assertFinalEvidenceProvenanceDocumented(options) {
     assert.ok(options.readme.includes('tool=verify-tt-sync-deploy'), 'README deploy tool provenance missing');
     assert.ok(options.readme.includes('tool=smoke-tt-sync-server'), 'README smoke tool provenance missing');
+    assert.ok(options.readme.includes('tool=verify-tauritavern-tt-sync'), 'README command tool provenance missing');
+    assert.ok(options.readme.includes('tool=verify-tauritavern-events'), 'README event tool provenance missing');
     assert.ok(options.verification.includes('tool=verify-tt-sync-deploy'), 'verification deploy tool provenance missing');
     assert.ok(options.verification.includes('tool=smoke-tt-sync-server'), 'verification smoke tool provenance missing');
+    assert.ok(options.verification.includes('tool=verify-tauritavern-tt-sync'), 'verification command tool provenance missing');
+    assert.ok(options.verification.includes('tool=verify-tauritavern-events'), 'verification event tool provenance missing');
     assert.ok(options.plan.includes('tool/schemaVersion provenance'), 'plan report provenance missing');
 }
 

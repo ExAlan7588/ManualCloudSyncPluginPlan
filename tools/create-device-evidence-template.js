@@ -66,9 +66,11 @@ function applyReportReferences(options) {
 
 function reportReference(report) {
     return {
+        schemaVersion: report.schemaVersion || 0,
         scannedAt: report.scannedAt || '',
         source: report.source || '',
         sourceKind: report.sourceKind || '',
+        tool: report.tool || '',
     };
 }
 
@@ -119,7 +121,7 @@ function usageText() {
         'Usage: node tools/create-device-evidence-template.js --output <device-evidence.json>',
         '',
         'Creates a device evidence JSON template with every required check set to ok=false.',
-        'Optional report inputs copy source/scannedAt/sourceKind references without marking evidence complete.',
+        'Optional report inputs copy tool/schemaVersion/source/scannedAt/sourceKind references without marking evidence complete.',
     ].join('\n');
 }
 

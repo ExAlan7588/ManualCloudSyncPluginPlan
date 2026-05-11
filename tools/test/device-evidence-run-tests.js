@@ -65,9 +65,11 @@ async function testTemplateCopiesReportReferences() {
 
 function assertReportReference(actual, expected) {
     assert.deepEqual(actual, {
+        schemaVersion: expected.schemaVersion,
         scannedAt: expected.scannedAt,
         source: expected.source,
         sourceKind: expected.sourceKind,
+        tool: expected.tool,
     });
 }
 

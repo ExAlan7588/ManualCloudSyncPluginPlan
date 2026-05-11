@@ -69,9 +69,9 @@ TT-Sync v2 已經具備很多理想形態：
 - 缺少 TT-Sync 後端命令時顯示明確錯誤，不做 mock success 或靜默降級。
 - 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
 - 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
-- 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
+- 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱，並在 report 內寫入 `tool=verify-tauritavern-tt-sync` 與 `schemaVersion=1` provenance。
 - 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke，並可用 `--bulk-files` / `--bulk-file-bytes` 產生多檔或大檔部署證據。
-- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 `sourceKind=build-artifact` 的實際手機與桌面 build command reports、`sourceKind=source-tree` 且含 diff/conflict surface 的 event surface report、含 tool/schemaVersion provenance、service/env path 為非範例絕對路徑且 URL 使用 HTTPS、不是 placeholder or reserved domains 且不含 credentials/query/fragment 的真實 VPS deploy report、帶 fixture provenance 且必要 check 皆通過的遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate；device evidence 內的 command 與 event surface report reference consistency 也必須對齊頂層 reports。
+- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在帶 `tool/schemaVersion provenance` 且 `sourceKind=build-artifact` 的實際手機與桌面 build command reports、帶 `tool/schemaVersion provenance`、`sourceKind=source-tree` 且含 diff/conflict surface 的 event surface report、含 tool/schemaVersion provenance、service/env path 為非範例絕對路徑且 URL 使用 HTTPS、不是 placeholder or reserved domains 且不含 credentials/query/fragment 的真實 VPS deploy report、帶 fixture provenance 且必要 check 皆通過的遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate；device evidence 內的 command 與 event surface report reference consistency 也必須對齊頂層 reports。
 - 新增 `tools/create-device-evidence-template.js`，可產生所有真機檢查預設 `ok=false` 並列出 required fields 的 device evidence 模板。
 - 新增 `docs/TauriTavernTtSyncCommandContract.md`，明確定義前端呼叫的 `tt_sync_*` command contract 與後端必須保證的 mtime、atomic write、mutex、error 行為。
 
@@ -242,7 +242,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 0：盤點與決策
 
-- [x] 確認目前手機與桌面 build 是否已包含 `tt_sync_*` commands。結果：已用 `/tmp/TauriTavern-inspect` 產生 Android `aarch64` debug APK，並以 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk --manifest /tmp/tt-sync-command-report-mobile-build.json --json` 驗證；也已用 Linux desktop release binary `/tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern` 執行 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern --manifest /tmp/tt-sync-command-report-desktop-build.json --json`。兩份報告皆為 `sourceKind=build-artifact`、`missingCommands=[]`，五個必要 `tt_sync_*` commands 皆有 trusted `build-artifact-string` evidence。
+- [x] 確認目前手機與桌面 build 是否已包含 `tt_sync_*` commands。結果：已用 `/tmp/TauriTavern-inspect` 產生 Android `aarch64` debug APK，並以 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk --manifest /tmp/tt-sync-command-report-mobile-build.json --json` 驗證；也已用 Linux desktop release binary `/tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern` 執行 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern --manifest /tmp/tt-sync-command-report-desktop-build.json --json`。兩份報告皆為 `tool=verify-tauritavern-tt-sync`、`schemaVersion=1`、`sourceKind=build-artifact`、`missingCommands=[]`，五個必要 `tt_sync_*` commands 皆有 trusted `build-artifact-string` evidence。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
 - [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
 - [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template、env 範例、`verify:tt-sync-deploy` 與 live smoke verifier；實際 VPS 啟動仍需在部署環境驗證。
@@ -318,7 +318,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ## 13. 外部驗證入口
 
 1. 使用 `npm run verify:tauritavern -- --source <path>` 確認手機與桌面 build 是否已有 `tt_sync_*` commands。
-2. 使用 `npm run verify:tauritavern-events -- --source <path>` 確認 TauriTavern source tree 是否已有 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error` 與必要 payload 欄位；目前也用它記錄 dry-run diff/conflict surface 是否仍缺失。
+2. 使用 `npm run verify:tauritavern-events -- --source <path>` 確認 TauriTavern source tree 是否已有 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error` 與必要 payload 欄位；report 必須標示 `tool=verify-tauritavern-events` 與 `schemaVersion=1`，目前也用它記錄 dry-run diff/conflict surface 是否仍缺失。
 3. 依 `docs/TauriTavernTtSyncCommandContract.md` 實作並檢查 TauriTavern 後端 `tt_sync_*` command contract。
 4. 依 `docs/TauriTavernTtSyncVerification.md` 保存配對、mtime、中斷安全、互斥與弱網路證據。
 5. Minimal TT-Sync server 已在本 repo 內提供；真實 VPS 啟動與端到端同步需保存 `smoke:tt-sync-server` 報告作為部署環境證據。

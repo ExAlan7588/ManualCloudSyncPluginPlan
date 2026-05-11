@@ -198,12 +198,24 @@ async function testFailedDeployReportStatus() {
 
 async function testReportProvenanceMismatch() {
     const evidence = completeEvidence();
+    evidence.mobileCommandReport.tool = 'manual-json';
+    evidence.mobileCommandReport.schemaVersion = 2;
+    evidence.desktopCommandReport.tool = 'manual-json';
+    evidence.desktopCommandReport.schemaVersion = 2;
+    evidence.eventReport.tool = 'manual-json';
+    evidence.eventReport.schemaVersion = 2;
     evidence.deployReport.tool = 'manual-json';
     evidence.deployReport.schemaVersion = 2;
     evidence.smokeReport.tool = 'manual-json';
     evidence.smokeReport.schemaVersion = 2;
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('mobile command report tool'));
+    assert.ok(report.failed.includes('mobile command report schema version'));
+    assert.ok(report.failed.includes('desktop command report tool'));
+    assert.ok(report.failed.includes('desktop command report schema version'));
+    assert.ok(report.failed.includes('event surface report tool'));
+    assert.ok(report.failed.includes('event surface report schema version'));
     assert.ok(report.failed.includes('deploy report tool'));
     assert.ok(report.failed.includes('deploy report schema version'));
     assert.ok(report.failed.includes('smoke report tool'));

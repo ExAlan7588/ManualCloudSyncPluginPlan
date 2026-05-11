@@ -21,6 +21,8 @@ export const REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES = Object.freeze([
     'conflictEvent',
     'preTransferDiffEvent',
 ]);
+export const EVENT_SURFACE_REPORT_SCHEMA_VERSION = 1;
+export const EVENT_SURFACE_REPORT_TOOL = 'verify-tauritavern-events';
 
 const DIFF_CONFLICT_SURFACE_GROUPS = Object.freeze({
     conflictDecisionPayload: ['conflictDecisions', 'conflict_decisions'],
@@ -180,10 +182,12 @@ function reportFor(state) {
         missingPayloadFields,
         ok: missingEvents.length === 0 && missingPayloadFields.length === 0,
         payloadFields,
+        schemaVersion: EVENT_SURFACE_REPORT_SCHEMA_VERSION,
         scannedAt: new Date().toISOString(),
         scannedFiles: state.scannedFiles,
         source: state.source,
         sourceKind: state.sourceKind,
+        tool: EVENT_SURFACE_REPORT_TOOL,
     };
 }
 

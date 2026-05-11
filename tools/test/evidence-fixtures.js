@@ -1,5 +1,11 @@
-import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
+    COMMAND_REPORT_SCHEMA_VERSION,
+    COMMAND_REPORT_TOOL,
+    REQUIRED_TT_SYNC_COMMANDS,
+} from '../verify-tauritavern-tt-sync.js';
+import {
+    EVENT_SURFACE_REPORT_SCHEMA_VERSION,
+    EVENT_SURFACE_REPORT_TOOL,
     REQUIRED_TT_SYNC_EVENTS,
     REQUIRED_TT_SYNC_EVENT_FIELDS,
 } from '../verify-tauritavern-tt-sync-events.js';
@@ -30,19 +36,25 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
     commandContractVerified: {
         contract: { commands: REQUIRED_TT_SYNC_COMMANDS, reportId: 'contract-test-report-fixture' },
         desktopCommandReport: {
+            schemaVersion: COMMAND_REPORT_SCHEMA_VERSION,
             scannedAt: '2026-05-12T00:00:20+08:00',
             source: '/builds/TauriTavern-desktop.dmg',
             sourceKind: 'build-artifact',
+            tool: COMMAND_REPORT_TOOL,
         },
         eventSurfaceReport: {
+            schemaVersion: EVENT_SURFACE_REPORT_SCHEMA_VERSION,
             scannedAt: '2026-05-12T00:00:10+08:00',
             source: '/src/TauriTavern',
             sourceKind: 'source-tree',
+            tool: EVENT_SURFACE_REPORT_TOOL,
         },
         mobileCommandReport: {
+            schemaVersion: COMMAND_REPORT_SCHEMA_VERSION,
             scannedAt: '2026-05-12T00:00:00+08:00',
             source: '/builds/TauriTavern-mobile.apk',
             sourceKind: 'build-artifact',
+            tool: COMMAND_REPORT_TOOL,
         },
     },
     conflictResolutionVisible: {
@@ -153,10 +165,12 @@ function commandReportFixture(options) {
         })),
         missingCommands: [],
         ok: true,
+        schemaVersion: COMMAND_REPORT_SCHEMA_VERSION,
         scannedAt: options.scannedAt,
         scannedFiles: 1,
         source: options.source,
         sourceKind: 'build-artifact',
+        tool: COMMAND_REPORT_TOOL,
     };
 }
 
@@ -191,10 +205,12 @@ export function eventReportFixture() {
             completed: REQUIRED_TT_SYNC_EVENT_FIELDS.completed.map(name => eventItemFixture(name)),
             progress: REQUIRED_TT_SYNC_EVENT_FIELDS.progress.map(name => eventItemFixture(name)),
         },
+        schemaVersion: EVENT_SURFACE_REPORT_SCHEMA_VERSION,
         scannedAt: '2026-05-12T00:00:10+08:00',
         scannedFiles: 986,
         source: '/src/TauriTavern',
         sourceKind: 'source-tree',
+        tool: EVENT_SURFACE_REPORT_TOOL,
     };
 }
 

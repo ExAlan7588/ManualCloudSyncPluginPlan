@@ -3,7 +3,12 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { deflateRawSync } from 'node:zlib';
-import { REQUIRED_TT_SYNC_COMMANDS, verifyTauriTavernCommands } from '../verify-tauritavern-tt-sync.js';
+import {
+    COMMAND_REPORT_SCHEMA_VERSION,
+    COMMAND_REPORT_TOOL,
+    REQUIRED_TT_SYNC_COMMANDS,
+    verifyTauriTavernCommands,
+} from '../verify-tauritavern-tt-sync.js';
 
 const VERIFIER_FIXTURE_DIR = 'src-tauri/src';
 const VERIFIER_FIXTURE_FILE = 'commands.rs';
@@ -61,6 +66,8 @@ async function testVerifierFindsCommands() {
         await writeVerifierFixture({ commands: REQUIRED_TT_SYNC_COMMANDS, root });
         const report = await verifyTauriTavernCommands({ source: root });
         assert.equal(report.ok, true);
+        assert.equal(report.tool, COMMAND_REPORT_TOOL);
+        assert.equal(report.schemaVersion, COMMAND_REPORT_SCHEMA_VERSION);
         assert.equal(report.sourceKind, 'source-tree');
         assert.equal(report.missingCommands.length, 0);
         assert.equal(report.commands.every(command => command.found), true);
