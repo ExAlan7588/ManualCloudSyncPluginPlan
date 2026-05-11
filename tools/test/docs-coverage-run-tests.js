@@ -87,6 +87,8 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('--mobile-command-report /tmp/tt-sync-mobile-command-report.json'), 'README device template mobile report input missing');
     assert.ok(options.verification.includes('--mobile-command-report /tmp/tt-sync-mobile-command-report.json'), 'verification device template mobile report input missing');
     assert.ok(options.plan.includes('--mobile-command-report'), 'plan device template mobile report input missing');
+    assert.ok(options.readme.includes('command names'), 'README device template command names missing');
+    assert.ok(options.verification.includes('command names'), 'verification device template command names missing');
     assert.ok(options.readme.includes('sourceKind=build-artifact'), 'README build-artifact final evidence policy missing');
     assert.ok(options.verification.includes('sourceKind=build-artifact'), 'verification build-artifact final evidence policy missing');
     assert.ok(options.plan.includes('sourceKind=build-artifact'), 'plan build-artifact final evidence policy missing');

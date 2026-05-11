@@ -58,6 +58,10 @@ function applyReportReferences(options) {
     if (options.eventSurfaceReport) {
         check.eventSurfaceReport = reportReference(options.eventSurfaceReport);
     }
+    const commands = commandNamesFromReports([options.mobileCommandReport, options.desktopCommandReport]);
+    if (commands.length > 0) {
+        check.contract = { commands, reportId: '' };
+    }
 }
 
 function reportReference(report) {
@@ -66,6 +70,18 @@ function reportReference(report) {
         source: report.source || '',
         sourceKind: report.sourceKind || '',
     };
+}
+
+function commandNamesFromReports(reports) {
+    const names = [];
+    for (const report of reports) {
+        for (const item of report?.commands || []) {
+            if (typeof item.name === 'string' && !names.includes(item.name)) {
+                names.push(item.name);
+            }
+        }
+    }
+    return names;
 }
 
 function deviceCheckTemplate(item) {

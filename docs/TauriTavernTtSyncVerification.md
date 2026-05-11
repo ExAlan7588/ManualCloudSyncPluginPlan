@@ -236,7 +236,7 @@ device evidence JSON 需包含：
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 ```
 
-已有 mobile/desktop command reports 與 event surface report 時，可先預填 report references，避免手動複製 `source`、`scannedAt`、`sourceKind` 時出錯；模板仍會保留每個檢查的 `ok=false`：
+已有 mobile/desktop command reports 與 event surface report 時，可先預填 report references 與 command names，避免手動複製 `source`、`scannedAt`、`sourceKind` 時出錯；模板仍會保留每個檢查的 `ok=false`：
 
 ```bash
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json --mobile-command-report /tmp/tt-sync-mobile-command-report.json --desktop-command-report /tmp/tt-sync-desktop-command-report.json --event-report /tmp/tt-sync-event-report.json

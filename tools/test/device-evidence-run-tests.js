@@ -54,6 +54,10 @@ async function testTemplateCopiesReportReferences() {
     assertReportReference(check.mobileCommandReport, evidence.mobileCommandReport);
     assertReportReference(check.desktopCommandReport, evidence.desktopCommandReport);
     assertReportReference(check.eventSurfaceReport, evidence.eventReport);
+    assert.deepEqual(
+        check.contract.commands,
+        evidence.mobileCommandReport.commands.map(command => command.name),
+    );
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assertReferenceFailuresAbsent(report.failed);
@@ -71,4 +75,5 @@ function assertReferenceFailuresAbsent(failed) {
     assert.equal(failed.some(name => name.startsWith('same mobile command report')), false);
     assert.equal(failed.some(name => name.startsWith('same desktop command report')), false);
     assert.equal(failed.some(name => name.startsWith('same event report')), false);
+    assert.equal(failed.includes('command contract covers required commands'), false);
 }
