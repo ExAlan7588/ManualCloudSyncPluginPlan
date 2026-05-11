@@ -71,6 +71,11 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
 const EXIT_FAILURE = 1;
 const EXIT_SUCCESS = 0;
 const JSON_INDENT = 2;
+const TRUSTED_COMMAND_EVIDENCE_KINDS = new Set([
+    'build-artifact-string',
+    'tauri-command-declaration',
+    'tauri-handler-registration',
+]);
 
 export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
@@ -128,7 +133,18 @@ function commandFoundCheck(report, command) {
     const item = Array.isArray(report?.commands)
         ? report.commands.find(commandReport => commandReport.name === command)
         : null;
-    return check(`command ${command}`, Boolean(item?.found && item.files?.length), `${command} must have file evidence`);
+    return check(
+        `command ${command}`,
+        Boolean(item?.found && trustedCommandEvidence(item).length),
+        `${command} must have trusted command evidence`,
+    );
+}
+
+function trustedCommandEvidence(item) {
+    if (!Array.isArray(item?.evidence)) {
+        return [];
+    }
+    return item.evidence.filter(entry => hasText(entry?.file) && TRUSTED_COMMAND_EVIDENCE_KINDS.has(entry?.kind));
 }
 
 function deployChecks(report) {

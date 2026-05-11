@@ -55,6 +55,7 @@ const tests = [
     ['account device history and rollback endpoints work', testAccountDeviceHistoryRollback],
     ['TauriTavern command verifier passes when commands exist', testVerifierFindsCommands],
     ['TauriTavern command verifier scans compressed zip artifacts', testVerifierScansCompressedZip],
+    ['TauriTavern command verifier rejects docs-only command strings', testVerifierRejectsDocsOnly],
     ['TauriTavern command verifier fails when commands are missing', testVerifierMissingCommands],
 ];
 
@@ -258,6 +259,17 @@ async function testVerifierScansCompressedZip() {
     });
 }
 
+async function testVerifierRejectsDocsOnly() {
+    await withVerifierFixture(async root => {
+        const docsPath = path.join(root, 'README.md');
+        await writeFile(docsPath, REQUIRED_TT_SYNC_COMMANDS.join('\n'));
+        const report = await verifyTauriTavernCommands({ source: root });
+        assert.equal(report.ok, false);
+        assert.deepEqual(report.missingCommands, REQUIRED_TT_SYNC_COMMANDS);
+        assert.equal(report.commands.every(command => command.ignoredFiles.includes('README.md')), true);
+    });
+}
+
 async function withServer(callback) {
     const dataDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-test-'));
     process.env.TT_SYNC_PAIRING_TOKEN = TEST_TOKEN;
@@ -293,7 +305,7 @@ async function writeVerifierFixture(options) {
 }
 
 function verifierSourceFor(commands) {
-    return commands.map(command => `#[tauri::command]\nfn ${command}() {}\n`).join('\n');
+    return commands.map(command => `#[tauri::command]\npub async fn ${command}() {}\n`).join('\n');
 }
 
 function zipArtifactFor(options) {

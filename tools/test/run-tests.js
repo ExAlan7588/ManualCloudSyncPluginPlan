@@ -57,6 +57,7 @@ const tests = [
     ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
+    ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
@@ -301,6 +302,14 @@ async function testMixedCommandReportEvidence() {
     assert.ok(report.failed.includes('same command report source'));
 }
 
+async function testUntrustedCommandEvidence() {
+    const evidence = completeEvidence();
+    evidence.commandReport.commands[0].evidence[0].kind = 'untrusted-string';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
+}
+
 async function testPlaceholderDeployEvidence() {
     const evidence = completeEvidence();
     evidence.deployReport.allowPlaceholders = true;
@@ -319,7 +328,13 @@ async function testMissingDeviceIds() {
 
 function commandReportFixture() {
     return {
-        commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({ files: ['src-tauri/src/commands.rs'], found: true, name: command })),
+        commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({
+            evidence: [{ file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' }],
+            files: ['src-tauri/src/commands.rs'],
+            found: true,
+            ignoredFiles: [],
+            name: command,
+        })),
         missingCommands: [],
         ok: true,
         scannedAt: '2026-05-12T00:00:00+08:00',

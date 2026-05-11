@@ -39,6 +39,43 @@ const ZIP_MAX_COMMENT_BYTES = 0xffff;
 const ZIP_STORE_METHOD = 0;
 const ZIP_UINT32_MAX = 0xffffffff;
 const ZIP_LIKE_EXTENSIONS = new Set(['.aab', '.apk', '.jar', '.zip']);
+const TRUSTED_BINARY_EXTENSIONS = new Set([
+    '.arsc',
+    '.class',
+    '.dex',
+    '.dll',
+    '.dylib',
+    '.exe',
+    '.node',
+    '.so',
+    '.wasm',
+]);
+const TEXT_EXTENSIONS = new Set([
+    '.css',
+    '.html',
+    '.java',
+    '.js',
+    '.json',
+    '.jsx',
+    '.kt',
+    '.md',
+    '.mjs',
+    '.rs',
+    '.swift',
+    '.toml',
+    '.ts',
+    '.tsx',
+    '.txt',
+    '.yaml',
+    '.yml',
+]);
+const TEXT_SAMPLE_BYTES = 4096;
+const BINARY_CONTROL_RATIO = 0.08;
+const ASCII_PRINTABLE_MIN = 32;
+const ASCII_PRINTABLE_MAX = 126;
+const ASCII_TAB = 9;
+const ASCII_LF = 10;
+const ASCII_CR = 13;
 
 export async function verifyTauriTavernCommands(options) {
     const sourceInfo = await sourceInfoFor(options?.source);
@@ -55,6 +92,7 @@ export function formatVerificationReport(report) {
     ];
     appendMissingSection({ lines, report });
     appendCommandSection({ lines, report });
+    appendIgnoredSection({ lines, report });
     appendSpecialEntrySection({ lines, report });
     return lines.join('\n');
 }
@@ -66,6 +104,7 @@ async function sourceInfoFor(source) {
     const resolved = await realpath(path.resolve(source));
     const sourceStats = await stat(resolved);
     return {
+        isSingleFile: sourceStats.isFile(),
         rootDir: sourceStats.isDirectory() ? resolved : path.dirname(resolved),
         source: resolved,
         startPath: resolved,
@@ -78,7 +117,9 @@ function createScanState(sourceInfo) {
             command,
             Buffer.from(command, COMMAND_ENCODING),
         ])),
+        ignoredHits: new Map(REQUIRED_TT_SYNC_COMMANDS.map(command => [command, []])),
         hits: new Map(REQUIRED_TT_SYNC_COMMANDS.map(command => [command, []])),
+        isSingleFile: sourceInfo.isSingleFile,
         rootDir: sourceInfo.rootDir,
         scannedFiles: 0,
         skippedSpecialEntries: [],
@@ -132,9 +173,32 @@ async function scanFile(options) {
 function scanBuffer(options) {
     for (const [command, commandBuffer] of options.state.commandBuffers) {
         if (options.buffer.includes(commandBuffer)) {
-            options.state.hits.get(command).push(options.label);
+            recordCommandHit({ command, ...options });
         }
     }
+}
+
+function recordCommandHit(options) {
+    const evidence = evidenceFor(options);
+    if (evidence.trusted) {
+        options.state.hits.get(options.command).push({ file: options.label, kind: evidence.kind });
+        return;
+    }
+    options.state.ignoredHits.get(options.command).push(options.label);
+}
+
+function evidenceFor(options) {
+    if (isTrustedBuildArtifact({ buffer: options.buffer, label: options.label, state: options.state })) {
+        return { kind: 'build-artifact-string', trusted: true };
+    }
+    const text = options.buffer.toString(COMMAND_ENCODING);
+    if (hasTauriCommandDeclaration({ command: options.command, text })) {
+        return { kind: 'tauri-command-declaration', trusted: true };
+    }
+    if (hasTauriHandlerRegistration({ command: options.command, text })) {
+        return { kind: 'tauri-handler-registration', trusted: true };
+    }
+    return { kind: 'untrusted-string', trusted: false };
 }
 
 function reportFor(state) {
@@ -152,9 +216,12 @@ function reportFor(state) {
 }
 
 function commandReport(state, command) {
+    const evidence = [...state.hits.get(command)].sort(compareEvidence);
     return {
-        files: [...state.hits.get(command)].sort(compareText),
-        found: state.hits.get(command).length > 0,
+        evidence,
+        files: evidence.map(item => item.file),
+        found: evidence.length > 0,
+        ignoredFiles: [...state.ignoredHits.get(command)].sort(compareText),
         name: command,
     };
 }
@@ -174,8 +241,23 @@ function appendMissingSection(options) {
 function appendCommandSection(options) {
     options.lines.push('command evidence:');
     for (const command of options.report.commands) {
-        const files = command.files.length > 0 ? command.files.join(', ') : 'not found';
+        const files = command.evidence.length > 0 ? evidenceLabels(command.evidence).join(', ') : 'not found';
         options.lines.push(`- ${command.name}: ${files}`);
+    }
+}
+
+function evidenceLabels(evidence) {
+    return evidence.map(item => `${item.file} (${item.kind})`);
+}
+
+function appendIgnoredSection(options) {
+    const ignored = options.report.commands.filter(command => command.ignoredFiles.length > 0);
+    if (ignored.length === 0) {
+        return;
+    }
+    options.lines.push('ignored command strings:');
+    for (const command of ignored) {
+        options.lines.push(`- ${command.name}: ${command.ignoredFiles.join(', ')}`);
     }
 }
 
@@ -241,6 +323,63 @@ function writeCliOutput(options) {
 
 function compareText(left, right) {
     return left.localeCompare(right);
+}
+
+function compareEvidence(left, right) {
+    return compareText(`${left.file}:${left.kind}`, `${right.file}:${right.kind}`);
+}
+
+function hasTauriCommandDeclaration(options) {
+    const escaped = escapeRegex(options.command);
+    const visibility = '(?:pub(?:\\([^)]*\\))?\\s+)?';
+    const pattern = new RegExp(`#\\[\\s*tauri::command[^\\]]*\\][\\s\\S]{0,300}\\b${visibility}(?:async\\s+)?fn\\s+${escaped}\\b`);
+    return pattern.test(options.text);
+}
+
+function hasTauriHandlerRegistration(options) {
+    const escaped = escapeRegex(options.command);
+    const pattern = new RegExp(`tauri::generate_handler!\\s*\\[[\\s\\S]{0,2000}\\b${escaped}\\b[\\s\\S]{0,2000}\\]`);
+    return pattern.test(options.text);
+}
+
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isTrustedBuildArtifact(options) {
+    if (TRUSTED_BINARY_EXTENSIONS.has(path.extname(artifactLabel(options.label)).toLowerCase())) {
+        return true;
+    }
+    return options.state.isSingleFile && looksBinary(options.buffer) && !isTextExtension(options.label);
+}
+
+function artifactLabel(label) {
+    return label.includes('!/') ? label.slice(label.lastIndexOf('!/') + 2) : label;
+}
+
+function isTextExtension(label) {
+    return TEXT_EXTENSIONS.has(path.extname(artifactLabel(label)).toLowerCase());
+}
+
+function looksBinary(buffer) {
+    const sampleSize = Math.min(buffer.length, TEXT_SAMPLE_BYTES);
+    if (sampleSize === 0) {
+        return false;
+    }
+    let controlBytes = 0;
+    for (let index = 0; index < sampleSize; index += 1) {
+        if (!isPrintableByte(buffer[index])) {
+            controlBytes += 1;
+        }
+    }
+    return controlBytes / sampleSize > BINARY_CONTROL_RATIO;
+}
+
+function isPrintableByte(value) {
+    return value === ASCII_TAB
+        || value === ASCII_LF
+        || value === ASCII_CR
+        || (value >= ASCII_PRINTABLE_MIN && value <= ASCII_PRINTABLE_MAX);
 }
 
 function zipEntriesFrom(options) {
