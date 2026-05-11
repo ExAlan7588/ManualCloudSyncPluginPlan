@@ -420,6 +420,7 @@ function smokeReport(options) {
             pull: options.pulled.plan.id,
             push: options.pushed.plan.id,
         },
+        serverId: options.pair.serverId,
         smokePath: options.fixture.path,
         smokePaths: options.fixture.paths,
         startedAt: options.runtime.startedAt,

@@ -38,6 +38,7 @@ async function testLocalSmoke() {
     assert.equal(report.mode, 'local');
     assert.match(report.endpoint, /^http:\/\/127\.0\.0\.1:/);
     assert.match(report.namespace, /^smoke-/);
+    assert.match(report.serverId, /^minimal-smoke-/);
     assert.match(report.smokePath, /^default-user\/chats\/tt-sync-smoke-/);
     assertCheckNames(report);
 }

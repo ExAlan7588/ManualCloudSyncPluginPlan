@@ -203,6 +203,7 @@ function smokeChecks(report) {
         check('smoke report ok', report?.ok === true, 'smoke report must have ok=true'),
         check('smoke report completedAt', isTimestamp(report?.completedAt), 'smoke report must include a parseable completedAt timestamp'),
         check('smoke report deviceId', hasText(report?.deviceId), 'smoke report must include paired deviceId'),
+        check('smoke report serverId', hasText(report?.serverId), 'smoke report must include paired serverId'),
         check('smoke report path', hasText(report?.smokePath), 'smoke report must include smokePath'),
         check('smoke report plan ids', hasText(report?.planIds?.push) && hasText(report?.planIds?.pull), 'smoke report must include push and pull plan ids'),
         check('smoke report fixture files', hasPositiveInteger(report?.fixture?.fileCount), 'smoke report must include fixture.fileCount > 0'),
@@ -276,6 +277,16 @@ function serverConsistencyChecks(evidence) {
             'desktop saved server URL matches',
             sameEndpoint(deviceCheckValue(evidence, 'phoneDesktopPairingSaved', 'desktop.savedServerUrl'), evidence.deviceEvidence?.server?.url),
             'phoneDesktopPairingSaved.desktop.savedServerUrl must match device evidence server.url',
+        ),
+        check(
+            'phone saved server id matches',
+            sameText(deviceCheckValue(evidence, 'phoneDesktopPairingSaved', 'phone.savedServerId'), evidence.smokeReport?.serverId),
+            'phoneDesktopPairingSaved.phone.savedServerId must match smoke report serverId',
+        ),
+        check(
+            'desktop saved server id matches',
+            sameText(deviceCheckValue(evidence, 'phoneDesktopPairingSaved', 'desktop.savedServerId'), evidence.smokeReport?.serverId),
+            'phoneDesktopPairingSaved.desktop.savedServerId must match smoke report serverId',
         ),
         check(
             'deploy and smoke same URL',

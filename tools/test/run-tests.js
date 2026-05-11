@@ -53,12 +53,12 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
     phoneDesktopPairingSaved: {
         desktop: {
             restartVerifiedAt: '2026-05-12T00:02:00+08:00',
-            savedServerId: 'desktop-server-fixture',
+            savedServerId: 'minimal-default',
             savedServerUrl: 'https://sync.example.com',
         },
         phone: {
             restartVerifiedAt: '2026-05-12T00:02:00+08:00',
-            savedServerId: 'phone-server-fixture',
+            savedServerId: 'minimal-default',
             savedServerUrl: 'https://sync.example.com',
         },
     },
@@ -104,6 +104,7 @@ const tests = [
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
+    ['incremental evidence verifier rejects saved pairing id mismatch', testSavedPairingIdMismatch],
     ['incremental evidence verifier rejects undersized large sync evidence', testUndersizedLargeSyncEvidence],
     ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
     ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
@@ -254,6 +255,14 @@ async function testSavedPairingUrlMismatch() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('phone saved server URL matches'));
+}
+
+async function testSavedPairingIdMismatch() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.desktop.savedServerId = 'other-server-id';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('desktop saved server id matches'));
 }
 
 async function testUndersizedLargeSyncEvidence() {
@@ -480,6 +489,7 @@ function smokeReportFixture() {
             pull: 'pull-plan-fixture',
             push: 'push-plan-fixture',
         },
+        serverId: 'minimal-default',
         smokePath,
         smokePaths: [smokePath],
         status: {
