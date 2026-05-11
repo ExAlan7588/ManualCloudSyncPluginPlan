@@ -9,6 +9,8 @@ const TT_COMMANDS = {
 };
 const TT_SYNC_EVENTS = Object.freeze({
     completed: 'tt_sync:completed',
+    conflict: 'tt_sync:conflict',
+    diff: 'tt_sync:diff',
     error: 'tt_sync:error',
     progress: 'tt_sync:progress',
 });
@@ -49,6 +51,8 @@ function renderInitialState() {
     renderTtStatus('尚未讀取服務端');
     renderTransferSummary(null);
     renderProgress(null);
+    renderDiffSummary(null);
+    renderConflictList(null);
 }
 
 async function pairServer(deps, state) {
@@ -75,7 +79,12 @@ async function runTransfer(deps, state, direction) {
 
     await deps.runAction(`TT-Sync ${directionLabel(direction)} 完成`, async () => {
         renderProgress(submittedProgress(direction));
-        await deps.invokeCommand(TT_COMMANDS[direction], transferArgs());
+        renderDiffSummary(null);
+        renderConflictList(null);
+        const result = await deps.invokeCommand(TT_COMMANDS[direction], transferArgs());
+        if (hasObjectPayload(result)) {
+            renderTransferArtifacts(result);
+        }
         await loadServers(deps, state);
     });
 }
@@ -111,6 +120,8 @@ function installTtSyncEventListeners(deps, state) {
     void Promise.all([
         deps.listen(TT_SYNC_EVENTS.progress, event => handleProgressEvent(event?.payload)),
         deps.listen(TT_SYNC_EVENTS.completed, event => handleCompletedEvent(deps, state, event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.diff, event => handleDiffEvent(event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.conflict, event => handleConflictEvent(event?.payload)),
         deps.listen(TT_SYNC_EVENTS.error, event => handleErrorEvent(event?.payload)),
     ]).catch(error => {
         eventListenersInstalled = false;
@@ -124,7 +135,7 @@ function handleProgressEvent(payload) {
 }
 
 function handleCompletedEvent(deps, state, payload) {
-    renderTransferSummary(payload);
+    renderTransferArtifacts(payload);
     renderProgress(payload);
     renderTtStatus(`TT-Sync ${directionLabel(payload?.direction)} 完成`);
     void loadServers(deps, state).catch(error => {
@@ -133,6 +144,17 @@ function handleCompletedEvent(deps, state, payload) {
     if (isPullDirection(payload) && typeof deps.scheduleReload === 'function') {
         deps.scheduleReload();
     }
+}
+
+function handleDiffEvent(payload) {
+    renderDiffSummary(payload);
+    renderConflictList(payload);
+    renderTtStatus('TT-Sync 差異摘要已更新');
+}
+
+function handleConflictEvent(payload) {
+    renderConflictList(payload);
+    renderTtStatus('TT-Sync 衝突列表已更新');
 }
 
 function handleErrorEvent(payload) {
@@ -210,12 +232,57 @@ function renderProgress(progress) {
     }
 }
 
+function renderTransferArtifacts(payload) {
+    renderTransferSummary(payload);
+    renderDiffSummary(payload);
+    renderConflictList(payload);
+}
+
+function renderDiffSummary(payload) {
+    const container = document.getElementById('mcs_tts_diff');
+    container.replaceChildren();
+    const rows = diffSummaryRows(payload);
+    if (!hasVisibleRows(rows)) {
+        container.appendChild(emptyInfo('尚無差異摘要'));
+        return;
+    }
+    for (const row of rows) {
+        container.appendChild(metricElement(row.label, row.value));
+    }
+}
+
+function renderConflictList(payload) {
+    const container = document.getElementById('mcs_tts_conflicts');
+    container.replaceChildren();
+    const conflicts = conflictListFrom(payload);
+    if (conflicts.length === 0) {
+        const text = hasConflictCount(payload) ? '衝突內容未回傳' : '尚無衝突';
+        container.appendChild(emptyInfo(text));
+        return;
+    }
+    for (const conflict of conflicts) {
+        container.appendChild(conflictElement(conflict));
+    }
+}
+
 function transferSummaryRows(result) {
     return [
         { label: '方向', value: directionLabel(result?.direction) },
         { label: '檔案數', value: formatOptionalCount(firstValue(result, ['files_total', 'filesTotal', 'totalFiles'])) },
         { label: '大小', value: formatOptionalBytes(firstValue(result, ['bytes_total', 'bytesTotal', 'totalBytes'])) },
         { label: '刪除檔案', value: formatOptionalCount(firstValue(result, ['files_deleted', 'filesDeleted', 'deletedFiles'])) },
+    ];
+}
+
+function diffSummaryRows(payload) {
+    const summary = diffSummaryFrom(payload);
+    return [
+        { label: '上傳檔案', value: formatOptionalCount(firstValue(summary, ['uploadFiles', 'upload_files'])) },
+        { label: '上傳大小', value: formatOptionalBytes(firstValue(summary, ['uploadBytes', 'upload_bytes'])) },
+        { label: '下載檔案', value: formatOptionalCount(firstValue(summary, ['downloadFiles', 'download_files'])) },
+        { label: '下載大小', value: formatOptionalBytes(firstValue(summary, ['downloadBytes', 'download_bytes'])) },
+        { label: '刪除檔案', value: formatOptionalCount(firstValue(summary, ['deleteFiles', 'delete_files'])) },
+        { label: '衝突檔案', value: formatOptionalCount(firstValue(summary, ['conflictFiles', 'conflict_files'])) },
     ];
 }
 
@@ -253,6 +320,57 @@ function metricElement(label, value) {
     valueElement.textContent = value || EMPTY_VALUE;
     root.append(labelElement, valueElement);
     return root;
+}
+
+function conflictElement(conflict) {
+    const root = document.createElement('div');
+    root.className = 'mcs-conflict';
+    const title = document.createElement('strong');
+    title.textContent = stringValue(conflict?.path);
+    const meta = document.createElement('span');
+    meta.className = 'mcs-conflict-meta';
+    meta.textContent = conflictMetaText(conflict);
+    root.append(title, meta);
+    return root;
+}
+
+function diffSummaryFrom(payload) {
+    return firstObject(payload, ['diff', 'summary', 'preTransferDiff', 'pre_transfer_diff'])
+        || firstObject(payload?.plan, ['summary'])
+        || payload;
+}
+
+function conflictListFrom(payload) {
+    const conflicts = firstValue(payload, ['conflicts'])
+        || firstValue(payload?.diff, ['conflicts'])
+        || firstValue(payload?.plan, ['conflicts']);
+    return Array.isArray(conflicts) ? conflicts : [];
+}
+
+function hasVisibleRows(rows) {
+    return rows.some(row => row.value !== EMPTY_VALUE);
+}
+
+function hasConflictCount(payload) {
+    const summary = diffSummaryFrom(payload);
+    const count = Number(firstValue(summary, ['conflictFiles', 'conflict_files']));
+    return Number.isFinite(count) && count > 0;
+}
+
+function conflictMetaText(conflict) {
+    return [
+        entryText('本機', conflict?.local),
+        entryText('遠端', conflict?.remote),
+    ].filter(Boolean).join(' | ') || EMPTY_VALUE;
+}
+
+function entryText(label, entry) {
+    if (!entry) {
+        return '';
+    }
+    const size = formatOptionalBytes(entry.sizeBytes ?? entry.size_bytes);
+    const modified = stringValue(entry.modifiedMs ?? entry.modified_ms);
+    return `${label}: ${size}, mtime ${modified}`;
 }
 
 function emptyInfo(text) {
@@ -345,6 +463,19 @@ function firstValue(object, keys, fallback) {
         }
     }
     return fallback;
+}
+
+function firstObject(object, keys) {
+    for (const key of keys) {
+        if (object?.[key] && typeof object[key] === 'object') {
+            return object[key];
+        }
+    }
+    return null;
+}
+
+function hasObjectPayload(value) {
+    return Boolean(value && typeof value === 'object' && Object.keys(value).length > 0);
 }
 
 function formatOptionalCount(value) {

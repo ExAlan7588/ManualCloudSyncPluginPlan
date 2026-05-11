@@ -13,6 +13,7 @@
 - `tt_sync_remove_server`
 
 目前上游 TauriTavern TT-Sync v2 command surface 沒有獨立 dry-run diff command。前端不得呼叫不存在的 `tt_sync_check_diff`，也不得用 fake diff summary 模擬成功。
+前端可以訂閱實際 Tauri event `tt_sync:diff` 與 `tt_sync:conflict` 來顯示差異摘要與衝突列表；若後端沒有發出事件或 command 沒有回傳對應 payload，前端只保持空狀態，不補假資料。
 
 ## 2. Shared Types
 
@@ -75,6 +76,41 @@
   "files_total": 3,
   "bytes_total": 456,
   "files_deleted": 0
+}
+```
+
+### Diff Event
+
+後端在執行前或 plan 建立後可發出 Tauri event `tt_sync:diff`；payload 應包含可追溯的差異摘要：
+
+```json
+{
+  "direction": "Push",
+  "summary": {
+    "uploadFiles": 1,
+    "uploadBytes": 123,
+    "downloadFiles": 0,
+    "downloadBytes": 0,
+    "deleteFiles": 0,
+    "conflictFiles": 0
+  }
+}
+```
+
+### Conflict Event
+
+後端發現未解決衝突時可發出 Tauri event `tt_sync:conflict`；payload 應包含衝突檔案 DTO：
+
+```json
+{
+  "direction": "Push",
+  "conflicts": [
+    {
+      "path": "default-user/chats/example.jsonl",
+      "local": { "sizeBytes": 123, "modifiedMs": 1778515200000 },
+      "remote": { "sizeBytes": 120, "modifiedMs": 1778515300000 }
+    }
+  ]
 }
 ```
 
@@ -157,6 +193,8 @@ Required behavior:
 - Ask the selected TT-Sync server for a push plan.
 - Upload only changed files.
 - Do not perform remote mirror delete until all required uploads are staged and commit succeeds.
+- Emit `tt_sync:diff` before transfer when a pre-transfer plan summary is available.
+- Emit `tt_sync:conflict` instead of destructive sync when unresolved conflicts require user review.
 - Emit `tt_sync:progress` events with files and bytes.
 - Emit `tt_sync:completed` with transferred file/byte totals, or `tt_sync:error` with an explicit failure message.
 
@@ -181,6 +219,8 @@ Required behavior:
 - Preserve remote `modifiedMs` as local filesystem mtime after successful write.
 - Never replace a valid existing local file with a partial download.
 - Apply local mirror delete only after all required downloads are safely staged.
+- Emit `tt_sync:diff` before transfer when a pre-transfer plan summary is available.
+- Emit `tt_sync:conflict` instead of destructive sync when unresolved conflicts require user review.
 - Emit `tt_sync:progress`, `tt_sync:completed`, and `tt_sync:error` events with the same semantics as Push.
 - Refresh TauriTavern runtime caches after successful Pull before completion is surfaced.
 

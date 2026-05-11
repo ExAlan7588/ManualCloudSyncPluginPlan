@@ -64,6 +64,7 @@ TT-Sync v2 已經具備很多理想形態：
 - 新增獨立 `增量 TT-Sync` 面板，和既有全量 zip 交棒同步分離。
 - UI 呼叫目前上游真實 `tt_sync_*` command 名稱：`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`。
 - 顯示服務端狀態、同步模式、Push/Pull 操作、進度欄位與完成摘要。
+- 新增差異摘要與衝突列表 UI 承接面；只渲染後端 command 回傳或 `tt_sync:diff` / `tt_sync:conflict` event 內的真實 payload，不用 fake summary 或假衝突補齊缺失。
 - 目前上游沒有獨立 `tt_sync_check_diff` dry-run command；插件已移除該呼叫，不用 fake summary 模擬成功。
 - 缺少 TT-Sync 後端命令時顯示明確錯誤，不做 mock success 或靜默降級。
 - 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
@@ -260,15 +261,15 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ### Phase 2：差異預覽
 
 - [x] 新增 `check_diff` 類 command 或復用 plan endpoint 回傳 summary。結果：Minimal server 的 push/pull plan endpoint 回傳 summary；目前 TauriTavern command surface 僅 exposes Push/Pull，插件不呼叫不存在的 `tt_sync_check_diff`。
-- [ ] 前端顯示本機/遠端差異摘要。狀態：需要 TauriTavern 後端新增 dry-run command 或事件 payload；目前插件只顯示完成摘要。
-- [ ] 前端顯示上傳/下載預估大小。狀態：需要 TauriTavern 後端在 dry-run 或 progress 事件暴露預估 plan。
+- [ ] 前端顯示本機/遠端差異摘要。狀態：插件已新增 `mcs_tts_diff` 真資料渲染區，可承接 command 回傳或 `tt_sync:diff` event 的 summary；仍需 TauriTavern 後端實際發出 pre-transfer diff payload 才能完成產品驗證。
+- [ ] 前端顯示上傳/下載預估大小。狀態：`mcs_tts_diff` 會顯示真實 `uploadBytes` / `downloadBytes`；仍需 TauriTavern 後端在 dry-run 或 event payload 暴露預估 plan。
 - [x] 空 diff 時明確顯示「沒有需要同步的變更」。結果：Minimal server smoke 覆蓋 empty diff；現有 TauriTavern command surface 尚未提供前端 dry-run 顯示。
 
 ### Phase 3：衝突處理
 
 - [x] 服務端 plan 標記 conflict。
 - [x] 後端禁止未解決 conflict 的破壞性同步。
-- [ ] 前端列出 conflict。狀態：Minimal server 支援 conflict plan；目前上游 TauriTavern command surface 未暴露 conflict DTO 給插件。
+- [ ] 前端列出 conflict。狀態：插件已新增 `mcs_tts_conflicts` 真資料列表，可承接 `tt_sync:conflict` event 或 command 回傳的 conflicts；目前上游 TauriTavern command surface 未暴露 conflict DTO 給插件。
 - [ ] 使用者可選本機或遠端版本。狀態：需要 TauriTavern command contract 擴充。
 - [x] 衝突決策寫入 plan commit。
 
@@ -286,10 +287,10 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [x] 找到目前設定面板放置同步入口的位置。
 - [x] 建立「雲端同步」面板，避免和全量 zip 插件混淆。
 - [x] 配對流程 UI。
-- [ ] 差異摘要 UI。狀態：已改為最近同步結果；真正 dry-run diff 需後端 command/event 擴充。
+- [x] 差異摘要 UI。結果：已新增 `mcs_tts_diff`，只顯示後端回傳或 event 內的真實 summary；真正 dry-run diff 完成證據仍需 TauriTavern command/event 擴充。
 - [x] Push/Pull 操作按鈕。
 - [x] 進度欄位顯示。
-- [ ] 衝突列表 UI。狀態：目前上游 command surface 未提供 conflict DTO。
+- [x] 衝突列表 UI。結果：已新增 `mcs_tts_conflicts`，只列出真實 conflict DTO；目前上游 command surface 仍未提供 conflict DTO 或決策 API。
 - [x] 手機版排版檢查。結果：使用 responsive grid/flex；實機驗證仍列在驗證清單。
 - [x] 錯誤訊息繁體中文化。
 
@@ -311,7 +312,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`，不在純前端插件內新增假的增量同步，也不呼叫不存在的 dry-run command。
 - TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。實際 VPS 上線狀態仍需外部 smoke report 證明。
 - 第一版接受配對式流程；帳號式能力已在 Minimal server 內提供 login、token refresh、device list、history 與 rollback endpoints，真實產品流程仍取決於 TauriTavern app 整合。
-- 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；目前上游 TauriTavern command surface 尚未把 conflict DTO 與決策 payload 暴露給插件。
+- 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；插件已準備好渲染真實 `tt_sync:conflict` payload，但目前上游 TauriTavern command surface 尚未把 conflict DTO 與決策 payload 暴露給插件。
 - 圖片/附件不在第一階段拆成獨立可選 scope；同步範圍沿用 TT-Sync/LAN Sync scope 規則，並強制排除同步狀態與本機 cache 路徑。
 
 ## 13. 外部驗證入口

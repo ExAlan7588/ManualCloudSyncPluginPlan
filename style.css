@@ -104,3 +104,21 @@
     opacity: 0.8;
     overflow-wrap: anywhere;
 }
+
+#manual_cloud_sync_settings .mcs-conflict-list {
+    display: grid;
+    gap: 6px;
+}
+
+#manual_cloud_sync_settings .mcs-conflict {
+    display: grid;
+    gap: 4px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+#manual_cloud_sync_settings .mcs-conflict-meta {
+    opacity: 0.8;
+    overflow-wrap: anywhere;
+}

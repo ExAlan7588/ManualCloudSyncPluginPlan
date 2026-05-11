@@ -21,6 +21,8 @@ const REQUIRED_TT_SYNC_IDS = Object.freeze([
     'mcs_tts_unpair',
     'mcs_tts_summary',
     'mcs_tts_progress',
+    'mcs_tts_diff',
+    'mcs_tts_conflicts',
 ]);
 
 const tests = [
@@ -63,6 +65,11 @@ async function testUpstreamCommandPayloads() {
     assert.ok(source.includes('mode: selectedSyncMode()'), 'transfer must send SyncMode payload');
     assert.ok(source.includes('server?.server_device_id'), 'server list must handle upstream snake_case ids');
     assert.ok(source.includes('server?.base_url'), 'server list must handle upstream base_url');
+    assert.ok(source.includes('if (hasObjectPayload(result))'), 'empty command result must not clear event payloads');
+    assert.ok(source.includes("diff: 'tt_sync:diff'"), 'frontend must subscribe to real diff events');
+    assert.ok(source.includes("conflict: 'tt_sync:conflict'"), 'frontend must subscribe to real conflict events');
+    assert.ok(source.includes('renderDiffSummary(payload)'), 'frontend must render diff payloads');
+    assert.ok(source.includes('renderConflictList(payload)'), 'frontend must render conflict payloads');
     assert.equal(source.includes('tt_sync_check_diff'), false, 'frontend must not call absent check_diff command');
     assert.equal(source.includes('conflictDecisions'), false, 'frontend must not send unsupported conflict decisions');
 }
