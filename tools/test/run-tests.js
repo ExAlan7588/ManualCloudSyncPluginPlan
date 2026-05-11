@@ -40,8 +40,16 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         },
     },
     phoneDesktopPairingSaved: {
-        desktop: { savedServerId: 'desktop-server-fixture' },
-        phone: { savedServerId: 'phone-server-fixture' },
+        desktop: {
+            restartVerifiedAt: '2026-05-12T00:02:00+08:00',
+            savedServerId: 'desktop-server-fixture',
+            savedServerUrl: 'https://sync.example.com',
+        },
+        phone: {
+            restartVerifiedAt: '2026-05-12T00:02:00+08:00',
+            savedServerId: 'phone-server-fixture',
+            savedServerUrl: 'https://sync.example.com',
+        },
     },
     pullInterruptionSafe: {
         interruption: { afterHash: 'sha256-stable', beforeHash: 'sha256-stable', error: 'interrupted pull' },
@@ -73,6 +81,7 @@ const tests = [
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
+    ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
     ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
     ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
@@ -229,6 +238,14 @@ async function testMixedServerEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('same server URL'));
+}
+
+async function testSavedPairingUrlMismatch() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = 'https://other-sync.example.com';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('phone saved server URL matches'));
 }
 
 async function testMtimeMismatch() {

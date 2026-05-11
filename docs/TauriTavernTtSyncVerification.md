@@ -186,7 +186,7 @@ command report 必須包含 `scannedAt`、實際 source 與 scanned file count�
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且包含 direct Node `ExecStart`、hardening、public URL、port、non-placeholder pairing token 與 data dir writable path 檢查；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
 遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、`status.version`、fixture files/bytes 與 smoke paths。
-device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
+device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，phone/desktop saved server URL 也必須和 `server.url` 一致，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
 `pullMtimePreserved.mtime.expectedModifiedMs` 必須等於 `pullMtimePreserved.mtime.actualModifiedMs`；`pullInterruptionSafe.interruption.beforeHash` 必須等於 `pullInterruptionSafe.interruption.afterHash`。
 
 device evidence JSON 需包含：
@@ -201,7 +201,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
 
 - `realLargeFirstSyncCompleted`: `metrics.durationMs`, `metrics.fileCount`, `metrics.totalBytes`
 - `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`
-- `phoneDesktopPairingSaved`: `desktop.savedServerId`, `phone.savedServerId`
+- `phoneDesktopPairingSaved`: `desktop.restartVerifiedAt`, `desktop.savedServerId`, `desktop.savedServerUrl`, `phone.restartVerifiedAt`, `phone.savedServerId`, `phone.savedServerUrl`
 - `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`
 - `pullInterruptionSafe`: `interruption.afterHash`, `interruption.beforeHash`, `interruption.error`
@@ -240,8 +240,16 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "phoneDesktopPairingSaved": {
       "ok": true,
       "evidence": "both devices still list server after restart",
-      "phone": { "savedServerId": "phone-server-id" },
-      "desktop": { "savedServerId": "desktop-server-id" }
+      "phone": {
+        "restartVerifiedAt": "2026-05-12T00:02:00+08:00",
+        "savedServerId": "phone-server-id",
+        "savedServerUrl": "https://sync.example.com"
+      },
+      "desktop": {
+        "restartVerifiedAt": "2026-05-12T00:02:00+08:00",
+        "savedServerId": "desktop-server-id",
+        "savedServerUrl": "https://sync.example.com"
+      }
     },
     "liveProgressBridgeVisible": {
       "ok": true,

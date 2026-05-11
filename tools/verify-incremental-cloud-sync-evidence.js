@@ -45,8 +45,12 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['commandReport.source', FIELD_TEXT],
     ]],
     ['phoneDesktopPairingSaved', 'phone and desktop save paired server', [
+        ['desktop.restartVerifiedAt', FIELD_TEXT],
         ['desktop.savedServerId', FIELD_TEXT],
+        ['desktop.savedServerUrl', FIELD_TEXT],
+        ['phone.restartVerifiedAt', FIELD_TEXT],
         ['phone.savedServerId', FIELD_TEXT],
+        ['phone.savedServerUrl', FIELD_TEXT],
     ]],
     ['liveProgressBridgeVisible', 'live progress bridge visible in TauriTavern', [
         ['progress.bytesTransferred', FIELD_POSITIVE_NUMBER],
@@ -211,6 +215,16 @@ function consistencyChecks(evidence) {
             'command contract covers required commands',
             arrayIncludesAllTexts(deviceCheckValue(evidence, 'commandContractVerified', 'contract.commands'), REQUIRED_TT_SYNC_COMMANDS),
             'commandContractVerified.contract.commands must include every required tt_sync command',
+        ),
+        check(
+            'phone saved server URL matches',
+            sameEndpoint(deviceCheckValue(evidence, 'phoneDesktopPairingSaved', 'phone.savedServerUrl'), evidence.deviceEvidence?.server?.url),
+            'phoneDesktopPairingSaved.phone.savedServerUrl must match device evidence server.url',
+        ),
+        check(
+            'desktop saved server URL matches',
+            sameEndpoint(deviceCheckValue(evidence, 'phoneDesktopPairingSaved', 'desktop.savedServerUrl'), evidence.deviceEvidence?.server?.url),
+            'phoneDesktopPairingSaved.desktop.savedServerUrl must match device evidence server.url',
         ),
         check(
             'deploy and smoke same URL',
