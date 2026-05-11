@@ -175,6 +175,16 @@ function deviceChecks(evidence) {
 function consistencyChecks(evidence) {
     return [
         check(
+            'same command report source',
+            sameText(evidence.commandReport?.source, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.source),
+            'command report source and device commandContractVerified.commandReport.source must match',
+        ),
+        check(
+            'same command report scannedAt',
+            sameText(evidence.commandReport?.scannedAt, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.scannedAt),
+            'command report scannedAt and device commandContractVerified.commandReport.scannedAt must match',
+        ),
+        check(
             'deploy and smoke same URL',
             sameEndpoint(evidence.deployReport?.publicUrl, evidence.smokeReport?.endpoint),
             'deploy publicUrl and smoke endpoint must match',
@@ -258,6 +268,10 @@ function normalizeEndpoint(endpoint) {
     } catch {
         return '';
     }
+}
+
+function sameText(left, right) {
+    return hasText(left) && hasText(right) && left.trim() === right.trim();
 }
 
 function reportFor(checks) {

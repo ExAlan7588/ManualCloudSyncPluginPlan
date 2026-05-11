@@ -56,6 +56,7 @@ const tests = [
     ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
     ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
+    ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
@@ -271,6 +272,14 @@ async function testMissingDeployEvidence() {
         verifyIncrementalCloudSyncEvidence(evidence),
         /deploy report path is required/,
     );
+}
+
+async function testMixedCommandReportEvidence() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.commandContractVerified.commandReport.source = '/builds/other.apk';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('same command report source'));
 }
 
 async function testPlaceholderDeployEvidence() {
