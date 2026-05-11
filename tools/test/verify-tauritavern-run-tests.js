@@ -60,6 +60,7 @@ async function testVerifierFindsCommands() {
         await writeVerifierFixture({ commands: REQUIRED_TT_SYNC_COMMANDS, root });
         const report = await verifyTauriTavernCommands({ source: root });
         assert.equal(report.ok, true);
+        assert.equal(report.sourceKind, 'source-tree');
         assert.equal(report.missingCommands.length, 0);
         assert.equal(report.commands.every(command => command.found), true);
     });
@@ -82,6 +83,7 @@ async function testVerifierScansCompressedZip() {
         await writeFile(artifactPath, zipArtifactFor({ content: source, name: 'classes.dex' }));
         const report = await verifyTauriTavernCommands({ source: artifactPath });
         assert.equal(report.ok, true);
+        assert.equal(report.sourceKind, 'build-artifact');
         assert.equal(report.commands.every(command => command.files.includes('app-release.apk!/classes.dex')), true);
     });
 }

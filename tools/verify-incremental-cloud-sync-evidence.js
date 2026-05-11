@@ -45,6 +45,7 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['contract.reportId', FIELD_TEXT],
         ['commandReport.scannedAt', FIELD_TIMESTAMP],
         ['commandReport.source', FIELD_TEXT],
+        ['commandReport.sourceKind', FIELD_TEXT],
     ]],
     ['phoneDesktopPairingSaved', 'phone and desktop save paired server', [
         ['desktop.restartVerifiedAt', FIELD_TIMESTAMP],
@@ -98,6 +99,7 @@ const TRUSTED_COMMAND_EVIDENCE_KINDS = new Set([
     'tauri-command-declaration',
     'tauri-handler-registration',
 ]);
+const COMMAND_SOURCE_KINDS = new Set(['build-artifact', 'source-file', 'source-tree']);
 
 export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
@@ -145,6 +147,7 @@ function commandChecks(report) {
         check('command report ok', report?.ok === true, 'command report must have ok=true'),
         check('command report scannedAt', isTimestamp(report?.scannedAt), 'command report must include a parseable scannedAt timestamp'),
         check('command report source', hasText(report?.source), 'command report must include source path or artifact'),
+        check('command report source kind', COMMAND_SOURCE_KINDS.has(report?.sourceKind), 'command report must include sourceKind'),
         check('command report scanned files', Number(report?.scannedFiles) > 0, 'command report must scan at least one file'),
         check('no missing commands', Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, 'missingCommands must be empty'),
         ...REQUIRED_TT_SYNC_COMMANDS.map(command => commandFoundCheck(report, command)),
@@ -157,8 +160,8 @@ function commandFoundCheck(report, command) {
         : null;
     return check(
         `command ${command}`,
-        Boolean(item?.found && commandEvidenceCoversCommand(trustedCommandEvidence(item))),
-        `${command} must have trusted build artifact evidence or source declaration plus handler evidence`,
+        Boolean(item?.found && commandEvidenceCoversCommand(trustedCommandEvidence(item), report?.sourceKind)),
+        `${command} must have evidence compatible with command report sourceKind`,
     );
 }
 
@@ -169,10 +172,15 @@ function trustedCommandEvidence(item) {
     return item.evidence.filter(entry => hasText(entry?.file) && TRUSTED_COMMAND_EVIDENCE_KINDS.has(entry?.kind));
 }
 
-function commandEvidenceCoversCommand(evidence) {
+function commandEvidenceCoversCommand(evidence, sourceKind) {
     const kinds = new Set(evidence.map(item => item.kind));
-    return kinds.has('build-artifact-string')
-        || (kinds.has('tauri-command-declaration') && kinds.has('tauri-handler-registration'));
+    if (sourceKind === 'build-artifact') {
+        return kinds.has('build-artifact-string');
+    }
+    if (sourceKind === 'source-tree' || sourceKind === 'source-file') {
+        return kinds.has('tauri-command-declaration') && kinds.has('tauri-handler-registration');
+    }
+    return false;
 }
 
 function deployChecks(report) {
@@ -238,6 +246,11 @@ function commandEvidenceConsistencyChecks(evidence) {
             'same command report scannedAt',
             sameText(evidence.commandReport?.scannedAt, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.scannedAt),
             'command report scannedAt and device commandContractVerified.commandReport.scannedAt must match',
+        ),
+        check(
+            'same command report sourceKind',
+            sameText(evidence.commandReport?.sourceKind, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.sourceKind),
+            'command report sourceKind and device commandContractVerified.commandReport.sourceKind must match',
         ),
         check(
             'command contract covers required commands',

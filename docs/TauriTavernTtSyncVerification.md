@@ -30,7 +30,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 工具 exit code 為 `0`。
 - 報告中的 `missingCommands` 為空陣列。
 - 每個 command 都有至少一個實際檔案命中。
-- command evidence 來自可信 build artifact，或 source tree 內同時具備 Tauri command 宣告與 handler 註冊的 command；文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
+- command report 必須包含 `sourceKind`。`sourceKind=build-artifact` 時，command evidence 必須來自可信 build artifact；`sourceKind=source-tree` 或 `source-file` 時，command evidence 必須同時包含 Tauri command 宣告與 handler 註冊。文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
 
 失敗時工具會列出缺少的 command 並以非零 exit code 結束；這代表該 build 不能被本插件視為增量同步可用。
 
@@ -181,7 +181,7 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
-command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source 與 scanned file count。
+command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind` 與 scanned file count。
 每個 command 必須包含 verifier 產生的 trusted `evidence`；build artifact 可用 `build-artifact-string`，source tree 則必須同時有 `tauri-command-declaration` 與 `tauri-handler-registration`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
@@ -202,7 +202,7 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 final evidence gate 會檢查下列 dot-path 欄位：
 
 - `realLargeFirstSyncCompleted`: `metrics.durationMs`, `metrics.fileCount`, `metrics.totalBytes`
-- `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`
+- `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`, `commandReport.sourceKind`
 - `phoneDesktopPairingSaved`: `desktop.restartVerifiedAt`, `desktop.savedServerId`, `desktop.savedServerUrl`, `phone.restartVerifiedAt`, `phone.savedServerId`, `phone.savedServerUrl`
 - `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`, `mtime.path`
@@ -237,7 +237,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
         "reportId": "contract-test-report-id",
         "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_check_diff", "tt_sync_push", "tt_sync_pull", "tt_sync_unpair"]
       },
-      "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern.apk" }
+      "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/src/TauriTavern", "sourceKind": "source-tree" }
     },
     "phoneDesktopPairingSaved": {
       "ok": true,

@@ -107,8 +107,21 @@ async function sourceInfoFor(source) {
         isSingleFile: sourceStats.isFile(),
         rootDir: sourceStats.isDirectory() ? resolved : path.dirname(resolved),
         source: resolved,
+        sourceKind: sourceKindFor(resolved, sourceStats),
         startPath: resolved,
     };
+}
+
+function sourceKindFor(sourcePath, sourceStats) {
+    if (sourceStats.isDirectory()) {
+        return 'source-tree';
+    }
+    return isBuildArtifactSource(sourcePath) ? 'build-artifact' : 'source-file';
+}
+
+function isBuildArtifactSource(sourcePath) {
+    const extension = path.extname(sourcePath).toLowerCase();
+    return ZIP_LIKE_EXTENSIONS.has(extension) || TRUSTED_BINARY_EXTENSIONS.has(extension) || !isTextExtension(sourcePath);
 }
 
 function createScanState(sourceInfo) {
@@ -124,6 +137,7 @@ function createScanState(sourceInfo) {
         scannedFiles: 0,
         skippedSpecialEntries: [],
         source: sourceInfo.source,
+        sourceKind: sourceInfo.sourceKind,
         visited: new Set(),
     };
 }
@@ -215,6 +229,7 @@ function reportFor(state) {
         scannedFiles: state.scannedFiles,
         skippedSpecialEntries: state.skippedSpecialEntries,
         source: state.source,
+        sourceKind: state.sourceKind,
     };
 }
 
