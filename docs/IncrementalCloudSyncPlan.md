@@ -302,7 +302,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [x] Push commit 前斷線不造成遠端 mirror delete。結果：server test `uncommitted push plan does not delete remote files`。
 - [ ] Pull 寫入中斷不破壞本機既有檔案。
 - [ ] LAN Sync 與雲端同步不能並行。
-- [ ] 同步狀態目錄不會被同步。
+- [x] 同步狀態目錄不會被同步。結果：Minimal server 會拒收 LAN Sync、manual/incremental sync 狀態與 iOS policy cache 路徑。
 - [ ] Android 手機弱網路下錯誤可見。
 
 ## 12. 開放問題

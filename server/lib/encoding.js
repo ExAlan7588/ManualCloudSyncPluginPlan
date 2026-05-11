@@ -1,5 +1,14 @@
 import { badRequest } from './http-error.js';
 
+const EXCLUDED_PREFIXES = [
+    'default-user/user/incremental-cloud-sync/',
+    'default-user/user/lan-sync/',
+    'default-user/user/manual-cloud-sync/',
+];
+const EXCLUDED_FILES = new Set([
+    '_tauritavern/.ios-policy.json',
+]);
+
 export function encodePath(value) {
     return Buffer.from(validateSyncPath(value), 'utf8').toString('base64url');
 }
@@ -26,6 +35,9 @@ export function validateSyncPath(value) {
     if (path.split('/').some(segment => segment === '..' || segment === '')) {
         throw badRequest(`Invalid sync path: ${path}`);
     }
+    if (isExcludedSyncPath(path)) {
+        throw badRequest(`Sync path is excluded from TT-Sync: ${path}`);
+    }
     return path;
 }
 
@@ -35,4 +47,8 @@ export function safeName(value, label) {
         throw badRequest(`${label} must use A-Z, a-z, 0-9, dot, underscore, or dash`);
     }
     return text;
+}
+
+export function isExcludedSyncPath(path) {
+    return EXCLUDED_FILES.has(path) || EXCLUDED_PREFIXES.some(prefix => path.startsWith(prefix));
 }

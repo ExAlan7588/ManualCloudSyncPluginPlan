@@ -16,6 +16,7 @@ const tests = [
     ['only changed files transfer and bundle endpoints work', testChangedFilesAndBundle],
     ['uncommitted push plan does not delete remote files', testUncommittedPushKeepsRemote],
     ['conflict blocks commit until decision is provided', testConflictDecision],
+    ['excluded sync state paths are rejected', testExcludedStatePath],
 ];
 
 for (const [name, test] of tests) {
@@ -157,6 +158,21 @@ async function testUncommittedPushKeepsRemote() {
         assert.deepEqual(plan.remoteDeletes, [IMAGE_PATH]);
         const pullPlan = await pullPlanFor(context, pair, []);
         assert.deepEqual(pullPlan.downloads.map(entry => entry.path).sort(), [FILE_PATH, IMAGE_PATH].sort());
+    });
+}
+
+async function testExcludedStatePath() {
+    await withServer(async context => {
+        const pair = await pairDevice(context);
+        await assert.rejects(
+            pushPlan({
+                baseManifest: [],
+                context,
+                localManifest: [entryForPath('default-user/user/lan-sync/state.json', '{}', BASE_MTIME)],
+                pair,
+            }),
+            /excluded from TT-Sync/,
+        );
     });
 }
 
