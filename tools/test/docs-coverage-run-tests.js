@@ -79,6 +79,9 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('sourceKind=build-artifact'), 'README build-artifact final evidence policy missing');
     assert.ok(options.verification.includes('sourceKind=build-artifact'), 'verification build-artifact final evidence policy missing');
     assert.ok(options.plan.includes('sourceKind=build-artifact'), 'plan build-artifact final evidence policy missing');
+    assert.ok(options.readme.includes('sourceKind=source-tree'), 'README source-tree event final evidence policy missing');
+    assert.ok(options.verification.includes('sourceKind=source-tree'), 'verification source-tree event final evidence policy missing');
+    assert.ok(options.plan.includes('sourceKind=source-tree'), 'plan source-tree event final evidence policy missing');
 }
 
 function assertDeviceRequirementDocumented(options) {

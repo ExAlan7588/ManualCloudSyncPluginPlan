@@ -39,6 +39,7 @@ const TRUSTED_COMMAND_EVIDENCE_KINDS = new Set([
     'tauri-handler-registration',
 ]);
 const COMMAND_SOURCE_KINDS = new Set(['build-artifact', 'source-file', 'source-tree']);
+const FINAL_EVENT_SOURCE_KIND = 'source-tree';
 const FINAL_COMMAND_SOURCE_KIND = 'build-artifact';
 
 export async function verifyIncrementalCloudSyncEvidence(options = {}) {
@@ -133,6 +134,7 @@ function eventChecks(report) {
         check('event surface report scannedAt', isTimestamp(report?.scannedAt), 'event surface report must include a parseable scannedAt timestamp'),
         check('event surface report source', hasText(report?.source), 'event surface report must include source path or artifact'),
         check('event surface report source kind', COMMAND_SOURCE_KINDS.has(report?.sourceKind), 'event surface report must include sourceKind'),
+        check('event surface report is source tree', report?.sourceKind === FINAL_EVENT_SOURCE_KIND, 'final evidence event surface report must scan the TauriTavern source tree'),
         check('event surface report scanned files', Number(report?.scannedFiles) > 0, 'event surface report must scan at least one file'),
         check('event surface missing events', Array.isArray(report?.missingEvents) && report.missingEvents.length === 0, 'missingEvents must be empty'),
         check('event surface missing fields', Array.isArray(report?.missingPayloadFields) && report.missingPayloadFields.length === 0, 'missingPayloadFields must be empty'),

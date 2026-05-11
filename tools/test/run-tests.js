@@ -34,6 +34,7 @@ const tests = [
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing event surface evidence', testMissingEventSurfaceEvidence],
     ['incremental evidence verifier rejects failed event surface report', testFailedEventSurfaceEvidence],
+    ['incremental evidence verifier rejects source-file event surface evidence', testSourceFileEventSurfaceEvidence],
     ['incremental evidence verifier rejects missing diff conflict surface', testMissingDiffConflictSurface],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
@@ -399,6 +400,15 @@ async function testFailedEventSurfaceEvidence() {
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('event surface report ok'));
     assert.ok(report.failed.includes('event surface missing events'));
+}
+
+async function testSourceFileEventSurfaceEvidence() {
+    const evidence = completeEvidence();
+    evidence.eventReport.sourceKind = 'source-file';
+    evidence.eventReport.source = '/src/TauriTavern/src-tauri/src/domain/models/tt_sync.rs';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('event surface report is source tree'));
 }
 
 async function testMissingDiffConflictSurface() {
