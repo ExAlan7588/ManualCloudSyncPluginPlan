@@ -204,8 +204,8 @@ final evidence gate 會檢查下列 dot-path 欄位：
 - `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`
 - `phoneDesktopPairingSaved`: `desktop.restartVerifiedAt`, `desktop.savedServerId`, `desktop.savedServerUrl`, `phone.restartVerifiedAt`, `phone.savedServerId`, `phone.savedServerUrl`
 - `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
-- `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`
-- `pullInterruptionSafe`: `interruption.afterHash`, `interruption.beforeHash`, `interruption.error`
+- `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`, `mtime.path`
+- `pullInterruptionSafe`: `interruption.afterHash`, `interruption.beforeHash`, `interruption.error`, `interruption.path`, `interruption.runId`
 - `lanCloudSyncMutex`: `mutex.blockedOperation`, `mutex.cloudWhileLanBlockedOperation`, `mutex.cloudWhileLanVisibleError`, `mutex.lanWhileCloudBlockedOperation`, `mutex.lanWhileCloudVisibleError`, `mutex.visibleError`
 - `androidWeakNetworkErrorVisible`: `android.capturedAt`, `android.errorCode`, `android.networkProfile`, `android.operation`, `android.visibleError`
 
@@ -266,12 +266,18 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "pullMtimePreserved": {
       "ok": true,
       "evidence": "mtime before/after shell output path",
-      "mtime": { "expectedModifiedMs": 1778500000000, "actualModifiedMs": 1778500000000 }
+      "mtime": { "expectedModifiedMs": 1778500000000, "actualModifiedMs": 1778500000000, "path": "default-user/chats/example.jsonl" }
     },
     "pullInterruptionSafe": {
       "ok": true,
       "evidence": "interrupted Pull run id and local file hash evidence",
-      "interruption": { "beforeHash": "sha256-stable", "afterHash": "sha256-stable", "error": "interrupted pull" }
+      "interruption": {
+        "beforeHash": "sha256-stable",
+        "afterHash": "sha256-stable",
+        "error": "interrupted pull",
+        "path": "default-user/chats/example.jsonl",
+        "runId": "pull-interruption-run-id"
+      }
     },
     "lanCloudSyncMutex": {
       "ok": true,

@@ -66,10 +66,20 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         },
     },
     pullInterruptionSafe: {
-        interruption: { afterHash: 'sha256-stable', beforeHash: 'sha256-stable', error: 'interrupted pull' },
+        interruption: {
+            afterHash: 'sha256-stable',
+            beforeHash: 'sha256-stable',
+            error: 'interrupted pull',
+            path: 'default-user/chats/interrupted.jsonl',
+            runId: 'pull-interruption-run-fixture',
+        },
     },
     pullMtimePreserved: {
-        mtime: { actualModifiedMs: TEST_MTIME_MS, expectedModifiedMs: TEST_MTIME_MS },
+        mtime: {
+            actualModifiedMs: TEST_MTIME_MS,
+            expectedModifiedMs: TEST_MTIME_MS,
+            path: 'default-user/chats/mtime-fixture.jsonl',
+        },
     },
     realLargeFirstSyncCompleted: {
         metrics: { durationMs: TEST_SYNC_DURATION_MS, fileCount: 128, totalBytes: TEST_REAL_LARGE_SYNC_BYTES },
@@ -99,6 +109,7 @@ const tests = [
     ['incremental evidence verifier rejects undersized large sync evidence', testUndersizedLargeSyncEvidence],
     ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
     ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
+    ['incremental evidence verifier rejects missing interruption run id', testMissingInterruptionRunId],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
     ['incremental evidence verifier rejects missing smoke status version', testMissingSmokeStatusVersion],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
@@ -287,6 +298,14 @@ async function testInterruptionHashMismatch() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('interruption hash unchanged'));
+}
+
+async function testMissingInterruptionRunId() {
+    const evidence = completeEvidence();
+    delete evidence.deviceEvidence.checks.pullInterruptionSafe.interruption.runId;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('pull interruption keeps existing local files safe'));
 }
 
 async function testMissingSmokeProvenance() {

@@ -63,11 +63,14 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ['pullMtimePreserved', 'pull preserves local filesystem mtime', [
         ['mtime.actualModifiedMs', FIELD_POSITIVE_NUMBER],
         ['mtime.expectedModifiedMs', FIELD_POSITIVE_NUMBER],
+        ['mtime.path', FIELD_TEXT],
     ]],
     ['pullInterruptionSafe', 'pull interruption keeps existing local files safe', [
         ['interruption.afterHash', FIELD_TEXT],
         ['interruption.beforeHash', FIELD_TEXT],
         ['interruption.error', FIELD_TEXT],
+        ['interruption.path', FIELD_TEXT],
+        ['interruption.runId', FIELD_TEXT],
     ]],
     ['lanCloudSyncMutex', 'LAN Sync and cloud sync are mutually exclusive', [
         ['mutex.blockedOperation', FIELD_TEXT],
