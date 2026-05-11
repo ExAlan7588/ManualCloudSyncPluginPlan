@@ -7,6 +7,7 @@ const BINARY_TYPE = 'application/octet-stream';
 const SSE_TYPE = 'text/event-stream; charset=utf-8';
 const DEFAULT_MAX_BODY_BYTES = 512 * 1024 * 1024;
 const PROGRESS_EVENT_INTERVAL_MS = 1000;
+const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 
 const STATIC_ROUTE_HANDLERS = Object.freeze({
     'GET /v2/status': handleStatus,
@@ -190,7 +191,7 @@ async function stageUploadBundle(context, plan) {
     }
     for (const file of body.files) {
         const entry = findPlanEntry(plan.uploads, file.path);
-        await context.storage.stageFile(plan, entry, Buffer.from(String(file.contentBase64 || ''), 'base64'));
+        await context.storage.stageFile(plan, entry, decodeBundleContent(file));
     }
 }
 
@@ -244,6 +245,16 @@ function parsePairingUri(value) {
     } catch {
         throw badRequest('Pairing URI must be a valid tt-sync:// URI');
     }
+}
+
+function decodeBundleContent(file) {
+    if (typeof file?.contentBase64 !== 'string') {
+        throw badRequest('Bundle file contentBase64 must be a base64 string');
+    }
+    if (!BASE64_PATTERN.test(file.contentBase64)) {
+        throw badRequest('Bundle file contentBase64 must be valid base64');
+    }
+    return Buffer.from(file.contentBase64, 'base64');
 }
 
 function planSummary(plan) {

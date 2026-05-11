@@ -17,6 +17,7 @@ const BULK_FILE_COUNT = 128;
 const tests = [
     ['pair, push, pull, and empty diff', testPushPullEmptyDiff],
     ['only changed files transfer and bundle endpoints work', testChangedFilesAndBundle],
+    ['bundle upload requires valid contentBase64', testBundleRequiresValidContentBase64],
     ['bulk first sync completes', testBulkFirstSync],
     ['uncommitted push plan does not delete remote files', testUncommittedPushKeepsRemote],
     ['conflict blocks commit until decision is provided', testConflictDecision],
@@ -134,6 +135,30 @@ async function testChangedFilesAndBundle() {
         const pullPlan = await pullPlanFor(context, pair, []);
         const bundle = await getBundle(context, pullPlan.id, pair.authToken);
         assert.deepEqual(bundle.files.map(file => file.path).sort(), [FILE_PATH, IMAGE_PATH].sort());
+    });
+}
+
+async function testBundleRequiresValidContentBase64() {
+    await withServer(async context => {
+        const pair = await pairDevice(context);
+        const entry = entryFor('', BASE_MTIME);
+        const plan = await pushPlan({ baseManifest: [], context, localManifest: [entry], pair });
+        await putBundleExpectError({
+            context,
+            files: [{ path: entry.path }],
+            message: /contentBase64 must be a base64 string/,
+            planId: plan.id,
+            status: 400,
+            token: pair.authToken,
+        });
+        await putBundleExpectError({
+            context,
+            files: [{ contentBase64: '!!!!', path: entry.path }],
+            message: /contentBase64 must be valid base64/,
+            planId: plan.id,
+            status: 400,
+            token: pair.authToken,
+        });
     });
 }
 
@@ -458,6 +483,17 @@ async function putBundle(options) {
         method: 'PUT',
     });
     await parseJsonResponse(response);
+}
+
+async function putBundleExpectError(options) {
+    const response = await fetch(`${options.context.baseUrl}/v2/plans/${options.planId}/bundle`, {
+        body: JSON.stringify({ files: options.files }),
+        headers: requestHeaders(options.token),
+        method: 'PUT',
+    });
+    const payload = await response.json();
+    assert.equal(response.status, options.status);
+    assert.match(payload.error, options.message);
 }
 
 async function getFile(options) {
