@@ -138,10 +138,10 @@ function refreshBackendFields() {
     const webdavAuthMode = String($('#mcs_webdav_auth_mode').val() || AUTH_BASIC);
     const isWebDav = backend === BACKEND_WEBDAV;
     const isBasic = webdavAuthMode === AUTH_BASIC;
-    $('#mcs_webdav_basic_credentials').toggle(isWebDav && isBasic);
-    $('#mcs_webdav_advanced_fields').toggle(isWebDav);
-    $('#mcs_s3_fields').toggle(backend === BACKEND_S3);
-    $('.mcs-bearer-field').toggle(isWebDav && webdavAuthMode === AUTH_BEARER);
+    $('#mcs_webdav_basic_credentials').prop('hidden', !(isWebDav && isBasic));
+    $('#mcs_webdav_advanced_fields').prop('hidden', !isWebDav);
+    $('#mcs_s3_fields').prop('hidden', backend !== BACKEND_S3);
+    $('.mcs-bearer-field').prop('hidden', !(isWebDav && webdavAuthMode === AUTH_BEARER));
 }
 
 async function loadConfig() {
@@ -439,6 +439,8 @@ jQuery(async () => {
     $('#mcs_upload_now').on('click', onUploadClick);
     $('#mcs_download_now').on('click', onDownloadClick);
     $('#mcs_use_local_webdav').on('click', applyLocalWebDavPreset);
+    ensureDefaultFormState();
+    refreshBackendFields();
 
     try {
         await loadConfig();
@@ -447,3 +449,21 @@ jQuery(async () => {
         setStatus(normalizeError(error));
     }
 });
+
+function ensureDefaultFormState() {
+    if (!$('#mcs_backend').val()) {
+        $('#mcs_backend').val(BACKEND_WEBDAV);
+    }
+    if (!$('#mcs_webdav_auth_mode').val()) {
+        $('#mcs_webdav_auth_mode').val(AUTH_BASIC);
+    }
+    if (!String($('#mcs_remote_prefix').val() || '').trim()) {
+        $('#mcs_remote_prefix').val(DEFAULT_REMOTE_PREFIX);
+    }
+    if (!String($('#mcs_s3_region').val() || '').trim()) {
+        $('#mcs_s3_region').val(DEFAULT_S3_REGION);
+    }
+    if (!$('#mcs_s3_path_style').prop('checked')) {
+        $('#mcs_s3_path_style').prop('checked', true);
+    }
+}
