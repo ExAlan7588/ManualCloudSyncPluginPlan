@@ -130,6 +130,12 @@ device evidence 可先用模板產生；模板內所有檢查預設 `ok=false`�
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 ```
 
+若已經有 command/event reports，可在產生模板時預填 report references；模板仍保持 `ok=false`，不會被視為完成證據：
+
+```bash
+npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json --mobile-command-report /tmp/tt-sync-mobile-command-report.json --desktop-command-report /tmp/tt-sync-desktop-command-report.json --event-report /tmp/tt-sync-event-report.json
+```
+
 ## WebDAV 使用方式
 
 第一次設定時，預設就是 WebDAV Basic，只需要先填：

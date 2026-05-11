@@ -236,6 +236,12 @@ device evidence JSON 需包含：
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 ```
 
+已有 mobile/desktop command reports 與 event surface report 時，可先預填 report references，避免手動複製 `source`、`scannedAt`、`sourceKind` 時出錯；模板仍會保留每個檢查的 `ok=false`：
+
+```bash
+npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json --mobile-command-report /tmp/tt-sync-mobile-command-report.json --desktop-command-report /tmp/tt-sync-desktop-command-report.json --event-report /tmp/tt-sync-event-report.json
+```
+
 模板會建立完整欄位，但每個檢查都預設 `ok=false`；必須填入真實 evidence、補齊 required fields 並改成 `ok=true` 後，final evidence gate 才可能通過。
 
 final evidence gate 會檢查下列 dot-path 欄位：
