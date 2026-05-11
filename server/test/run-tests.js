@@ -22,6 +22,7 @@ const tests = [
     ['conflict blocks commit until decision is provided', testConflictDecision],
     ['excluded sync state paths are rejected', testExcludedStatePath],
     ['invalid manifest entries are rejected', testInvalidManifestEntries],
+    ['protected endpoints reject missing auth', testProtectedEndpointsRejectMissingAuth],
     ['account device history and rollback endpoints work', testAccountDeviceHistoryRollback],
 ];
 
@@ -186,6 +187,24 @@ async function testInvalidManifestEntries() {
         await assert.rejects(
             pushPlan({ baseManifest: [], context, localManifest: [{ ...entryFor('a', BASE_MTIME), modifiedMs: 1.5 }], pair }),
             /Invalid modifiedMs/,
+        );
+    });
+}
+
+async function testProtectedEndpointsRejectMissingAuth() {
+    await withServer(async context => {
+        const pair = await pairDevice(context);
+        await assert.rejects(
+            postJson({
+                context,
+                route: '/v2/session/open',
+                body: { deviceId: pair.deviceId, namespace: pair.namespace },
+            }),
+            /Missing bearer token/,
+        );
+        await assert.rejects(
+            getJson({ context, route: '/v2/devices?namespace=default' }),
+            /Missing bearer token/,
         );
     });
 }
