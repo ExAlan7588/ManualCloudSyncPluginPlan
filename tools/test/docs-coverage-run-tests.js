@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
+import { REQUIRED_TT_SYNC_EVENTS, REQUIRED_TT_SYNC_EVENT_FIELDS } from '../verify-tauritavern-tt-sync-events.js';
 import { REQUIRED_DEVICE_CHECKS } from '../verify-incremental-cloud-sync-evidence.js';
 
 const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContract.md', import.meta.url);
@@ -31,12 +32,27 @@ async function testVerificationDocsCoverage() {
     const verification = await readFile(VERIFICATION_DOC, 'utf8');
     assert.ok(verification.includes('--deploy'), 'final evidence deploy input missing from verification doc');
     assert.ok(verification.includes('--allow-placeholders'), 'deploy placeholder policy missing from verification doc');
+    assertEventSurfaceDocumented({ plan, readme, verification });
     assertFinalEvidenceManifestDocumented({ plan, readme, verification });
     for (const command of REQUIRED_TT_SYNC_COMMANDS) {
         assert.ok(contract.includes(command), `${command} missing from command contract doc`);
     }
     for (const item of REQUIRED_DEVICE_CHECKS) {
         assertDeviceRequirementDocumented({ item, verification });
+    }
+}
+
+function assertEventSurfaceDocumented(options) {
+    assert.ok(options.readme.includes('verify:tauritavern-events'), 'README event verifier missing');
+    assert.ok(options.verification.includes('verify:tauritavern-events'), 'verification event verifier missing');
+    assert.ok(options.plan.includes('verify:tauritavern-events'), 'plan event verifier missing');
+    for (const eventName of REQUIRED_TT_SYNC_EVENTS) {
+        assert.ok(options.verification.includes(eventName), `${eventName} missing from verification doc`);
+    }
+    for (const fields of Object.values(REQUIRED_TT_SYNC_EVENT_FIELDS)) {
+        for (const field of fields) {
+            assert.ok(options.verification.includes(field), `${field} missing from verification doc`);
+        }
     }
 }
 

@@ -47,6 +47,14 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 
 verifier 會在 JSON 報告中寫入 `sourceKind`。`sourceKind=build-artifact` 時只接受可信 build artifact 內的 command 字串；`sourceKind=source-tree` 或 `source-file` 時，command 必須同時具備 Tauri command 宣告與 handler 註冊。README、測試 fixture 或一般文件中的字串會被列為 ignored，不會讓報告通過。
 
+可用以下命令檢查 TauriTavern source tree 是否暴露實際 TT-Sync event surface 與 payload 欄位：
+
+```bash
+npm run verify:tauritavern-events -- --source /path/to/TauriTavern --manifest /tmp/tt-sync-event-report.json
+```
+
+event verifier 會要求 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error` 與 progress/completed payload 欄位存在，並在 `diffConflictSurface` 中明確回報是否已有 dry-run diff 或 conflict DTO surface；目前上游沒有這些 diff/conflict surface，不能把它們當成已完成。
+
 完整的真機與 VPS 驗證清單請看：[docs/TauriTavernTtSyncVerification.md](docs/TauriTavernTtSyncVerification.md)。
 TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/TauriTavernTtSyncCommandContract.md](docs/TauriTavernTtSyncCommandContract.md)。
 

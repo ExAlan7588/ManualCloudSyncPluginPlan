@@ -34,7 +34,44 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 
 失敗時工具會列出缺少的 command 並以非零 exit code 結束；這代表該 build 不能被本插件視為增量同步可用。
 
-## 2. 配對保存檢查
+## 2. Event Surface 檢查
+
+使用 repo 內的 event-surface 掃描工具確認 TauriTavern source tree 內含實際 TT-Sync event 名稱與 payload 欄位：
+
+```bash
+npm run verify:tauritavern-events -- --source /path/to/TauriTavern --manifest /tmp/tt-sync-event-report.json
+```
+
+必要事件：
+
+- `tt_sync:progress`
+- `tt_sync:completed`
+- `tt_sync:error`
+
+必要 progress payload 欄位：
+
+- `direction`
+- `phase`
+- `files_done`
+- `files_total`
+- `bytes_done`
+- `bytes_total`
+- `current_path`
+
+必要 completed payload 欄位：
+
+- `direction`
+- `files_total`
+- `bytes_total`
+- `files_deleted`
+
+通過標準：
+
+- 工具 exit code 為 `0`。
+- 報告中的 `missingEvents` 與 `missingPayloadFields` 都是空陣列。
+- `diffConflictSurface` 只作為實際 surface 證據；目前上游沒有 `tt_sync:diff`、`tt_sync:conflict`、`conflictDecisions` 或 `TtSyncConflict` DTO，不能把缺失的 dry-run diff / conflict UI 視為完成。
+
+## 3. 配對保存檢查
 
 前置條件：
 
@@ -57,7 +94,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - 重開 app 後服務端仍存在。
 - 服務端 `/v2/devices?namespace=...` 能看到兩個不同 device。
 
-## 3. VPS / TT-Sync Server Live Smoke
+## 4. VPS / TT-Sync Server Live Smoke
 
 部署 Minimal TT-Sync server 或上游 TT-Sync server 後，先對實際 URL 跑 smoke verifier：
 
@@ -99,7 +136,7 @@ smoke verifier 會執行真實 HTTP 流程：
 - 報告包含 `fixture.fileCount`、`fixture.totalBytes` 與 `smokePaths`，且 `smokePath` 必須在 `smokePaths` 內。
 - 遠端模式會在 namespace 留下一組唯一命名的 smoke 檔案作為部署證據；工具不會自動執行 mirror delete 清理，以避免誤刪既有遠端資料。
 
-## 4. Pull mtime 保留
+## 5. Pull mtime 保留
 
 前置條件：
 
@@ -118,7 +155,7 @@ smoke verifier 會執行真實 HTTP 流程：
 - 裝置 B 檔案 mtime 等於服務端 manifest 的 `modifiedMs`。
 - 再次檢查差異時該檔案不會被誤判為變更。
 
-## 5. Pull 中斷安全
+## 6. Pull 中斷安全
 
 驗證步驟：
 
@@ -133,7 +170,7 @@ smoke verifier 會執行真實 HTTP 流程：
 - 後端回報明確錯誤，不顯示成功。
 - 下一次 Pull 能重新開始並完成。
 
-## 6. LAN Sync 與雲端同步互斥
+## 7. LAN Sync 與雲端同步互斥
 
 驗證步驟：
 
@@ -147,7 +184,7 @@ smoke verifier 會執行真實 HTTP 流程：
 - 錯誤訊息指出已有同步任務進行中。
 - 兩種同步的狀態檔都沒有被納入 TT-Sync manifest。
 
-## 7. Android 弱網路錯誤可見
+## 8. Android 弱網路錯誤可見
 
 驗證步驟：
 
@@ -161,7 +198,7 @@ smoke verifier 會執行真實 HTTP 流程：
 - 不出現成功 toast 或成功狀態。
 - 重試前不需要清除 app data。
 
-## 8. 證據格式
+## 9. 證據格式
 
 每次外部驗證應保存：
 
@@ -172,7 +209,7 @@ smoke verifier 會執行真實 HTTP 流程：
 - `smoke:tt-sync-server` JSON 報告。
 - 測試時間與失敗時的錯誤訊息。
 
-## 9. Final Evidence Gate
+## 10. Final Evidence Gate
 
 收齊 command report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
 
