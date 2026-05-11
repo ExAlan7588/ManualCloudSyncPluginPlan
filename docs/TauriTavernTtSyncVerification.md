@@ -205,7 +205,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
 - `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`
 - `pullInterruptionSafe`: `interruption.afterHash`, `interruption.beforeHash`, `interruption.error`
-- `lanCloudSyncMutex`: `mutex.blockedOperation`, `mutex.visibleError`
+- `lanCloudSyncMutex`: `mutex.blockedOperation`, `mutex.cloudWhileLanBlockedOperation`, `mutex.cloudWhileLanVisibleError`, `mutex.lanWhileCloudBlockedOperation`, `mutex.lanWhileCloudVisibleError`, `mutex.visibleError`
 - `androidWeakNetworkErrorVisible`: `android.networkProfile`, `android.visibleError`
 
 ```json
@@ -275,7 +275,14 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "lanCloudSyncMutex": {
       "ok": true,
       "evidence": "mutex rejection log path",
-      "mutex": { "blockedOperation": "lan_sync_start while tt_sync_pull is active", "visibleError": "Cloud sync already running" }
+      "mutex": {
+        "blockedOperation": "lan_sync_start while tt_sync_pull is active",
+        "cloudWhileLanBlockedOperation": "tt_sync_push while lan_sync_pull is active",
+        "cloudWhileLanVisibleError": "LAN sync already running",
+        "lanWhileCloudBlockedOperation": "lan_sync_start while tt_sync_push is active",
+        "lanWhileCloudVisibleError": "Cloud sync already running",
+        "visibleError": "Cloud sync already running"
+      }
     },
     "androidWeakNetworkErrorVisible": {
       "ok": true,

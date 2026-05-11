@@ -28,7 +28,14 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/builds/TauriTavern.apk' },
     },
     lanCloudSyncMutex: {
-        mutex: { blockedOperation: 'lan_sync_start while tt_sync_push is active', visibleError: 'Cloud sync already running' },
+        mutex: {
+            blockedOperation: 'lan_sync_start while tt_sync_push is active',
+            cloudWhileLanBlockedOperation: 'tt_sync_push while lan_sync_pull is active',
+            cloudWhileLanVisibleError: 'LAN sync already running',
+            lanWhileCloudBlockedOperation: 'lan_sync_start while tt_sync_push is active',
+            lanWhileCloudVisibleError: 'Cloud sync already running',
+            visibleError: 'Cloud sync already running',
+        },
     },
     liveProgressBridgeVisible: {
         progress: {
@@ -88,6 +95,7 @@ const tests = [
     ['incremental evidence verifier rejects missing smoke status version', testMissingSmokeStatusVersion],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
     ['incremental evidence verifier rejects missing progress transfer metrics', testMissingProgressTransferMetrics],
+    ['incremental evidence verifier rejects missing bidirectional mutex evidence', testMissingBidirectionalMutexEvidence],
     ['incremental evidence verifier rejects missing device structured fields', testMissingDeviceStructuredFields],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
@@ -296,6 +304,14 @@ async function testMissingProgressTransferMetrics() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('live progress bridge visible in TauriTavern'));
+}
+
+async function testMissingBidirectionalMutexEvidence() {
+    const evidence = completeEvidence();
+    delete evidence.deviceEvidence.checks.lanCloudSyncMutex.mutex.cloudWhileLanBlockedOperation;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('LAN Sync and cloud sync are mutually exclusive'));
 }
 
 async function testMissingDeviceStructuredFields() {

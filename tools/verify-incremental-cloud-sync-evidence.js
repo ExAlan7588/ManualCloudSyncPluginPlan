@@ -70,6 +70,10 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ]],
     ['lanCloudSyncMutex', 'LAN Sync and cloud sync are mutually exclusive', [
         ['mutex.blockedOperation', FIELD_TEXT],
+        ['mutex.cloudWhileLanBlockedOperation', FIELD_TEXT],
+        ['mutex.cloudWhileLanVisibleError', FIELD_TEXT],
+        ['mutex.lanWhileCloudBlockedOperation', FIELD_TEXT],
+        ['mutex.lanWhileCloudVisibleError', FIELD_TEXT],
         ['mutex.visibleError', FIELD_TEXT],
     ]],
     ['androidWeakNetworkErrorVisible', 'Android weak-network error is visible', [
