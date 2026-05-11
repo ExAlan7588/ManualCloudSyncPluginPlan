@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { REQUIRED_TT_SYNC_COMMANDS } from './verify-tauritavern-tt-sync.js';
 import {
+    REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES,
     REQUIRED_TT_SYNC_EVENTS,
 } from './verify-tauritavern-tt-sync-events.js';
 import {
@@ -136,7 +137,17 @@ function eventChecks(report) {
         check('event surface missing events', Array.isArray(report?.missingEvents) && report.missingEvents.length === 0, 'missingEvents must be empty'),
         check('event surface missing fields', Array.isArray(report?.missingPayloadFields) && report.missingPayloadFields.length === 0, 'missingPayloadFields must be empty'),
         ...REQUIRED_TT_SYNC_EVENTS.map(name => check(`event ${name}`, names.has(name), `${name} event is required`)),
+        ...REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES.map(name => diffConflictSurfaceCheck(report, name)),
     ];
+}
+
+function diffConflictSurfaceCheck(report, name) {
+    const item = report?.diffConflictSurface?.[name];
+    return check(
+        `event surface ${name}`,
+        item?.found === true && Array.isArray(item.files) && item.files.length > 0,
+        `${name} is required for final diff/conflict UI evidence`,
+    );
 }
 
 function passedEventNames(report) {

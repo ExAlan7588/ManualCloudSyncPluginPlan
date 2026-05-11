@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
-import { REQUIRED_TT_SYNC_EVENTS, REQUIRED_TT_SYNC_EVENT_FIELDS } from '../verify-tauritavern-tt-sync-events.js';
+import {
+    REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES,
+    REQUIRED_TT_SYNC_EVENTS,
+    REQUIRED_TT_SYNC_EVENT_FIELDS,
+} from '../verify-tauritavern-tt-sync-events.js';
 import { REQUIRED_DEVICE_CHECKS } from '../verify-incremental-cloud-sync-evidence.js';
 
 const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContract.md', import.meta.url);
@@ -48,6 +52,9 @@ function assertEventSurfaceDocumented(options) {
     assert.ok(options.plan.includes('verify:tauritavern-events'), 'plan event verifier missing');
     for (const eventName of REQUIRED_TT_SYNC_EVENTS) {
         assert.ok(options.verification.includes(eventName), `${eventName} missing from verification doc`);
+    }
+    for (const surfaceName of REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES) {
+        assert.ok(options.verification.includes(surfaceName), `${surfaceName} missing from verification doc`);
     }
     for (const fields of Object.values(REQUIRED_TT_SYNC_EVENT_FIELDS)) {
         for (const field of fields) {

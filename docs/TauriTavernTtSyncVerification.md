@@ -69,7 +69,7 @@ npm run verify:tauritavern-events -- --source /path/to/TauriTavern --manifest /t
 
 - 工具 exit code 為 `0`。
 - 報告中的 `missingEvents` 與 `missingPayloadFields` 都是空陣列。
-- `diffConflictSurface` 只作為實際 surface 證據；目前上游沒有 `tt_sync:diff`、`tt_sync:conflict`、`conflictDecisions` 或 `TtSyncConflict` DTO，不能把缺失的 dry-run diff / conflict UI 視為完成。
+- `diffConflictSurface` 只作為實際 surface 證據；final evidence gate 會要求 `preTransferDiffEvent`、`conflictEvent`、`conflictDto`、`conflictDecisionPayload` 都存在。目前上游沒有 `tt_sync:diff`、`tt_sync:conflict`、`conflictDecisions` 或 `TtSyncConflict` DTO，不能把缺失的 dry-run diff / conflict UI 視為完成。
 
 ## 3. 配對保存檢查
 
@@ -221,7 +221,7 @@ npm run verify:incremental-evidence -- --mobile-commands /tmp/tt-sync-mobile-com
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
 mobile 與 desktop command reports 都必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind=build-artifact` 與 scanned file count。
 每個 mobile/desktop command 都必須包含 verifier 產生的 trusted `build-artifact-string` evidence。source tree command report 仍可做整合前檢查，但 final evidence gate 不接受 source tree 取代實際 build artifact。
-event surface report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind`、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`。
+event surface report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind`、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`，以及 `diffConflictSurface` 內的 `preTransferDiffEvent`、`conflictEvent`、`conflictDto`、`conflictDecisionPayload`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
 device evidence 的 `commandContractVerified.mobileCommandReport.*` 與 `commandContractVerified.desktopCommandReport.*` 必須和頂層 command reports 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且所有 deploy checks 都必須有 name/detail 並是 `ok=true`；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。

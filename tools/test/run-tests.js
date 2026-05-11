@@ -34,6 +34,7 @@ const tests = [
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing event surface evidence', testMissingEventSurfaceEvidence],
     ['incremental evidence verifier rejects failed event surface report', testFailedEventSurfaceEvidence],
+    ['incremental evidence verifier rejects missing diff conflict surface', testMissingDiffConflictSurface],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
@@ -398,6 +399,18 @@ async function testFailedEventSurfaceEvidence() {
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('event surface report ok'));
     assert.ok(report.failed.includes('event surface missing events'));
+}
+
+async function testMissingDiffConflictSurface() {
+    const evidence = completeEvidence();
+    evidence.eventReport.diffConflictSurface.preTransferDiffEvent = {
+        files: [],
+        found: false,
+        name: 'preTransferDiffEvent',
+    };
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('event surface preTransferDiffEvent'));
 }
 
 async function testMixedCommandReportEvidence() {

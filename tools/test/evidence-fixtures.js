@@ -198,10 +198,10 @@ function eventItemFixture(name) {
 
 function diffConflictSurfaceFixture() {
     return {
-        conflictDecisionPayload: { files: [], found: false, name: 'conflictDecisionPayload' },
-        conflictDto: { files: [], found: false, name: 'conflictDto' },
-        conflictEvent: { files: [], found: false, name: 'conflictEvent' },
-        preTransferDiffEvent: { files: [], found: false, name: 'preTransferDiffEvent' },
+        conflictDecisionPayload: { files: ['src-tauri/src/domain/models/tt_sync.rs'], found: true, name: 'conflictDecisionPayload' },
+        conflictDto: { files: ['src-tauri/src/domain/models/tt_sync.rs'], found: true, name: 'conflictDto' },
+        conflictEvent: { files: ['src-tauri/src/infrastructure/tt_sync/runtime.rs'], found: true, name: 'conflictEvent' },
+        preTransferDiffEvent: { files: ['src-tauri/src/infrastructure/tt_sync/runtime.rs'], found: true, name: 'preTransferDiffEvent' },
     };
 }
 

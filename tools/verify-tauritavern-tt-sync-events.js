@@ -15,6 +15,13 @@ export const REQUIRED_TT_SYNC_EVENT_FIELDS = Object.freeze({
     progress: ['direction', 'phase', 'files_done', 'files_total', 'bytes_done', 'bytes_total', 'current_path'],
 });
 
+export const REQUIRED_TT_SYNC_DIFF_CONFLICT_SURFACES = Object.freeze([
+    'conflictDecisionPayload',
+    'conflictDto',
+    'conflictEvent',
+    'preTransferDiffEvent',
+]);
+
 const DIFF_CONFLICT_SURFACE_GROUPS = Object.freeze({
     conflictDecisionPayload: ['conflictDecisions', 'conflict_decisions'],
     conflictDto: ['TtSyncConflict', 'TtSyncConflictEvent'],
