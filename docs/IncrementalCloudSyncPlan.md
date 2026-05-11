@@ -241,7 +241,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 0：盤點與決策
 
-- [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。結果：本 repo 已提供 `npm run verify:tauritavern -- --source <path>` 檢查器；尚未取得實際手機 build 掃描報告。
+- [x] 確認目前手機 build 是否已包含 `tt_sync_*` commands。結果：已用 `/tmp/TauriTavern-inspect` 產生 Android `aarch64` debug APK，並以 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk --manifest /tmp/tt-sync-command-report-mobile-build.json --json` 驗證；報告為 `sourceKind=build-artifact`、`missingCommands=[]`，五個必要 `tt_sync_*` commands 皆有 trusted `build-artifact-string` evidence。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
 - [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
 - [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template、env 範例、`verify:tt-sync-deploy` 與 live smoke verifier；實際 VPS 啟動仍需在部署環境驗證。
