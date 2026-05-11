@@ -212,22 +212,22 @@ smoke verifier 會執行真實 HTTP 流程：
 
 ## 10. Final Evidence Gate
 
-收齊 `sourceKind=build-artifact` 的實際手機或桌面 build command report、event surface report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
+收齊 `sourceKind=build-artifact` 的實際手機與桌面 build command reports、event surface report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
 
 ```bash
-npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --events /tmp/tt-sync-event-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
+npm run verify:incremental-evidence -- --mobile-commands /tmp/tt-sync-mobile-command-report.json --desktop-commands /tmp/tt-sync-desktop-command-report.json --events /tmp/tt-sync-event-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
-command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind=build-artifact` 與 scanned file count。
-每個 command 必須包含 verifier 產生的 trusted `build-artifact-string` evidence。source tree command report 仍可做整合前檢查，但 final evidence gate 不接受 source tree 取代實際 build artifact。
+mobile 與 desktop command reports 都必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind=build-artifact` 與 scanned file count。
+每個 mobile/desktop command 都必須包含 verifier 產生的 trusted `build-artifact-string` evidence。source tree command report 仍可做整合前檢查，但 final evidence gate 不接受 source tree 取代實際 build artifact。
 event surface report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind`、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
-device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
+device evidence 的 `commandContractVerified.mobileCommandReport.*` 與 `commandContractVerified.desktopCommandReport.*` 必須和頂層 command reports 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且所有 deploy checks 都必須有 name/detail 並是 `ok=true`；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
 遠端 smoke report 必須包含可解析 timestamp 的 `completedAt`、`smokePath`、`deviceId`、`serverId`、push/pull `planIds`、`status.version`、fixture files/bytes 與 smoke paths，且所有 smoke checks 都必須有 name/detail 並是 `ok=true`。
 device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，phone/desktop saved server URL 也必須和 `server.url` 一致，phone/desktop saved server id 必須和 smoke report 的 `serverId` 一致，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
-device evidence 的 `testedAt`、`commandReport.scannedAt`、phone/desktop `restartVerifiedAt` 與 Android `capturedAt` 都必須是可解析 timestamp。
+device evidence 的 `testedAt`、mobile/desktop command report `scannedAt`、phone/desktop `restartVerifiedAt` 與 Android `capturedAt` 都必須是可解析 timestamp。
 `pullMtimePreserved.mtime.expectedModifiedMs` 必須等於 `pullMtimePreserved.mtime.actualModifiedMs`；`pullInterruptionSafe.interruption.beforeHash` 必須等於 `pullInterruptionSafe.interruption.afterHash`。
 
 device evidence JSON 需包含：
@@ -241,7 +241,7 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 final evidence gate 會檢查下列 dot-path 欄位：
 
 - `realLargeFirstSyncCompleted`: `metrics.durationMs`, `metrics.fileCount`, `metrics.totalBytes`
-- `commandContractVerified`: `contract.commands`, `contract.reportId`, `commandReport.scannedAt`, `commandReport.source`, `commandReport.sourceKind`
+- `commandContractVerified`: `contract.commands`, `contract.reportId`, `mobileCommandReport.scannedAt`, `mobileCommandReport.source`, `mobileCommandReport.sourceKind`, `desktopCommandReport.scannedAt`, `desktopCommandReport.source`, `desktopCommandReport.sourceKind`
 - `phoneDesktopPairingSaved`: `desktop.restartVerifiedAt`, `desktop.savedServerId`, `desktop.savedServerUrl`, `phone.restartVerifiedAt`, `phone.savedServerId`, `phone.savedServerUrl`
 - `liveProgressBridgeVisible`: `progress.bytesTransferred`, `progress.currentPath`, `progress.eventCount`, `progress.filesTransferred`, `progress.lastPhase`
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`, `mtime.path`
@@ -276,7 +276,8 @@ final evidence gate 會檢查下列 dot-path 欄位：
         "reportId": "contract-test-report-id",
         "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_push", "tt_sync_pull", "tt_sync_remove_server"]
       },
-      "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern.apk", "sourceKind": "build-artifact" }
+      "mobileCommandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern-mobile.apk", "sourceKind": "build-artifact" },
+      "desktopCommandReport": { "scannedAt": "2026-05-12T00:00:20+08:00", "source": "/builds/TauriTavern-desktop.dmg", "sourceKind": "build-artifact" }
     },
     "phoneDesktopPairingSaved": {
       "ok": true,

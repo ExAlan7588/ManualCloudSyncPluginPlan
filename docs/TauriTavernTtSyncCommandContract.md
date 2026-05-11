@@ -220,7 +220,7 @@ Do not return `(mock) ok`, empty success, partial success, or fallback success w
 
 A TauriTavern build is not considered compatible until:
 
-- `npm run verify:tauritavern -- --source <build>` passes for the actual mobile or desktop build artifact.
+- `npm run verify:tauritavern -- --source <build>` passes for both actual mobile and desktop build artifacts.
 - `npm run smoke:tt-sync-server -- --endpoint <url> --pairing-token <token>` passes against the deployed server.
 - Structured real device evidence confirms command contract behavior, pairing persistence, live progress, mtime preservation, interruption safety, LAN/cloud sync mutex behavior, Android weak-network errors, and a large first sync.
-- `npm run verify:incremental-evidence -- --commands <build-command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <remote-smoke-report.json> --device-evidence <device-evidence.json>` passes.
+- `npm run verify:incremental-evidence -- --mobile-commands <mobile-command-report.json> --desktop-commands <desktop-command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <remote-smoke-report.json> --device-evidence <device-evidence.json>` passes.

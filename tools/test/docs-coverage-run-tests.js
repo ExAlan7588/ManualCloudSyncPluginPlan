@@ -60,6 +60,12 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'README final evidence manifest output missing');
     assert.ok(options.verification.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'verification final evidence manifest output missing');
     assert.ok(options.plan.includes('--manifest <final-evidence-report.json>'), 'plan final evidence manifest output missing');
+    assert.ok(options.readme.includes('--mobile-commands /tmp/tt-sync-mobile-command-report.json'), 'README final evidence mobile command input missing');
+    assert.ok(options.readme.includes('--desktop-commands /tmp/tt-sync-desktop-command-report.json'), 'README final evidence desktop command input missing');
+    assert.ok(options.verification.includes('--mobile-commands /tmp/tt-sync-mobile-command-report.json'), 'verification final evidence mobile command input missing');
+    assert.ok(options.verification.includes('--desktop-commands /tmp/tt-sync-desktop-command-report.json'), 'verification final evidence desktop command input missing');
+    assert.ok(options.plan.includes('--mobile-commands <mobile-command-report.json>'), 'plan final evidence mobile command input missing');
+    assert.ok(options.plan.includes('--desktop-commands <desktop-command-report.json>'), 'plan final evidence desktop command input missing');
     assert.ok(options.readme.includes('--events /tmp/tt-sync-event-report.json'), 'README final evidence event input missing');
     assert.ok(options.verification.includes('--events /tmp/tt-sync-event-report.json'), 'verification final evidence event input missing');
     assert.ok(options.plan.includes('--events <event-report.json>'), 'plan final evidence event input missing');

@@ -9,8 +9,8 @@ import {
     writeManifest,
 } from '../verify-incremental-cloud-sync-evidence.js';
 import {
-    commandReportFixture,
     completeEvidence,
+    desktopCommandReportFixture,
     deployReportFixture,
     deviceEvidenceFixture,
     eventReportFixture,
@@ -26,6 +26,7 @@ const tests = [
     ['incremental evidence verifier writes manifest report', testFinalEvidenceManifestWritten],
     ['incremental evidence verifier labels malformed JSON input', testMalformedEvidenceJson],
     ['incremental evidence verifier labels missing JSON input', testMissingEvidenceJsonFile],
+    ['incremental evidence verifier rejects missing desktop command evidence', testMissingDesktopCommandEvidence],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
     ['incremental evidence verifier rejects source-tree command report as final evidence', testSourceTreeCommandReportEvidence],
@@ -99,17 +100,18 @@ async function testFinalEvidenceManifestWritten() {
 async function testMalformedEvidenceJson() {
     const tempDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-evidence-json-'));
     try {
-        const commandReportPath = path.join(tempDir, 'command-report.json');
-        await writeFile(commandReportPath, `${String.fromCharCode(123)} broken`);
+        const mobileCommandReportPath = path.join(tempDir, 'mobile-command-report.json');
+        await writeFile(mobileCommandReportPath, `${String.fromCharCode(123)} broken`);
         await assert.rejects(
             verifyIncrementalCloudSyncEvidence({
-                commandReportPath,
+                desktopCommandReport: desktopCommandReportFixture(),
                 deployReport: deployReportFixture(),
                 deviceEvidence: deviceEvidenceFixture(),
                 eventReport: eventReportFixture(),
+                mobileCommandReportPath,
                 smokeReport: smokeReportFixture(),
             }),
-            /command report must be valid JSON/,
+            /mobile command report must be valid JSON/,
         );
     } finally {
         await rm(tempDir, { force: true, recursive: true });
@@ -121,17 +123,27 @@ async function testMissingEvidenceJsonFile() {
     try {
         await assert.rejects(
             verifyIncrementalCloudSyncEvidence({
-                commandReportPath: path.join(tempDir, 'missing-command-report.json'),
+                desktopCommandReport: desktopCommandReportFixture(),
                 deployReport: deployReportFixture(),
                 deviceEvidence: deviceEvidenceFixture(),
                 eventReport: eventReportFixture(),
+                mobileCommandReportPath: path.join(tempDir, 'missing-command-report.json'),
                 smokeReport: smokeReportFixture(),
             }),
-            /command report cannot be read:/,
+            /mobile command report cannot be read:/,
         );
     } finally {
         await rm(tempDir, { force: true, recursive: true });
     }
+}
+
+async function testMissingDesktopCommandEvidence() {
+    const evidence = completeEvidence();
+    delete evidence.desktopCommandReport;
+    await assert.rejects(
+        verifyIncrementalCloudSyncEvidence(evidence),
+        /desktop command report path is required/,
+    );
 }
 
 async function testMissingDeviceEvidence() {
@@ -220,14 +232,14 @@ async function testFailedExtraReportCheck() {
 
 async function testInvalidEvidenceTimestamp() {
     const evidence = completeEvidence();
-    evidence.commandReport.scannedAt = 'not-a-date';
-    evidence.deviceEvidence.checks.commandContractVerified.commandReport.scannedAt = 'not-a-date';
+    evidence.mobileCommandReport.scannedAt = 'not-a-date';
+    evidence.deviceEvidence.checks.commandContractVerified.mobileCommandReport.scannedAt = 'not-a-date';
     evidence.deviceEvidence.checks.androidWeakNetworkErrorVisible.android.capturedAt = 'not-a-date';
     evidence.deviceEvidence.testedAt = 'not-a-date';
     evidence.smokeReport.completedAt = 'not-a-date';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
-    assert.ok(report.failed.includes('command report scannedAt'));
+    assert.ok(report.failed.includes('mobile command report scannedAt'));
     assert.ok(report.failed.includes('device evidence testedAt'));
     assert.ok(report.failed.includes('smoke report completedAt'));
     assert.ok(report.failed.includes('Android weak-network error is visible'));
@@ -390,44 +402,44 @@ async function testFailedEventSurfaceEvidence() {
 
 async function testMixedCommandReportEvidence() {
     const evidence = completeEvidence();
-    evidence.deviceEvidence.checks.commandContractVerified.commandReport.source = '/builds/other.apk';
-    evidence.deviceEvidence.checks.commandContractVerified.commandReport.sourceKind = 'source-tree';
+    evidence.deviceEvidence.checks.commandContractVerified.mobileCommandReport.source = '/builds/other.apk';
+    evidence.deviceEvidence.checks.commandContractVerified.mobileCommandReport.sourceKind = 'source-tree';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
-    assert.ok(report.failed.includes('same command report source'));
-    assert.ok(report.failed.includes('same command report sourceKind'));
+    assert.ok(report.failed.includes('same mobile command report source'));
+    assert.ok(report.failed.includes('same mobile command report sourceKind'));
 }
 
 async function testUntrustedCommandEvidence() {
     const evidence = completeEvidence();
-    evidence.commandReport.commands[0].evidence[0].kind = 'untrusted-string';
+    evidence.mobileCommandReport.commands[0].evidence[0].kind = 'untrusted-string';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
-    assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
+    assert.ok(report.failed.includes(`mobile command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
 }
 
 async function testSourceTreeCommandReportEvidence() {
     const evidence = completeEvidence();
-    evidence.commandReport = sourceTreeCommandReportFixture();
-    evidence.deviceEvidence.checks.commandContractVerified.commandReport = {
-        scannedAt: evidence.commandReport.scannedAt,
-        source: evidence.commandReport.source,
-        sourceKind: evidence.commandReport.sourceKind,
+    evidence.mobileCommandReport = sourceTreeCommandReportFixture();
+    evidence.deviceEvidence.checks.commandContractVerified.mobileCommandReport = {
+        scannedAt: evidence.mobileCommandReport.scannedAt,
+        source: evidence.mobileCommandReport.source,
+        sourceKind: evidence.mobileCommandReport.sourceKind,
     };
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
-    assert.ok(report.failed.includes('command report is build artifact'));
+    assert.ok(report.failed.includes('mobile command report is build artifact'));
 }
 
 async function testBuildArtifactEvidenceKind() {
     const evidence = completeEvidence();
-    evidence.commandReport.commands[0].evidence = [
+    evidence.mobileCommandReport.commands[0].evidence = [
         { file: 'src-tauri/src/commands.rs', kind: 'tauri-command-declaration' },
         { file: 'src-tauri/src/main.rs', kind: 'tauri-handler-registration' },
     ];
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
-    assert.ok(report.failed.includes(`command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
+    assert.ok(report.failed.includes(`mobile command ${REQUIRED_TT_SYNC_COMMANDS[0]}`));
 }
 
 async function testIncompleteCommandContractCoverage() {

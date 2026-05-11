@@ -36,9 +36,12 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ['commandContractVerified', 'TauriTavern backend command contract verified', [
         ['contract.commands', FIELD_TEXT_ARRAY],
         ['contract.reportId', FIELD_TEXT],
-        ['commandReport.scannedAt', FIELD_TIMESTAMP],
-        ['commandReport.source', FIELD_TEXT],
-        ['commandReport.sourceKind', FIELD_TEXT],
+        ['desktopCommandReport.scannedAt', FIELD_TIMESTAMP],
+        ['desktopCommandReport.source', FIELD_TEXT],
+        ['desktopCommandReport.sourceKind', FIELD_TEXT],
+        ['mobileCommandReport.scannedAt', FIELD_TIMESTAMP],
+        ['mobileCommandReport.source', FIELD_TEXT],
+        ['mobileCommandReport.sourceKind', FIELD_TEXT],
     ]],
     ['phoneDesktopPairingSaved', 'phone and desktop save paired server', [
         ['desktop.restartVerifiedAt', FIELD_TIMESTAMP],

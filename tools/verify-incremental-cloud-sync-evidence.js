@@ -43,7 +43,8 @@ const FINAL_COMMAND_SOURCE_KIND = 'build-artifact';
 export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
     const checks = [
-        ...commandChecks(evidence.commandReport),
+        ...commandChecks(evidence.mobileCommandReport, 'mobile'),
+        ...commandChecks(evidence.desktopCommandReport, 'desktop'),
         ...eventChecks(evidence.eventReport),
         ...deployChecks(evidence.deployReport),
         ...smokeChecks(evidence.smokeReport),
@@ -65,7 +66,8 @@ export function formatEvidenceReport(report) {
 
 async function loadEvidence(options) {
     return {
-        commandReport: await loadReport({ label: 'command report', object: options.commandReport, path: options.commandReportPath }),
+        mobileCommandReport: await loadReport({ label: 'mobile command report', object: options.mobileCommandReport, path: options.mobileCommandReportPath }),
+        desktopCommandReport: await loadReport({ label: 'desktop command report', object: options.desktopCommandReport, path: options.desktopCommandReportPath }),
         eventReport: await loadReport({ label: 'event surface report', object: options.eventReport, path: options.eventReportPath }),
         deployReport: await loadReport({ label: 'deploy report', object: options.deployReport, path: options.deployReportPath }),
         deviceEvidence: await loadReport({ label: 'device evidence', object: options.deviceEvidence, path: options.deviceEvidencePath }),
@@ -99,27 +101,27 @@ function parseReportJson(options) {
     }
 }
 
-function commandChecks(report) {
+function commandChecks(report, target) {
     return [
-        check('command report ok', report?.ok === true, 'command report must have ok=true'),
-        check('command report scannedAt', isTimestamp(report?.scannedAt), 'command report must include a parseable scannedAt timestamp'),
-        check('command report source', hasText(report?.source), 'command report must include source path or artifact'),
-        check('command report source kind', COMMAND_SOURCE_KINDS.has(report?.sourceKind), 'command report must include sourceKind'),
-        check('command report is build artifact', report?.sourceKind === FINAL_COMMAND_SOURCE_KIND, 'final evidence command report must come from an actual build artifact'),
-        check('command report scanned files', Number(report?.scannedFiles) > 0, 'command report must scan at least one file'),
-        check('no missing commands', Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, 'missingCommands must be empty'),
-        ...REQUIRED_TT_SYNC_COMMANDS.map(command => commandFoundCheck(report, command)),
+        check(`${target} command report ok`, report?.ok === true, `${target} command report must have ok=true`),
+        check(`${target} command report scannedAt`, isTimestamp(report?.scannedAt), `${target} command report must include a parseable scannedAt timestamp`),
+        check(`${target} command report source`, hasText(report?.source), `${target} command report must include source path or artifact`),
+        check(`${target} command report source kind`, COMMAND_SOURCE_KINDS.has(report?.sourceKind), `${target} command report must include sourceKind`),
+        check(`${target} command report is build artifact`, report?.sourceKind === FINAL_COMMAND_SOURCE_KIND, `${target} command report must come from an actual build artifact`),
+        check(`${target} command report scanned files`, Number(report?.scannedFiles) > 0, `${target} command report must scan at least one file`),
+        check(`${target} no missing commands`, Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, `${target} missingCommands must be empty`),
+        ...REQUIRED_TT_SYNC_COMMANDS.map(command => commandFoundCheck(report, command, target)),
     ];
 }
 
-function commandFoundCheck(report, command) {
+function commandFoundCheck(report, command, target) {
     const item = Array.isArray(report?.commands)
         ? report.commands.find(commandReport => commandReport.name === command)
         : null;
     return check(
-        `command ${command}`,
+        `${target} command ${command}`,
         Boolean(item?.found && commandEvidenceCoversCommand(trustedCommandEvidence(item), report?.sourceKind)),
-        `${command} must have evidence compatible with command report sourceKind`,
+        `${target} ${command} must have evidence compatible with command report sourceKind`,
     );
 }
 
@@ -218,25 +220,33 @@ function consistencyChecks(evidence) {
 
 function commandEvidenceConsistencyChecks(evidence) {
     return [
-        check(
-            'same command report source',
-            sameText(evidence.commandReport?.source, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.source),
-            'command report source and device commandContractVerified.commandReport.source must match',
-        ),
-        check(
-            'same command report scannedAt',
-            sameText(evidence.commandReport?.scannedAt, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.scannedAt),
-            'command report scannedAt and device commandContractVerified.commandReport.scannedAt must match',
-        ),
-        check(
-            'same command report sourceKind',
-            sameText(evidence.commandReport?.sourceKind, evidence.deviceEvidence?.checks?.commandContractVerified?.commandReport?.sourceKind),
-            'command report sourceKind and device commandContractVerified.commandReport.sourceKind must match',
-        ),
+        ...commandReportReferenceChecks({ report: evidence.mobileCommandReport, target: 'mobile', deviceEvidence: evidence.deviceEvidence }),
+        ...commandReportReferenceChecks({ report: evidence.desktopCommandReport, target: 'desktop', deviceEvidence: evidence.deviceEvidence }),
         check(
             'command contract covers required commands',
             arrayIncludesAllTexts(deviceCheckValue(evidence, 'commandContractVerified', 'contract.commands'), REQUIRED_TT_SYNC_COMMANDS),
             'commandContractVerified.contract.commands must include every required tt_sync command',
+        ),
+    ];
+}
+
+function commandReportReferenceChecks(options) {
+    const reference = options.deviceEvidence?.checks?.commandContractVerified?.[`${options.target}CommandReport`];
+    return [
+        check(
+            `same ${options.target} command report source`,
+            sameText(options.report?.source, reference?.source),
+            `${options.target} command report source and device evidence reference must match`,
+        ),
+        check(
+            `same ${options.target} command report scannedAt`,
+            sameText(options.report?.scannedAt, reference?.scannedAt),
+            `${options.target} command report scannedAt and device evidence reference must match`,
+        ),
+        check(
+            `same ${options.target} command report sourceKind`,
+            sameText(options.report?.sourceKind, reference?.sourceKind),
+            `${options.target} command report sourceKind and device evidence reference must match`,
         ),
     ];
 }
@@ -465,8 +475,9 @@ function parseCliOptions() {
     return parseArgs({
         allowPositionals: false,
         options: {
-            commands: { type: 'string' },
+            'desktop-commands': { type: 'string' },
             events: { type: 'string' },
+            'mobile-commands': { type: 'string' },
             deploy: { type: 'string' },
             'device-evidence': { type: 'string' },
             help: { short: 'h', type: 'boolean' },
@@ -479,7 +490,7 @@ function parseCliOptions() {
 
 function usageText() {
     return [
-        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --commands <command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
+        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --mobile-commands <mobile-command-report.json> --desktop-commands <desktop-command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
         '',
         'Validates the external evidence needed to close docs/IncrementalCloudSyncPlan.md without accepting local-only proxy signals.',
     ].join('\n');
@@ -504,8 +515,9 @@ async function runCli() {
 
 function cliInput(options) {
     return {
-        commandReportPath: options.commands,
+        desktopCommandReportPath: options['desktop-commands'],
         eventReportPath: options.events,
+        mobileCommandReportPath: options['mobile-commands'],
         deployReportPath: options.deploy,
         deviceEvidencePath: options['device-evidence'],
         smokeReportPath: options.smoke,

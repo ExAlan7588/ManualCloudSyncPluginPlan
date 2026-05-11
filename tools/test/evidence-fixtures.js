@@ -28,7 +28,16 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
     },
     commandContractVerified: {
         contract: { commands: REQUIRED_TT_SYNC_COMMANDS, reportId: 'contract-test-report-fixture' },
-        commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/builds/TauriTavern.apk', sourceKind: 'build-artifact' },
+        desktopCommandReport: {
+            scannedAt: '2026-05-12T00:00:20+08:00',
+            source: '/builds/TauriTavern-desktop.dmg',
+            sourceKind: 'build-artifact',
+        },
+        mobileCommandReport: {
+            scannedAt: '2026-05-12T00:00:00+08:00',
+            source: '/builds/TauriTavern-mobile.apk',
+            sourceKind: 'build-artifact',
+        },
     },
     conflictResolutionVisible: {
         conflict: {
@@ -102,7 +111,8 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
 
 export function completeEvidence() {
     return {
-        commandReport: commandReportFixture(),
+        desktopCommandReport: desktopCommandReportFixture(),
+        mobileCommandReport: mobileCommandReportFixture(),
         eventReport: eventReportFixture(),
         deployReport: deployReportFixture(),
         deviceEvidence: deviceEvidenceFixture(),
@@ -110,26 +120,42 @@ export function completeEvidence() {
     };
 }
 
-export function commandReportFixture() {
+export function mobileCommandReportFixture() {
+    return commandReportFixture({
+        file: 'TauriTavern-mobile.apk',
+        scannedAt: '2026-05-12T00:00:00+08:00',
+        source: '/builds/TauriTavern-mobile.apk',
+    });
+}
+
+export function desktopCommandReportFixture() {
+    return commandReportFixture({
+        file: 'TauriTavern-desktop.dmg',
+        scannedAt: '2026-05-12T00:00:20+08:00',
+        source: '/builds/TauriTavern-desktop.dmg',
+    });
+}
+
+function commandReportFixture(options) {
     return {
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({
-            evidence: [{ file: 'TauriTavern.apk', kind: 'build-artifact-string' }],
-            files: ['TauriTavern.apk'],
+            evidence: [{ file: options.file, kind: 'build-artifact-string' }],
+            files: [options.file],
             found: true,
             ignoredFiles: [],
             name: command,
         })),
         missingCommands: [],
         ok: true,
-        scannedAt: '2026-05-12T00:00:00+08:00',
+        scannedAt: options.scannedAt,
         scannedFiles: 1,
-        source: '/builds/TauriTavern.apk',
+        source: options.source,
         sourceKind: 'build-artifact',
     };
 }
 
 export function sourceTreeCommandReportFixture() {
-    const report = commandReportFixture();
+    const report = mobileCommandReportFixture();
     return {
         ...report,
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({
