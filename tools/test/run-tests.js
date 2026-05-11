@@ -12,6 +12,8 @@ import {
 } from '../verify-incremental-cloud-sync-evidence.js';
 
 const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContract.md', import.meta.url);
+const INCREMENTAL_PLAN_DOC = new URL('../../docs/IncrementalCloudSyncPlan.md', import.meta.url);
+const README_DOC = new URL('../../README.md', import.meta.url);
 const TEST_BULK_FILE_BYTES = 128;
 const TEST_BULK_FILES = 3;
 const TEST_MTIME_MS = 1778500000000;
@@ -137,15 +139,24 @@ for (const [name, test] of tests) {
 
 async function testVerificationDocsCoverage() {
     const contract = await readFile(COMMAND_CONTRACT_DOC, 'utf8');
+    const plan = await readFile(INCREMENTAL_PLAN_DOC, 'utf8');
+    const readme = await readFile(README_DOC, 'utf8');
     const verification = await readFile(VERIFICATION_DOC, 'utf8');
     assert.ok(verification.includes('--deploy'), 'final evidence deploy input missing from verification doc');
     assert.ok(verification.includes('--allow-placeholders'), 'deploy placeholder policy missing from verification doc');
+    assertFinalEvidenceManifestDocumented({ plan, readme, verification });
     for (const command of REQUIRED_TT_SYNC_COMMANDS) {
         assert.ok(contract.includes(command), `${command} missing from command contract doc`);
     }
     for (const item of REQUIRED_DEVICE_CHECKS) {
         assertDeviceRequirementDocumented({ item, verification });
     }
+}
+
+function assertFinalEvidenceManifestDocumented(options) {
+    assert.ok(options.readme.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'README final evidence manifest output missing');
+    assert.ok(options.verification.includes('--manifest /tmp/tt-sync-final-evidence-report.json'), 'verification final evidence manifest output missing');
+    assert.ok(options.plan.includes('--manifest <final-evidence-report.json>'), 'plan final evidence manifest output missing');
 }
 
 function assertDeviceRequirementDocumented(options) {
