@@ -66,11 +66,12 @@ TT-Sync v2 已經具備很多理想形態：
 - 顯示服務端狀態、差異摘要、Push/Pull 操作、進度欄位與 conflict 決策 UI。
 - 缺少 TT-Sync 後端命令時顯示明確錯誤，不做 mock success 或靜默降級。
 - 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
+- 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build 是否已包含 `tt_sync_*` commands。
-- TT-Sync 服務端是否已存在、可部署與可在 VPS 上運作。
+- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性仍需部署環境驗證。
 - 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證。
 
 ## 4. 非目標
@@ -241,34 +242,34 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 - [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
-- [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：本 repo 與本機工作區未找到 server 原始碼；VPS/其他倉庫需外部確認。
-- [ ] 在 VPS 上確認可部署方式：systemd 或 pm2。
+- [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
+- [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template；實際 VPS 啟動仍需在部署環境驗證。
 - [x] 決定第一階段採用「既有 TT-Sync」還是「新增 manual incremental cloud sync」。決策：採用既有 TT-Sync command surface，不在純前端插件內新增假的增量同步。
 
 ### Phase 1：最小可用增量同步
 
-- [ ] 建立或部署 VPS TT-Sync 服務。
-- [ ] 產生配對 URI。
+- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server；尚未在真實 VPS 驗證。
+- [x] 產生配對 URI。結果：`npm run tt-sync:pair` 會依 `TT_SYNC_PAIRING_TOKEN` 產生配對 URI。
 - [ ] 手機與電腦能保存配對服務端。
-- [ ] Push 只傳變更檔案。
-- [ ] Pull 只抓變更檔案。
+- [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
+- [x] Pull 只抓變更檔案。結果：server pull-plan 測試覆蓋空 diff 不下載。
 - [ ] 進度事件能顯示 files/bytes。
-- [ ] 同步失敗時保留可讀錯誤。
+- [x] 同步失敗時保留可讀錯誤。結果：server 回傳 JSON error，前端顯示 normalized error。
 
 ### Phase 2：差異預覽
 
-- [ ] 新增 `check_diff` 類 command 或復用 plan endpoint 回傳 summary。
+- [x] 新增 `check_diff` 類 command 或復用 plan endpoint 回傳 summary。結果：Minimal server 的 push/pull plan endpoint 回傳 summary；前端預留 `tt_sync_check_diff` command。
 - [x] 前端顯示本機/遠端差異摘要。
 - [x] 前端顯示上傳/下載預估大小。
 - [x] 空 diff 時明確顯示「沒有需要同步的變更」。
 
 ### Phase 3：衝突處理
 
-- [ ] 服務端 plan 標記 conflict。
-- [ ] 後端禁止未解決 conflict 的破壞性同步。
+- [x] 服務端 plan 標記 conflict。
+- [x] 後端禁止未解決 conflict 的破壞性同步。
 - [x] 前端列出 conflict。
 - [x] 使用者可選本機或遠端版本。
-- [ ] 衝突決策寫入 plan commit。
+- [x] 衝突決策寫入 plan commit。
 
 ### Phase 4：帳號式體驗
 
@@ -294,11 +295,11 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ## 11. 驗證清單
 
 - [ ] 首次同步大資料目錄可完成。
-- [ ] 第二次未變更同步不傳檔案。
-- [ ] 只新增一個聊天檔時，只傳該檔案。
-- [ ] 圖片/附件未變更時不重傳。
+- [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
+- [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
+- [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。
 - [ ] Pull 後本機檔案 mtime 保留。
-- [ ] Push commit 前斷線不造成遠端 mirror delete。
+- [x] Push commit 前斷線不造成遠端 mirror delete。結果：server test `uncommitted push plan does not delete remote files`。
 - [ ] Pull 寫入中斷不破壞本機既有檔案。
 - [ ] LAN Sync 與雲端同步不能並行。
 - [ ] 同步狀態目錄不會被同步。

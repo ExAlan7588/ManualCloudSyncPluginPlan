@@ -62,6 +62,26 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 如果後端回傳 conflict 清單，面板會要求每個路徑選擇「使用本機」或「使用遠端」後才允許 Push/Pull。這個插件只負責 UI 與 command 呼叫；manifest 掃描、plan、原子寫入、mtime 保留、mirror delete 與 commit 必須由 TauriTavern TT-Sync 後端實作。
 
+## Minimal TT-Sync Server
+
+本 repo 內含一個無第三方依賴的最小 TT-Sync v2-compatible server，供尚未取得上游 TT-Sync server artifact 時部署測試：
+
+```bash
+npm install
+TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:server
+TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:pair
+```
+
+主要環境變數：
+
+- `TT_SYNC_DATA_DIR`：資料目錄，預設 `.tt-sync-data`
+- `TT_SYNC_HOST`：監聽位址，預設 `127.0.0.1`
+- `TT_SYNC_PORT`：監聽 port，預設 `8787`
+- `TT_SYNC_PUBLIC_URL`：產生配對 URI 時使用的公開 URL
+- `TT_SYNC_PAIRING_TOKEN`：配對必填 token
+
+服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)。
+
 ## WebDAV 使用方式
 
 第一次設定時，預設就是 WebDAV Basic，只需要先填：
