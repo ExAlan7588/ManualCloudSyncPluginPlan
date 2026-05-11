@@ -59,6 +59,7 @@ const tests = [
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
+    ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
@@ -290,6 +291,14 @@ async function testPlaceholderDeployEvidence() {
     assert.ok(report.failed.includes('deploy report real env mode'));
 }
 
+async function testMissingDeviceIds() {
+    const evidence = completeEvidence();
+    delete evidence.deviceEvidence.devices[0].deviceId;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('device coverage'));
+}
+
 function commandReportFixture() {
     return {
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({ files: ['src-tauri/src/commands.rs'], found: true, name: command })),
@@ -339,8 +348,8 @@ function deviceEvidenceFixture() {
     return {
         checks: Object.fromEntries(REQUIRED_DEVICE_CHECKS.map(deviceCheckEntry)),
         devices: [
-            { model: 'Pixel', platform: 'Android 15' },
-            { model: 'Workstation', platform: 'Linux desktop' },
+            { deviceId: 'android-device-fixture', model: 'Pixel', platform: 'Android 15' },
+            { deviceId: 'desktop-device-fixture', model: 'Workstation', platform: 'Linux desktop' },
         ],
         server: {
             url: 'https://sync.example.com',

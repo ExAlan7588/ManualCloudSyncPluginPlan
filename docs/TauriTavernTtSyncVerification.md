@@ -184,7 +184,7 @@ command report 必須包含 `scannedAt`、實際 source 與 scanned file count�
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且包含 direct Node `ExecStart`、hardening、public URL、port、non-placeholder pairing token 與 data dir writable path 檢查；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
 遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、fixture files/bytes 與 smoke paths。
-device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL。
+device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
 
 device evidence JSON 需包含：
 
@@ -213,8 +213,8 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "desktopBuildId": "desktop-build-id"
   },
   "devices": [
-    { "platform": "Android 15", "model": "Pixel" },
-    { "platform": "Linux desktop", "model": "Workstation" }
+    { "deviceId": "android-device-id", "platform": "Android 15", "model": "Pixel" },
+    { "deviceId": "desktop-device-id", "platform": "Linux desktop", "model": "Workstation" }
   ],
   "server": {
     "url": "https://sync.example.com"

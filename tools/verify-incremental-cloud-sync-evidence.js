@@ -167,7 +167,7 @@ function deviceChecks(evidence) {
         check('device evidence server URL', hasText(evidence?.server?.url), 'device evidence must include server.url'),
         check('mobile build id', hasText(evidence?.tauriTavern?.mobileBuildId), 'mobile build id is required'),
         check('desktop build id', hasText(evidence?.tauriTavern?.desktopBuildId), 'desktop build id is required'),
-        check('device coverage', hasDeviceCoverage(evidence), 'at least Android phone and desktop device records are required'),
+        check('device coverage', hasDeviceCoverage(evidence), 'at least Android phone and desktop device records with deviceId are required'),
         ...REQUIRED_DEVICE_CHECKS.map(item => deviceCheck(evidence, item)),
     ];
 }
@@ -235,7 +235,15 @@ function requiredFieldPaths(fieldSpecs) {
 
 function hasDeviceCoverage(evidence) {
     const devices = Array.isArray(evidence?.devices) ? evidence.devices : [];
-    return devices.some(isAndroidDevice) && devices.some(isDesktopDevice);
+    return devices.some(isCoveredAndroidDevice) && devices.some(isCoveredDesktopDevice);
+}
+
+function isCoveredAndroidDevice(device) {
+    return hasText(device?.deviceId) && isAndroidDevice(device);
+}
+
+function isCoveredDesktopDevice(device) {
+    return hasText(device?.deviceId) && isDesktopDevice(device);
 }
 
 function isAndroidDevice(device) {

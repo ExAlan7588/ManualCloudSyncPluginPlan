@@ -16,10 +16,12 @@ export function createDeviceEvidenceTemplate(options = {}) {
         checks: Object.fromEntries(REQUIRED_DEVICE_CHECKS.map(deviceCheckTemplate)),
         devices: [
             {
+                deviceId: '',
                 model: options.androidModel || '',
                 platform: options.androidPlatform || DEFAULT_ANDROID_PLATFORM,
             },
             {
+                deviceId: '',
                 model: options.desktopModel || '',
                 platform: options.desktopPlatform || DEFAULT_DESKTOP_PLATFORM,
             },
