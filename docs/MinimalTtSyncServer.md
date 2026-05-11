@@ -29,6 +29,8 @@ Environment variables:
 | `TT_SYNC_PORT` | no | `8787` | Port for the HTTP listener. |
 | `TT_SYNC_PUBLIC_URL` | no | listener URL | Public URL embedded in generated pairing URIs. |
 | `TT_SYNC_PAIRING_TOKEN` | yes for pairing | none | Token required by `POST /v2/pair/complete`. |
+| `TT_SYNC_ACCOUNT_USERNAME` | yes for login | none | Account username for `POST /v2/account/login`. |
+| `TT_SYNC_ACCOUNT_PASSWORD` | yes for login | none | Account password for `POST /v2/account/login`. |
 
 If `TT_SYNC_PAIRING_TOKEN` is missing, pairing fails with an explicit 500 error. Existing authenticated namespaces can still use non-pairing endpoints.
 
@@ -57,6 +59,8 @@ Authorization: Bearer <namespace auth token>
 ```
 
 The minimal server stores one auth token per namespace. Pairing creates the namespace if needed and returns the namespace auth token to the trusted TauriTavern backend.
+
+Account login creates expiring access and refresh tokens stored in `namespace.json`. Authenticated endpoints accept either the namespace auth token or a live account access token.
 
 ## Manifest Entry
 
@@ -109,6 +113,49 @@ Body:
   "deviceId": "device-id"
 }
 ```
+
+### `POST /v2/account/login`
+
+Body:
+
+```json
+{
+  "namespace": "default",
+  "username": "user",
+  "password": "password"
+}
+```
+
+Returns an access token, refresh token, token expiry, namespace, and server id.
+
+### `POST /v2/account/token/refresh`
+
+Body:
+
+```json
+{
+  "namespace": "default",
+  "refreshToken": "..."
+}
+```
+
+Returns a replacement access/refresh token pair.
+
+### `GET /v2/devices?namespace=default`
+
+Returns paired devices and their `lastSeenAt` / `lastSyncAt` metadata.
+
+### `GET /v2/history?namespace=default`
+
+Returns recent committed sync plans.
+
+### `GET /v2/rollback-points?namespace=default`
+
+Returns rollback points created before push commits.
+
+### `POST /v2/rollback-points/{rollback_id}/restore?namespace=default`
+
+Restores the files and manifest entries captured by a rollback point.
 
 ### `POST /v2/sync/push-plan`
 
@@ -193,6 +240,8 @@ Commits a push plan by atomically moving staged uploads into namespace storage a
       manifest.json
       files/
         ...
+      rollback/
+        <rollback_id>.json
   plans/
     <plan_id>/
       plan.json

@@ -79,6 +79,8 @@ TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:pair
 - `TT_SYNC_PORT`：監聽 port，預設 `8787`
 - `TT_SYNC_PUBLIC_URL`：產生配對 URI 時使用的公開 URL
 - `TT_SYNC_PAIRING_TOKEN`：配對必填 token
+- `TT_SYNC_ACCOUNT_USERNAME`：帳號登入使用者名稱
+- `TT_SYNC_ACCOUNT_PASSWORD`：帳號登入密碼
 
 Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，內容包含 phase、files、bytes 與目前路徑；檔案下載會回傳 `X-TT-Sync-Modified-Ms`，讓 TauriTavern 後端可保留 mtime。服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)。
 

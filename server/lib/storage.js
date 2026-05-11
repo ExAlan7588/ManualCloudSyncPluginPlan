@@ -5,6 +5,11 @@ import { encodePath, safeName } from './encoding.js';
 import { forbidden, notFound, serverError, unauthorized } from './http-error.js';
 import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
 
+const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_HISTORY_ITEMS = 100;
+const MAX_ROLLBACK_POINTS = 20;
+
 export class TtSyncStorage {
     constructor(options) {
         this.rootDir = path.resolve(options.rootDir);
@@ -35,14 +40,43 @@ export class TtSyncStorage {
         if (!token) {
             throw unauthorized('Missing bearer token');
         }
-        if (!constantTimeEqual(token, record.authToken)) {
+        if (!constantTimeEqual(token, record.authToken) && !activeAccessToken(record, token)) {
             throw forbidden('Invalid bearer token');
         }
         return record;
     }
 
+    async loginAccount(options) {
+        assertAccountLogin(options);
+        const namespace = safeName(options.namespace || 'default', 'namespace');
+        const record = await this.readNamespace(namespace).catch(error => {
+            if (error.status === 404) {
+                return this.createNamespace(namespace);
+            }
+            throw error;
+        });
+        record.account = { username: process.env.TT_SYNC_ACCOUNT_USERNAME };
+        const session = addSession(record);
+        await this.writeNamespace(namespace, record);
+        return sessionResponse(record, session);
+    }
+
+    async refreshAccountToken(namespace, refreshToken) {
+        const record = await this.readNamespace(namespace);
+        const existing = activeRefreshSession(record, refreshToken);
+        if (!existing) {
+            throw unauthorized('Invalid refresh token');
+        }
+        record.sessions = record.sessions.filter(session => session.refreshToken !== refreshToken);
+        const session = addSession(record);
+        await this.writeNamespace(namespace, record);
+        return sessionResponse(record, session);
+    }
+
     async openSession(namespace, deviceId) {
         const record = await this.readNamespace(namespace);
+        touchDevice(record, String(deviceId || '').trim(), { lastSeenAt: new Date().toISOString() });
+        await this.writeNamespace(namespace, record);
         return {
             namespace,
             deviceId: String(deviceId || '').trim(),
@@ -98,12 +132,40 @@ export class TtSyncStorage {
         if (plan.committedAt) {
             throw forbidden(`Plan already committed: ${plan.id}`);
         }
+        let rollbackPoint = null;
         if (plan.kind === 'push') {
+            rollbackPoint = await this.createRollbackPoint(plan);
             await this.commitPushPlan(plan, body.conflictDecisions || {});
         }
         plan.committedAt = new Date().toISOString();
         await this.writePlan(plan);
+        await this.recordCommittedPlan(plan, rollbackPoint || null);
         return plan;
+    }
+
+    async listDevices(namespace) {
+        return (await this.readNamespace(namespace)).devices || [];
+    }
+
+    async listHistory(namespace) {
+        return (await this.readNamespace(namespace)).syncHistory || [];
+    }
+
+    async listRollbackPoints(namespace) {
+        return (await this.readNamespace(namespace)).rollbackPoints || [];
+    }
+
+    async restoreRollbackPoint(namespace, rollbackId) {
+        const point = await readJson(this.rollbackPointPath(namespace, rollbackId)).catch(error => {
+            if (error.code === 'ENOENT') {
+                throw notFound(`Rollback point not found: ${rollbackId}`);
+            }
+            throw error;
+        });
+        const manifest = new Map((await this.readManifest(namespace)).map(entry => [entry.path, entry]));
+        await this.restoreRollbackFiles(namespace, point, manifest);
+        await this.writeManifest(namespace, Array.from(manifest.values()).sort(compareEntries));
+        return { restoredAt: new Date().toISOString(), rollbackId };
     }
 
     namespaceDir(namespace) {
@@ -134,6 +196,10 @@ export class TtSyncStorage {
         return path.join(this.namespaceDir(namespace), 'files', encodePath(syncPath));
     }
 
+    rollbackPointPath(namespace, rollbackId) {
+        return path.join(this.namespaceDir(namespace), 'rollback', `${safeName(rollbackId, 'rollback id')}.json`);
+    }
+
     async readNamespace(namespace) {
         return readJson(this.namespacePath(namespace)).catch(error => {
             if (error.code === 'ENOENT') {
@@ -149,11 +215,15 @@ export class TtSyncStorage {
             serverId: `minimal-${namespace}`,
             authToken: randomToken(),
             devices: [],
+            rollbackPoints: [],
+            sessions: [],
+            syncHistory: [],
             createdAt: new Date().toISOString(),
         };
     }
 
     async writeNamespace(namespace, record) {
+        record.sessions = pruneExpiredSessions(record.sessions || []);
         await mkdir(path.join(this.namespaceDir(namespace), 'files'), { recursive: true });
         await writeJsonAtomic(this.namespacePath(namespace), record);
         await writeJsonAtomic(this.manifestPath(namespace), await this.readManifest(namespace).catch(() => []));
@@ -198,6 +268,57 @@ export class TtSyncStorage {
             return;
         }
         await this.deleteRemote(namespace, conflictItem.path, manifest);
+    }
+
+    async createRollbackPoint(plan) {
+        const snapshot = await this.buildRollbackSnapshot(plan);
+        await writeJsonAtomic(this.rollbackPointPath(plan.namespace, snapshot.id), snapshot);
+        return rollbackPointSummary(snapshot);
+    }
+
+    async buildRollbackSnapshot(plan) {
+        const manifest = new Map((await this.readManifest(plan.namespace)).map(entry => [entry.path, entry]));
+        const files = [];
+        for (const syncPath of affectedPaths(plan)) {
+            files.push(await this.rollbackFileSnapshot(plan.namespace, syncPath, manifest.get(syncPath)));
+        }
+        return {
+            id: randomToken(10),
+            createdAt: new Date().toISOString(),
+            files,
+            planId: plan.id,
+        };
+    }
+
+    async rollbackFileSnapshot(namespace, syncPath, entry) {
+        if (!entry) {
+            return { entry: null, path: syncPath };
+        }
+        const content = await this.readRemoteFile(namespace, entry);
+        return { contentBase64: content.toString('base64'), entry, path: syncPath };
+    }
+
+    async restoreRollbackFiles(namespace, point, manifest) {
+        for (const file of point.files) {
+            if (!file.entry) {
+                await this.deleteRemote(namespace, file.path, manifest);
+                continue;
+            }
+            await writeFileAtomic(this.remoteFilePath(namespace, file.path), Buffer.from(file.contentBase64, 'base64'));
+            await utimes(this.remoteFilePath(namespace, file.path), new Date(), new Date(file.entry.modifiedMs));
+            manifest.set(file.path, file.entry);
+        }
+    }
+
+    async recordCommittedPlan(plan, rollbackPoint) {
+        const record = await this.readNamespace(plan.namespace);
+        const committedAt = plan.committedAt;
+        touchDevice(record, plan.deviceId, { lastSyncAt: committedAt });
+        record.syncHistory = cappedList([historyEntry(plan), ...(record.syncHistory || [])], MAX_HISTORY_ITEMS);
+        if (rollbackPoint) {
+            record.rollbackPoints = cappedList([rollbackPoint, ...(record.rollbackPoints || [])], MAX_ROLLBACK_POINTS);
+        }
+        await this.writeNamespace(plan.namespace, record);
     }
 }
 
@@ -257,6 +378,106 @@ function addDevice(record, deviceName) {
     };
     record.devices.push(device);
     return device;
+}
+
+function touchDevice(record, deviceId, patch) {
+    if (!deviceId) {
+        return;
+    }
+    const existing = record.devices.find(device => device.deviceId === deviceId);
+    if (existing) {
+        Object.assign(existing, patch);
+        return;
+    }
+    record.devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
+}
+
+function addSession(record) {
+    const now = Date.now();
+    const session = {
+        accessToken: randomToken(),
+        expiresAt: new Date(now + ACCESS_TOKEN_TTL_MS).toISOString(),
+        refreshExpiresAt: new Date(now + REFRESH_TOKEN_TTL_MS).toISOString(),
+        refreshToken: randomToken(),
+    };
+    record.sessions = [session, ...pruneExpiredSessions(record.sessions || [])];
+    return session;
+}
+
+function activeAccessToken(record, token) {
+    const now = Date.now();
+    return (record.sessions || []).some(session => {
+        return Date.parse(session.expiresAt) > now && constantTimeEqual(token, session.accessToken);
+    });
+}
+
+function activeRefreshSession(record, refreshToken) {
+    const now = Date.now();
+    return (record.sessions || []).find(session => {
+        return Date.parse(session.refreshExpiresAt) > now && constantTimeEqual(String(refreshToken || ''), session.refreshToken);
+    });
+}
+
+function pruneExpiredSessions(sessions) {
+    const now = Date.now();
+    return sessions.filter(session => Date.parse(session.expiresAt) > now || Date.parse(session.refreshExpiresAt) > now);
+}
+
+function sessionResponse(record, session) {
+    return {
+        accessToken: session.accessToken,
+        expiresAt: session.expiresAt,
+        namespace: record.namespace,
+        refreshExpiresAt: session.refreshExpiresAt,
+        refreshToken: session.refreshToken,
+        serverId: record.serverId,
+    };
+}
+
+function assertAccountLogin(options) {
+    if (!process.env.TT_SYNC_ACCOUNT_USERNAME || !process.env.TT_SYNC_ACCOUNT_PASSWORD) {
+        throw serverError('TT_SYNC_ACCOUNT_USERNAME and TT_SYNC_ACCOUNT_PASSWORD are required for account login');
+    }
+    if (options.username !== process.env.TT_SYNC_ACCOUNT_USERNAME) {
+        throw unauthorized('Invalid account credentials');
+    }
+    if (options.password !== process.env.TT_SYNC_ACCOUNT_PASSWORD) {
+        throw unauthorized('Invalid account credentials');
+    }
+}
+
+function affectedPaths(plan) {
+    return Array.from(new Set([
+        ...plan.uploads.map(entry => entry.path),
+        ...plan.remoteDeletes,
+        ...plan.conflicts.map(item => item.path),
+    ]));
+}
+
+function rollbackPointSummary(snapshot) {
+    return {
+        affectedFiles: snapshot.files.length,
+        createdAt: snapshot.createdAt,
+        id: snapshot.id,
+        planId: snapshot.planId,
+    };
+}
+
+function historyEntry(plan) {
+    return {
+        committedAt: plan.committedAt,
+        conflicts: plan.conflicts.length,
+        deviceId: plan.deviceId,
+        downloads: plan.downloads.length,
+        kind: plan.kind,
+        planId: plan.id,
+        remoteDeletes: plan.remoteDeletes.length,
+        uploads: plan.uploads.length,
+    };
+}
+
+function cappedList(items, limit) {
+    return items.slice(0, limit);
 }
 
 function pairingResponse(record, device, endpoint) {

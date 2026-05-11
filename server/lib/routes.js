@@ -27,8 +27,26 @@ async function dispatch(context) {
     if (route === 'POST /v2/pair/complete') {
         return handlePair(context);
     }
+    if (route === 'POST /v2/account/login') {
+        return handleAccountLogin(context);
+    }
+    if (route === 'POST /v2/account/token/refresh') {
+        return handleTokenRefresh(context);
+    }
     if (route === 'POST /v2/session/open') {
         return handleSession(context);
+    }
+    if (route === 'GET /v2/devices') {
+        return handleDevices(context, url);
+    }
+    if (route === 'GET /v2/history') {
+        return handleHistory(context, url);
+    }
+    if (route === 'GET /v2/rollback-points') {
+        return handleRollbackPoints(context, url);
+    }
+    if (context.request.method === 'POST' && /^\/v2\/rollback-points\/[^/]+\/restore$/.test(url.pathname)) {
+        return handleRollbackRestore(context, url);
     }
     if (route === 'POST /v2/sync/push-plan') {
         return handlePlan(context, 'push');
@@ -56,10 +74,42 @@ async function handlePair(context) {
     return sendJson(context.response, await context.storage.completePairing(body));
 }
 
+async function handleAccountLogin(context) {
+    const body = await readJsonBody(context.request);
+    return sendJson(context.response, await context.storage.loginAccount(body));
+}
+
+async function handleTokenRefresh(context) {
+    const body = await readJsonBody(context.request);
+    const namespace = safeName(body.namespace || 'default', 'namespace');
+    return sendJson(context.response, await context.storage.refreshAccountToken(namespace, body.refreshToken));
+}
+
 async function handleSession(context) {
     const body = await readJsonBody(context.request);
     await authenticate(context, body.namespace);
     return sendJson(context.response, await context.storage.openSession(body.namespace, body.deviceId));
+}
+
+async function handleDevices(context, url) {
+    const namespace = await authenticateQuery(context, url);
+    return sendJson(context.response, { devices: await context.storage.listDevices(namespace) });
+}
+
+async function handleHistory(context, url) {
+    const namespace = await authenticateQuery(context, url);
+    return sendJson(context.response, { history: await context.storage.listHistory(namespace) });
+}
+
+async function handleRollbackPoints(context, url) {
+    const namespace = await authenticateQuery(context, url);
+    return sendJson(context.response, { rollbackPoints: await context.storage.listRollbackPoints(namespace) });
+}
+
+async function handleRollbackRestore(context, url) {
+    const namespace = await authenticateQuery(context, url);
+    const rollbackId = safeName(url.pathname.split('/')[3], 'rollback id');
+    return sendJson(context.response, await context.storage.restoreRollbackPoint(namespace, rollbackId));
 }
 
 async function handlePlan(context, kind) {
@@ -160,6 +210,12 @@ async function authenticate(context, namespace) {
         safeName(namespace, 'namespace'),
         context.request.headers.authorization,
     );
+}
+
+async function authenticateQuery(context, url) {
+    const namespace = safeName(url.searchParams.get('namespace') || 'default', 'namespace');
+    await authenticate(context, namespace);
+    return namespace;
 }
 
 function normalizePairingBody(body) {

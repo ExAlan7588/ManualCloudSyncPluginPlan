@@ -273,12 +273,12 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 4：帳號式體驗
 
-- [ ] 設計 account/device 資料表。
-- [ ] 登入與 token refresh。
-- [ ] 裝置列表。
-- [ ] 每個裝置最後同步時間。
-- [ ] 同步歷史。
-- [ ] 可選回滾點。
+- [x] 設計 account/device 資料表。結果：Minimal server 以 `namespace.json` 保存 account、device、session、history、rollback metadata。
+- [x] 登入與 token refresh。結果：`POST /v2/account/login` 與 `POST /v2/account/token/refresh`。
+- [x] 裝置列表。結果：`GET /v2/devices?namespace=...`。
+- [x] 每個裝置最後同步時間。結果：commit 後更新 device `lastSyncAt`。
+- [x] 同步歷史。結果：`GET /v2/history?namespace=...` 回傳 committed plan history。
+- [x] 可選回滾點。結果：push commit 前建立 rollback point，`POST /v2/rollback-points/{id}/restore` 可還原受影響檔案。
 
 ## 10. 前端工作清單
 
