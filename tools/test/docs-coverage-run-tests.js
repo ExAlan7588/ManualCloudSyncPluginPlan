@@ -95,6 +95,9 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.readme.includes('sourceKind=source-tree'), 'README source-tree event final evidence policy missing');
     assert.ok(options.verification.includes('sourceKind=source-tree'), 'verification source-tree event final evidence policy missing');
     assert.ok(options.plan.includes('sourceKind=source-tree'), 'plan source-tree event final evidence policy missing');
+    assert.ok(options.readme.includes('非範例絕對路徑'), 'README real deploy path policy missing');
+    assert.ok(options.verification.includes('非範例絕對路徑'), 'verification real deploy path policy missing');
+    assert.ok(options.plan.includes('非範例絕對路徑'), 'plan real deploy path policy missing');
 }
 
 function assertDeviceRequirementDocumented(options) {

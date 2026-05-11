@@ -40,6 +40,7 @@ const tests = [
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
+    ['incremental evidence verifier rejects template deploy paths', testTemplateDeployPaths],
     ['incremental evidence verifier rejects failed deploy required checks', testFailedDeployRequiredCheck],
     ['incremental evidence verifier rejects deploy checks without detail', testDeployCheckMissingDetail],
     ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
@@ -490,6 +491,16 @@ async function testPlaceholderDeployEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('deploy report real env mode'));
+}
+
+async function testTemplateDeployPaths() {
+    const evidence = completeEvidence();
+    evidence.deployReport.envPath = 'deploy/systemd/manual-cloud-tt-sync.env.example';
+    evidence.deployReport.servicePath = 'deploy/systemd/manual-cloud-tt-sync.service';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report real env path'));
+    assert.ok(report.failed.includes('deploy report real service path'));
 }
 
 async function testMissingDeviceIds() {

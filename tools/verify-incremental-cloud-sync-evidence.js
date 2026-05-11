@@ -185,11 +185,21 @@ function deployChecks(report) {
         check('deploy report verifiedAt', isTimestamp(report?.verifiedAt), 'deploy report must include a parseable verifiedAt timestamp'),
         check('deploy report service path', hasText(report?.servicePath), 'deploy report must include servicePath'),
         check('deploy report env path', hasText(report?.envPath), 'deploy report must include envPath'),
+        check('deploy report real service path', isFinalDeployPath(report?.servicePath), 'final deploy servicePath must be an absolute non-template path'),
+        check('deploy report real env path', isFinalDeployPath(report?.envPath), 'final deploy envPath must be an absolute non-template path'),
         check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
         check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
         check('deploy report checks passed', reportChecksPassed(report), 'deploy report checks must all be ok=true with name and detail'),
         ...REQUIRED_DEPLOY_CHECKS.map(name => check(`deploy ${name}`, names.has(name), `${name} check is required`)),
     ];
+}
+
+function isFinalDeployPath(value) {
+    if (!hasText(value) || !path.isAbsolute(value)) {
+        return false;
+    }
+    const normalized = path.normalize(value);
+    return !normalized.endsWith('.example') && !normalized.includes(`${path.sep}deploy${path.sep}systemd${path.sep}`);
 }
 
 function smokeChecks(report) {
