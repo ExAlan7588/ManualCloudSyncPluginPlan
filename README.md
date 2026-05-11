@@ -69,6 +69,8 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 相容模式的 WebDAV 伺服器必須允許瀏覽器/WebView 直連 CORS，至少要允許 `OPTIONS, GET, PUT, DELETE, PROPFIND, HEAD` 與 `Authorization, Content-Type, Depth` headers。
 
+Android release 版若封鎖 `http://100.x.x.x` 這類明文 Tailscale 端點，請改用 HTTPS WebDAV 端點，例如反向代理或已啟用的 Tailscale Serve。
+
 ## S3 使用方式
 
 將同步後端切換成 `S3` 後，S3 欄位才會展開。此時需要填：
