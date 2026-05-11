@@ -172,7 +172,9 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
-device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL；command report 也必須包含實際 source 與 scanned file count。
+command report 必須包含 `scannedAt`、實際 source 與 scanned file count。
+遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId` 與 push/pull `planIds`。
+device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL。
 
 device evidence JSON 需包含：
 

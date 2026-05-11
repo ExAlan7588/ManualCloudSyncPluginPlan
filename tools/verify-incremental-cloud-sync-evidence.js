@@ -75,6 +75,7 @@ async function loadReport(options) {
 function commandChecks(report) {
     return [
         check('command report ok', report?.ok === true, 'command report must have ok=true'),
+        check('command report scannedAt', hasText(report?.scannedAt), 'command report must include scannedAt'),
         check('command report source', hasText(report?.source), 'command report must include source path or artifact'),
         check('command report scanned files', Number(report?.scannedFiles) > 0, 'command report must scan at least one file'),
         check('no missing commands', Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, 'missingCommands must be empty'),
@@ -93,6 +94,10 @@ function smokeChecks(report) {
     const names = new Set((report?.checks || []).map(item => item.name));
     return [
         check('smoke report ok', report?.ok === true, 'smoke report must have ok=true'),
+        check('smoke report completedAt', hasText(report?.completedAt), 'smoke report must include completedAt'),
+        check('smoke report deviceId', hasText(report?.deviceId), 'smoke report must include paired deviceId'),
+        check('smoke report path', hasText(report?.smokePath), 'smoke report must include smokePath'),
+        check('smoke report plan ids', hasText(report?.planIds?.push) && hasText(report?.planIds?.pull), 'smoke report must include push and pull plan ids'),
         check('smoke report is remote', report?.mode === 'remote', 'final evidence requires a remote deployed server smoke report'),
         check('smoke endpoint is non-local', isNonLocalEndpoint(report?.endpoint), 'smoke endpoint must not be localhost or loopback'),
         ...REQUIRED_SMOKE_CHECKS.map(name => check(`smoke ${name}`, names.has(name), `${name} check is required`)),

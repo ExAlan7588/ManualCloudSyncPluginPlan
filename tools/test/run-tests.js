@@ -18,6 +18,7 @@ const tests = [
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
+    ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
 
@@ -116,6 +117,14 @@ async function testMixedServerEvidence() {
     assert.ok(report.failed.includes('same server URL'));
 }
 
+async function testMissingSmokeProvenance() {
+    const evidence = completeEvidence();
+    delete evidence.smokeReport.planIds;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('smoke report plan ids'));
+}
+
 async function testDeviceEvidenceTemplateIncomplete() {
     const template = createDeviceEvidenceTemplate({
         desktopBuildId: 'desktop-build-fixture',
@@ -142,6 +151,7 @@ function commandReportFixture() {
         commands: REQUIRED_TT_SYNC_COMMANDS.map(command => ({ files: ['src-tauri/src/commands.rs'], found: true, name: command })),
         missingCommands: [],
         ok: true,
+        scannedAt: '2026-05-12T00:00:00+08:00',
         scannedFiles: 1,
         source: '/builds/TauriTavern.apk',
     };
@@ -150,9 +160,16 @@ function commandReportFixture() {
 function smokeReportFixture() {
     return {
         checks: REQUIRED_SMOKE_CHECKS.map(name => ({ detail: 'fixture', name })),
+        completedAt: '2026-05-12T00:01:00+08:00',
+        deviceId: 'device-fixture',
         endpoint: 'https://sync.example.com',
         mode: 'remote',
         ok: true,
+        planIds: {
+            pull: 'pull-plan-fixture',
+            push: 'push-plan-fixture',
+        },
+        smokePath: 'default-user/chats/tt-sync-smoke-fixture.jsonl',
     };
 }
 
