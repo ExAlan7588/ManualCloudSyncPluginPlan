@@ -13,6 +13,7 @@ import {
     completeEvidence,
     deployReportFixture,
     deviceEvidenceFixture,
+    eventReportFixture,
     smokeReportFixture,
     TEST_BULK_FILE_BYTES,
     TEST_BULK_FILES,
@@ -28,6 +29,8 @@ const tests = [
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
     ['incremental evidence verifier rejects source commands without handler evidence', testMissingCommandHandlerEvidence],
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
+    ['incremental evidence verifier rejects missing event surface evidence', testMissingEventSurfaceEvidence],
+    ['incremental evidence verifier rejects failed event surface report', testFailedEventSurfaceEvidence],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
@@ -101,6 +104,7 @@ async function testMalformedEvidenceJson() {
                 commandReportPath,
                 deployReport: deployReportFixture(),
                 deviceEvidence: deviceEvidenceFixture(),
+                eventReport: eventReportFixture(),
                 smokeReport: smokeReportFixture(),
             }),
             /command report must be valid JSON/,
@@ -118,6 +122,7 @@ async function testMissingEvidenceJsonFile() {
                 commandReportPath: path.join(tempDir, 'missing-command-report.json'),
                 deployReport: deployReportFixture(),
                 deviceEvidence: deviceEvidenceFixture(),
+                eventReport: eventReportFixture(),
                 smokeReport: smokeReportFixture(),
             }),
             /command report cannot be read:/,
@@ -360,6 +365,25 @@ async function testMissingDeployEvidence() {
         verifyIncrementalCloudSyncEvidence(evidence),
         /deploy report path is required/,
     );
+}
+
+async function testMissingEventSurfaceEvidence() {
+    const evidence = completeEvidence();
+    delete evidence.eventReport;
+    await assert.rejects(
+        verifyIncrementalCloudSyncEvidence(evidence),
+        /event surface report path is required/,
+    );
+}
+
+async function testFailedEventSurfaceEvidence() {
+    const evidence = completeEvidence();
+    evidence.eventReport.ok = false;
+    evidence.eventReport.missingEvents = ['tt_sync:error'];
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('event surface report ok'));
+    assert.ok(report.failed.includes('event surface missing events'));
 }
 
 async function testMixedCommandReportEvidence() {

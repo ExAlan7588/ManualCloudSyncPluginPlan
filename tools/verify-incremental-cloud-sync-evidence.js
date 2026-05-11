@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { REQUIRED_TT_SYNC_COMMANDS } from './verify-tauritavern-tt-sync.js';
 import {
+    REQUIRED_TT_SYNC_EVENTS,
+} from './verify-tauritavern-tt-sync-events.js';
+import {
     FIELD_NON_NEGATIVE_NUMBER,
     FIELD_POSITIVE_NUMBER,
     FIELD_TEXT,
@@ -40,6 +43,7 @@ export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
     const checks = [
         ...commandChecks(evidence.commandReport),
+        ...eventChecks(evidence.eventReport),
         ...deployChecks(evidence.deployReport),
         ...smokeChecks(evidence.smokeReport),
         ...deviceChecks(evidence.deviceEvidence),
@@ -61,6 +65,7 @@ export function formatEvidenceReport(report) {
 async function loadEvidence(options) {
     return {
         commandReport: await loadReport({ label: 'command report', object: options.commandReport, path: options.commandReportPath }),
+        eventReport: await loadReport({ label: 'event surface report', object: options.eventReport, path: options.eventReportPath }),
         deployReport: await loadReport({ label: 'deploy report', object: options.deployReport, path: options.deployReportPath }),
         deviceEvidence: await loadReport({ label: 'device evidence', object: options.deviceEvidence, path: options.deviceEvidencePath }),
         smokeReport: await loadReport({ label: 'smoke report', object: options.smokeReport, path: options.smokeReportPath }),
@@ -114,6 +119,28 @@ function commandFoundCheck(report, command) {
         Boolean(item?.found && commandEvidenceCoversCommand(trustedCommandEvidence(item), report?.sourceKind)),
         `${command} must have evidence compatible with command report sourceKind`,
     );
+}
+
+function eventChecks(report) {
+    const names = passedEventNames(report);
+    return [
+        check('event surface report ok', report?.ok === true, 'event surface report must have ok=true'),
+        check('event surface report scannedAt', isTimestamp(report?.scannedAt), 'event surface report must include a parseable scannedAt timestamp'),
+        check('event surface report source', hasText(report?.source), 'event surface report must include source path or artifact'),
+        check('event surface report source kind', COMMAND_SOURCE_KINDS.has(report?.sourceKind), 'event surface report must include sourceKind'),
+        check('event surface report scanned files', Number(report?.scannedFiles) > 0, 'event surface report must scan at least one file'),
+        check('event surface missing events', Array.isArray(report?.missingEvents) && report.missingEvents.length === 0, 'missingEvents must be empty'),
+        check('event surface missing fields', Array.isArray(report?.missingPayloadFields) && report.missingPayloadFields.length === 0, 'missingPayloadFields must be empty'),
+        ...REQUIRED_TT_SYNC_EVENTS.map(name => check(`event ${name}`, names.has(name), `${name} event is required`)),
+    ];
+}
+
+function passedEventNames(report) {
+    return new Set(Array.isArray(report?.events) ? report.events.filter(isPassedReportEvent).map(item => item.name) : []);
+}
+
+function isPassedReportEvent(item) {
+    return item?.found === true && hasText(item.name) && Array.isArray(item.files) && item.files.length > 0;
 }
 
 function trustedCommandEvidence(item) {
@@ -437,6 +464,7 @@ function parseCliOptions() {
         allowPositionals: false,
         options: {
             commands: { type: 'string' },
+            events: { type: 'string' },
             deploy: { type: 'string' },
             'device-evidence': { type: 'string' },
             help: { short: 'h', type: 'boolean' },
@@ -449,7 +477,7 @@ function parseCliOptions() {
 
 function usageText() {
     return [
-        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --commands <command-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
+        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --commands <command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
         '',
         'Validates the external evidence needed to close docs/IncrementalCloudSyncPlan.md without accepting local-only proxy signals.',
     ].join('\n');
@@ -475,6 +503,7 @@ async function runCli() {
 function cliInput(options) {
     return {
         commandReportPath: options.commands,
+        eventReportPath: options.events,
         deployReportPath: options.deploy,
         deviceEvidencePath: options['device-evidence'],
         smokeReportPath: options.smoke,

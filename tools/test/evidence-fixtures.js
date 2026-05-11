@@ -1,5 +1,9 @@
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
+    REQUIRED_TT_SYNC_EVENTS,
+    REQUIRED_TT_SYNC_EVENT_FIELDS,
+} from '../verify-tauritavern-tt-sync-events.js';
+import {
     REQUIRED_DEPLOY_CHECKS,
     REQUIRED_DEVICE_CHECKS,
     REQUIRED_SMOKE_CHECKS,
@@ -99,6 +103,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
 export function completeEvidence() {
     return {
         commandReport: commandReportFixture(),
+        eventReport: eventReportFixture(),
         deployReport: deployReportFixture(),
         deviceEvidence: deviceEvidenceFixture(),
         smokeReport: smokeReportFixture(),
@@ -120,6 +125,37 @@ export function commandReportFixture() {
         scannedFiles: 2,
         source: '/src/TauriTavern',
         sourceKind: 'source-tree',
+    };
+}
+
+export function eventReportFixture() {
+    return {
+        diffConflictSurface: diffConflictSurfaceFixture(),
+        events: REQUIRED_TT_SYNC_EVENTS.map(name => eventItemFixture(name)),
+        missingEvents: [],
+        missingPayloadFields: [],
+        ok: true,
+        payloadFields: {
+            completed: REQUIRED_TT_SYNC_EVENT_FIELDS.completed.map(name => eventItemFixture(name)),
+            progress: REQUIRED_TT_SYNC_EVENT_FIELDS.progress.map(name => eventItemFixture(name)),
+        },
+        scannedAt: '2026-05-12T00:00:10+08:00',
+        scannedFiles: 986,
+        source: '/src/TauriTavern',
+        sourceKind: 'source-tree',
+    };
+}
+
+function eventItemFixture(name) {
+    return { files: ['src-tauri/src/domain/models/tt_sync.rs'], found: true, name };
+}
+
+function diffConflictSurfaceFixture() {
+    return {
+        conflictDecisionPayload: { files: [], found: false, name: 'conflictDecisionPayload' },
+        conflictDto: { files: [], found: false, name: 'conflictDto' },
+        conflictEvent: { files: [], found: false, name: 'conflictEvent' },
+        preTransferDiffEvent: { files: [], found: false, name: 'preTransferDiffEvent' },
     };
 }
 

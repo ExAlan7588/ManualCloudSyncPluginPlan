@@ -37,6 +37,7 @@ export function formatEventSurfaceReport(report) {
     const lines = [
         `TT-Sync event surface verification ${report.ok ? 'passed' : 'failed'}`,
         `source: ${report.source}`,
+        `source kind: ${report.sourceKind}`,
         `scanned files: ${report.scannedFiles}`,
     ];
     appendMissingSection(lines, 'missing events', report.missingEvents);
@@ -56,6 +57,7 @@ async function sourceInfoFor(source) {
     return {
         rootDir: sourceStats.isDirectory() ? resolved : path.dirname(resolved),
         source: resolved,
+        sourceKind: sourceStats.isDirectory() ? 'source-tree' : 'source-file',
         startPath: resolved,
     };
 }
@@ -71,6 +73,7 @@ function createState(sourceInfo) {
         rootDir: sourceInfo.rootDir,
         scannedFiles: 0,
         source: sourceInfo.source,
+        sourceKind: sourceInfo.sourceKind,
         visited: new Set(),
     };
 }
@@ -173,6 +176,7 @@ function reportFor(state) {
         scannedAt: new Date().toISOString(),
         scannedFiles: state.scannedFiles,
         source: state.source,
+        sourceKind: state.sourceKind,
     };
 }
 

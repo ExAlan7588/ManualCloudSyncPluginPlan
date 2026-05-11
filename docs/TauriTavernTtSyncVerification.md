@@ -206,20 +206,22 @@ smoke verifier 會執行真實 HTTP 流程：
 - 裝置型號、OS 版本與網路型態。
 - TT-Sync server URL、server commit 或部署版本。
 - `verify-tauritavern` JSON 報告。
+- `verify-tauritavern-events` JSON 報告。
 - `smoke:tt-sync-server` JSON 報告。
 - 測試時間與失敗時的錯誤訊息。
 
 ## 10. Final Evidence Gate
 
-收齊 command report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
+收齊 command report、event surface report、真實 VPS deploy report、遠端 smoke report 與真機 device evidence 後，執行：
 
 ```bash
-npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
+npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --events /tmp/tt-sync-event-report.json --deploy /tmp/tt-sync-deploy-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json --manifest /tmp/tt-sync-final-evidence-report.json
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
 command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind` 與 scanned file count。
 每個 command 必須包含 verifier 產生的 trusted `evidence`；build artifact 可用 `build-artifact-string`，source tree 則必須同時有 `tauri-command-declaration` 與 `tauri-handler-registration`。
+event surface report 必須包含可解析 timestamp 的 `scannedAt`、實際 source、`sourceKind`、scanned file count、空的 `missingEvents` 與空的 `missingPayloadFields`，且必須包含 `tt_sync:progress`、`tt_sync:completed`、`tt_sync:error`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且所有 deploy checks 都必須有 name/detail 並是 `ok=true`；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
