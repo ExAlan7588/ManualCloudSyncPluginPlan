@@ -77,7 +77,10 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['mutex.visibleError', FIELD_TEXT],
     ]],
     ['androidWeakNetworkErrorVisible', 'Android weak-network error is visible', [
+        ['android.capturedAt', FIELD_TEXT],
+        ['android.errorCode', FIELD_TEXT],
         ['android.networkProfile', FIELD_TEXT],
+        ['android.operation', FIELD_TEXT],
         ['android.visibleError', FIELD_TEXT],
     ]],
 ]);

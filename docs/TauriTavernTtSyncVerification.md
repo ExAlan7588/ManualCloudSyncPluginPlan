@@ -206,7 +206,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
 - `pullMtimePreserved`: `mtime.actualModifiedMs`, `mtime.expectedModifiedMs`
 - `pullInterruptionSafe`: `interruption.afterHash`, `interruption.beforeHash`, `interruption.error`
 - `lanCloudSyncMutex`: `mutex.blockedOperation`, `mutex.cloudWhileLanBlockedOperation`, `mutex.cloudWhileLanVisibleError`, `mutex.lanWhileCloudBlockedOperation`, `mutex.lanWhileCloudVisibleError`, `mutex.visibleError`
-- `androidWeakNetworkErrorVisible`: `android.networkProfile`, `android.visibleError`
+- `androidWeakNetworkErrorVisible`: `android.capturedAt`, `android.errorCode`, `android.networkProfile`, `android.operation`, `android.visibleError`
 
 ```json
 {
@@ -287,7 +287,13 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "androidWeakNetworkErrorVisible": {
       "ok": true,
       "evidence": "Android weak-network error capture id",
-      "android": { "networkProfile": "Android emulator weak network", "visibleError": "TT-Sync failed: network timeout" }
+      "android": {
+        "capturedAt": "2026-05-12T00:03:00+08:00",
+        "errorCode": "network-timeout",
+        "networkProfile": "Android emulator weak network",
+        "operation": "tt_sync_pull",
+        "visibleError": "TT-Sync failed: network timeout"
+      }
     }
   }
 }

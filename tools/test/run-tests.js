@@ -21,7 +21,13 @@ const VERIFICATION_DOC = new URL('../../docs/TauriTavernTtSyncVerification.md', 
 
 const DEVICE_CHECK_FIXTURES = Object.freeze({
     androidWeakNetworkErrorVisible: {
-        android: { networkProfile: 'Android emulator 3G loss profile', visibleError: 'TT-Sync failed: network timeout' },
+        android: {
+            capturedAt: '2026-05-12T00:03:00+08:00',
+            errorCode: 'network-timeout',
+            networkProfile: 'Android emulator 3G loss profile',
+            operation: 'tt_sync_pull',
+            visibleError: 'TT-Sync failed: network timeout',
+        },
     },
     commandContractVerified: {
         contract: { commands: REQUIRED_TT_SYNC_COMMANDS, reportId: 'contract-test-report-fixture' },
@@ -96,6 +102,7 @@ const tests = [
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
     ['incremental evidence verifier rejects missing progress transfer metrics', testMissingProgressTransferMetrics],
     ['incremental evidence verifier rejects missing bidirectional mutex evidence', testMissingBidirectionalMutexEvidence],
+    ['incremental evidence verifier rejects missing Android weak-network error code', testMissingAndroidWeakNetworkErrorCode],
     ['incremental evidence verifier rejects missing device structured fields', testMissingDeviceStructuredFields],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
@@ -312,6 +319,14 @@ async function testMissingBidirectionalMutexEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('LAN Sync and cloud sync are mutually exclusive'));
+}
+
+async function testMissingAndroidWeakNetworkErrorCode() {
+    const evidence = completeEvidence();
+    delete evidence.deviceEvidence.checks.androidWeakNetworkErrorVisible.android.errorCode;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('Android weak-network error is visible'));
 }
 
 async function testMissingDeviceStructuredFields() {
