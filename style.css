@@ -20,6 +20,11 @@
     margin: 8px 0;
 }
 
+#manual_cloud_sync_settings .mcs-compat-actions {
+    justify-content: flex-start;
+    margin: 8px 0;
+}
+
 #manual_cloud_sync_settings .mcs-advanced {
     margin: 8px 0;
 }

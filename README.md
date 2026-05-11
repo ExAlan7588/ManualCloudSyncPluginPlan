@@ -1,6 +1,6 @@
 # 手動雲端同步
 
-這是 TauriTavern 的手動雲端交棒同步插件。插件本身只提供操作面板，真正的同步、封存、校驗與匯入都由 TauriTavern 原生後端命令執行。
+這是 TauriTavern 的手動雲端交棒同步插件。插件會先偵測目前的 TauriTavern 是否提供 `cloud_sync_*` 原生命令；有的話使用完整原生同步，沒有的話改用「資料遷移相容模式」支援手機舊版 app。
 
 支援：
 
@@ -9,6 +9,7 @@
 - 手動上傳完整資料封存。
 - 手動下載遠端佇列中最舊的一包。
 - 顯示遠端佇列並手動刪除遠端項目。
+- 舊版手機 app 相容模式：WebDAV 佇列、選擇 zip 上傳、下載後用資料遷移匯入。
 
 ## 安裝
 
@@ -22,7 +23,7 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 ## 必要條件
 
-這個 repo 只包含前端插件。TauriTavern 版本必須提供下列原生命令：
+這個 repo 只包含前端插件。完整 mirror 同步需要 TauriTavern 版本提供下列原生命令：
 
 - `cloud_sync_get_config`
 - `cloud_sync_save_config`
@@ -31,7 +32,7 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 - `cloud_sync_download_now`
 - `cloud_sync_delete_remote_item`
 
-如果這些命令不存在，插件會直接顯示後端錯誤，不會模擬成功，也不會靜默降級。
+如果這些命令不存在，插件會在畫面上明確切到資料遷移相容模式，不會模擬成功，也不會靜默降級。
 
 ## WebDAV 使用方式
 
@@ -55,6 +56,18 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 - 使用者名稱：`webdav`
 
 按「儲存」後，可用「立即上傳」產生遠端同步包；另一台裝置安裝同一插件並填同一組 WebDAV 設定後，按「重新整理佇列」再按「下載最舊項目」即可套用。下載會以 mirror 語意覆蓋本機資料。
+
+## 手機舊版 app 相容模式
+
+如果手機上的 TauriTavern 沒有 `cloud_sync_*` 後端命令，GitHub 插件仍可使用 WebDAV，但行為改成：
+
+- 設定儲存在該裝置的前端 localStorage。
+- 「匯出到檔案」會呼叫既有資料遷移匯出，讓 Android/iOS/桌面用原生方式保存 zip。
+- 「選擇 zip 上傳」會把你選到的 zip 上傳到 WebDAV，並建立 `sync-MMDDHHMMSS.json` manifest。
+- 「下載最舊項目」會從 WebDAV 下載 zip、驗證大小與 SHA-256，然後走既有資料遷移匯入。
+- 相容模式匯入是資料遷移語意：合併並覆蓋同路徑檔案，不會刪除本機多出的檔案；完整 mirror 仍需要原生 `cloud_sync_*` 後端。
+
+相容模式的 WebDAV 伺服器必須允許瀏覽器/WebView 直連 CORS，至少要允許 `OPTIONS, GET, PUT, DELETE, PROPFIND, HEAD` 與 `Authorization, Content-Type, Depth` headers。
 
 ## S3 使用方式
 

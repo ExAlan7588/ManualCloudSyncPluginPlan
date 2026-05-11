@@ -5,6 +5,8 @@
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
         <div class="inline-drawer-content">
+            <small id="mcs_mode_notice" class="extensions_info"></small>
+
             <div class="flex-container flexGap5 mcs-toolbar">
                 <button id="mcs_use_local_webdav" class="menu_button menu_button_icon" type="button">
                     <i class="fa-solid fa-laptop-code"></i>
@@ -114,6 +116,18 @@
                     <i class="fa-solid fa-cloud-arrow-down"></i>
                     <span>下載最舊項目</span>
                 </button>
+            </div>
+
+            <div id="mcs_compat_actions" class="flex-container flexGap5 mcs-compat-actions" hidden>
+                <button id="mcs_export_archive" class="menu_button menu_button_icon" type="button">
+                    <i class="fa-solid fa-file-export"></i>
+                    <span>匯出到檔案</span>
+                </button>
+                <button id="mcs_select_archive_upload" class="menu_button menu_button_icon" type="button">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>選擇 zip 上傳</span>
+                </button>
+                <input id="mcs_upload_archive_input" type="file" accept=".zip,application/zip" hidden />
             </div>
 
             <small id="mcs_status" class="extensions_info"></small>
