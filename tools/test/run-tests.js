@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createDeviceEvidenceTemplate } from '../create-device-evidence-template.js';
 import { smokeTtSyncServer } from '../smoke-tt-sync-server.js';
+import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
     REQUIRED_DEVICE_CHECKS,
@@ -47,6 +48,8 @@ const tests = [
     ['server smoke verifier supports bulk fixture', testBulkSmokeFixture],
     ['server smoke verifier requires endpoint or local mode', testRequiresTarget],
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
+    ['deploy verifier accepts repo template placeholders explicitly', testDeployVerifierTemplate],
+    ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
@@ -114,6 +117,18 @@ async function testRequiresRemotePairingToken() {
     } finally {
         restorePairingToken(previousToken);
     }
+}
+
+async function testDeployVerifierTemplate() {
+    const report = await verifyTtSyncDeploy({ allowPlaceholders: true });
+    assert.equal(report.ok, true);
+    assert.deepEqual(report.failed, []);
+}
+
+async function testDeployVerifierRejectsPlaceholderToken() {
+    const report = await verifyTtSyncDeploy();
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('env pairing token is not placeholder'));
 }
 
 function assertCheckNames(report) {

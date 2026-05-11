@@ -35,6 +35,27 @@ Environment variables:
 
 If `TT_SYNC_PAIRING_TOKEN` is missing, pairing fails with an explicit 500 error. Existing authenticated namespaces can still use non-pairing endpoints.
 
+## Deployment Verification
+
+The repository includes a systemd unit and env template:
+
+- `deploy/systemd/manual-cloud-tt-sync.service`
+- `deploy/systemd/manual-cloud-tt-sync.env.example`
+
+Validate the checked-in templates with explicit placeholder allowance:
+
+```bash
+npm run verify:tt-sync-deploy -- --allow-placeholders
+```
+
+Validate a real VPS env file without placeholder allowance:
+
+```bash
+npm run verify:tt-sync-deploy -- --service /etc/systemd/system/manual-cloud-tt-sync.service --env /etc/manual-cloud-tt-sync.env
+```
+
+The verifier checks service hardening, `ExecStart`, required env keys, public URL syntax, TCP port syntax, data directory writability, and rejects placeholder pairing tokens unless `--allow-placeholders` is explicit.
+
 ## Live Smoke Verification
 
 After deploying the service, run:

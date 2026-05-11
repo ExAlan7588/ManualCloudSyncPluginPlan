@@ -91,7 +91,13 @@ TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:pair
 - `TT_SYNC_ACCOUNT_USERNAME`：帳號登入使用者名稱
 - `TT_SYNC_ACCOUNT_PASSWORD`：帳號登入密碼
 
-Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，內容包含 phase、files、bytes 與目前路徑；檔案下載會回傳 `X-TT-Sync-Modified-Ms`，讓 TauriTavern 後端可保留 mtime。服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)。
+Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，內容包含 phase、files、bytes 與目前路徑；檔案下載會回傳 `X-TT-Sync-Modified-Ms`，讓 TauriTavern 後端可保留 mtime。服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)，env 範例在：[deploy/systemd/manual-cloud-tt-sync.env.example](deploy/systemd/manual-cloud-tt-sync.env.example)。
+
+部署前可檢查 systemd unit 與 env 檔；repo 內範例 env 需要明確允許 placeholder，真實 VPS env 不應使用 `--allow-placeholders`：
+
+```bash
+npm run verify:tt-sync-deploy -- --allow-placeholders
+```
 
 部署後可用 live smoke verifier 對實際端點跑 status、pair、session、Push、progress、Pull、mtime header、empty diff、device/history 檢查：
 

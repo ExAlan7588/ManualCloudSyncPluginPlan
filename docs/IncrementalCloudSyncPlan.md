@@ -76,7 +76,7 @@ TT-Sync v2 已經具備很多理想形態：
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build 是否已包含 `tt_sync_*` commands；需以 `npm run verify:tauritavern -- --source <build>` 產生實際 build 證據。
-- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據，大資料部署驗證可加上 `--bulk-files` / `--bulk-file-bytes`。
+- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據，大資料部署驗證可加上 `--bulk-files` / `--bulk-file-bytes`。
 - 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；全部外部證據需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
@@ -248,7 +248,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。結果：本 repo 已提供 `npm run verify:tauritavern -- --source <path>` 檢查器；尚未取得實際手機 build 掃描報告。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
 - [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
-- [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template 與 live smoke verifier；實際 VPS 啟動仍需在部署環境驗證。
+- [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template、env 範例、`verify:tt-sync-deploy` 與 live smoke verifier；實際 VPS 啟動仍需在部署環境驗證。
 - [x] 決定第一階段採用「既有 TT-Sync」還是「新增 manual incremental cloud sync」。決策：採用既有 TT-Sync command surface，不在純前端插件內新增假的增量同步。
 
 ### Phase 1：最小可用增量同步

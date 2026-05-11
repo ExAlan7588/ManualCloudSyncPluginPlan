@@ -11,6 +11,7 @@
     "tt-sync:server": "node server/tt-sync-server.js serve",
     "smoke:tt-sync-server": "node tools/smoke-tt-sync-server.js",
     "verify:incremental-evidence": "node tools/verify-incremental-cloud-sync-evidence.js",
+    "verify:tt-sync-deploy": "node tools/verify-tt-sync-deploy.js",
     "verify:tauritavern": "node tools/verify-tauritavern-tt-sync.js"
   }
 }
