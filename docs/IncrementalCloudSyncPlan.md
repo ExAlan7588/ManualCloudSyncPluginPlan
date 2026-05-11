@@ -253,7 +253,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [ ] 手機與電腦能保存配對服務端。
 - [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
 - [x] Pull 只抓變更檔案。結果：server pull-plan 測試覆蓋空 diff 不下載。
-- [ ] 進度事件能顯示 files/bytes。
+- [x] 進度事件能顯示 files/bytes。結果：Minimal server 提供 `/v2/plans/{plan_id}/events` SSE progress；前端已有 files/bytes 顯示欄位，真機 bridge 仍需裝置驗證。
 - [x] 同步失敗時保留可讀錯誤。結果：server 回傳 JSON error，前端顯示 normalized error。
 
 ### Phase 2：差異預覽

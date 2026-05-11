@@ -35,45 +35,38 @@ async function testPushPullEmptyDiff() {
     await withServer(async context => {
         const pair = await pairDevice(context);
         const entry = entryFor('hello', BASE_MTIME);
-        const pushPlan = await postJson({
-            context,
-            route: '/v2/sync/push-plan',
-            body: {
-            deviceId: pair.deviceId,
-            localManifest: [entry],
-            namespace: pair.namespace,
-            },
-            token: pair.authToken,
-        });
-        assert.equal(pushPlan.uploads.length, 1);
-        await putFile({ content: 'hello', context, planId: pushPlan.id, syncPath: entry.path, token: pair.authToken });
-        await postJson({ context, route: `/v2/plans/${pushPlan.id}/commit`, body: {}, token: pair.authToken });
+        const createdPlan = await pushPlan({ baseManifest: [], context, localManifest: [entry], pair });
+        assert.equal(createdPlan.uploads.length, 1);
+        await assertProgressLifecycle({ content: 'hello', context, entry, pair, pushPlan: createdPlan });
 
-        const pullPlan = await postJson({
-            context,
-            route: '/v2/sync/pull-plan',
-            body: {
-            deviceId: pair.deviceId,
-            localManifest: [],
-            namespace: pair.namespace,
-            },
-            token: pair.authToken,
-        });
+        const pullPlan = await pullPlanFor(context, pair, []);
         assert.equal(pullPlan.downloads.length, 1);
         assert.equal(await getFile({ context, planId: pullPlan.id, syncPath: entry.path, token: pair.authToken }), 'hello');
 
-        const emptyPlan = await postJson({
-            context,
-            route: '/v2/sync/pull-plan',
-            body: {
-            deviceId: pair.deviceId,
-            localManifest: [entry],
-            namespace: pair.namespace,
-            },
-            token: pair.authToken,
-        });
+        const emptyPlan = await pullPlanFor(context, pair, [entry]);
         assert.equal(emptyPlan.downloads.length, 0);
     });
+}
+
+async function assertProgressLifecycle(options) {
+    assert.deepEqual(await getProgress(options.context, options.pushPlan.id, options.pair.authToken), {
+        bytesTransferred: 0,
+        currentPath: FILE_PATH,
+        filesTransferred: 0,
+        phase: 'planned',
+        totalBytes: options.entry.sizeBytes,
+        totalFiles: 1,
+    });
+    await putFile({
+        content: options.content,
+        context: options.context,
+        planId: options.pushPlan.id,
+        syncPath: options.entry.path,
+        token: options.pair.authToken,
+    });
+    assert.equal((await getProgress(options.context, options.pushPlan.id, options.pair.authToken)).filesTransferred, 1);
+    await postJson({ context: options.context, route: `/v2/plans/${options.pushPlan.id}/commit`, body: {}, token: options.pair.authToken });
+    assert.equal((await getProgress(options.context, options.pushPlan.id, options.pair.authToken)).phase, 'committed');
 }
 
 async function testConflictDecision() {
@@ -328,6 +321,22 @@ async function getBundle(context, planId, token) {
         headers: requestHeaders(token),
     });
     return parseJsonResponse(response);
+}
+
+async function getProgress(context, planId, token) {
+    const response = await fetch(`${context.baseUrl}/v2/plans/${planId}/events?once=1`, {
+        headers: requestHeaders(token),
+    });
+    if (!response.ok) {
+        throw new Error((await response.json()).error);
+    }
+    return parseSseProgress(await response.text());
+}
+
+function parseSseProgress(text) {
+    const dataLine = text.split('\n').find(line => line.startsWith('data: '));
+    assert.ok(dataLine, 'SSE progress data line is required');
+    return JSON.parse(dataLine.slice('data: '.length));
 }
 
 async function parseJsonResponse(response) {

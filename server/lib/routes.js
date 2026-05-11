@@ -4,7 +4,9 @@ import { buildPullPlan, buildPushPlan } from './planner.js';
 
 const JSON_TYPE = 'application/json; charset=utf-8';
 const BINARY_TYPE = 'application/octet-stream';
+const SSE_TYPE = 'text/event-stream; charset=utf-8';
 const DEFAULT_MAX_BODY_BYTES = 512 * 1024 * 1024;
+const PROGRESS_EVENT_INTERVAL_MS = 1000;
 
 export function createHandler(storage) {
     return async (request, response) => {
@@ -39,6 +41,9 @@ async function dispatch(context) {
     }
     if (isBundleRoute(context.request.method, url.pathname)) {
         return handleBundle(context, url.pathname);
+    }
+    if (context.request.method === 'GET' && /^\/v2\/plans\/[^/]+\/events$/.test(url.pathname)) {
+        return handlePlanEvents(context, url);
     }
     if (context.request.method === 'POST' && /^\/v2\/plans\/[^/]+\/commit$/.test(url.pathname)) {
         return handleCommit(context, url.pathname);
@@ -92,6 +97,18 @@ async function handleCommit(context, pathname) {
     const plan = await loadAuthedPlan(context, planId);
     const body = await readJsonBody(context.request, {});
     return sendJson(context.response, planSummary(await context.storage.commitPlan(plan, body)));
+}
+
+async function handlePlanEvents(context, url) {
+    const planId = safeName(url.pathname.split('/')[3], 'plan id');
+    const plan = await loadAuthedPlan(context, planId);
+    startEventStream(context.response);
+    await writeProgressEvent(context, plan.id);
+    if (url.searchParams.get('once') === '1') {
+        context.response.end();
+        return;
+    }
+    streamProgressEvents(context, plan.id);
 }
 
 async function downloadPlanFile(context, plan, syncPath) {
@@ -194,12 +211,15 @@ function planSummary(plan) {
 function progressSummary(plan) {
     const totalFiles = plan.uploads.length + plan.downloads.length;
     const totalBytes = sumBytes([...plan.uploads, ...plan.downloads]);
+    const staged = Object.values(plan.staged || {});
+    const committed = Boolean(plan.committedAt);
     return {
-        bytesTransferred: 0,
-        phase: plan.committedAt ? 'committed' : 'planned',
+        bytesTransferred: committed ? totalBytes : sumBytes(staged),
+        currentPath: currentProgressPath(plan),
+        phase: progressPhase(plan, staged),
         totalBytes,
         totalFiles,
-        filesTransferred: 0,
+        filesTransferred: committed ? totalFiles : staged.length,
     };
 }
 
@@ -234,6 +254,44 @@ function findPlanEntry(entries, syncPath) {
 
 function sumBytes(entries) {
     return entries.reduce((total, entry) => total + Number(entry.sizeBytes || 0), 0);
+}
+
+function currentProgressPath(plan) {
+    const staged = new Set(Object.keys(plan.staged || {}));
+    const pending = [...plan.uploads, ...plan.downloads].find(entry => !staged.has(entry.path));
+    return pending?.path || '';
+}
+
+function progressPhase(plan, staged) {
+    if (plan.committedAt) {
+        return 'committed';
+    }
+    return staged.length > 0 ? 'transferring' : 'planned';
+}
+
+function startEventStream(response) {
+    response.writeHead(200, {
+        'Cache-Control': 'no-store',
+        Connection: 'keep-alive',
+        'Content-Type': SSE_TYPE,
+    });
+}
+
+async function writeProgressEvent(context, planId) {
+    const plan = await context.storage.readPlan(planId);
+    context.response.write(`event: progress\ndata: ${JSON.stringify(progressSummary(plan))}\n\n`);
+    return plan;
+}
+
+function streamProgressEvents(context, planId) {
+    const timer = setInterval(async () => {
+        const plan = await writeProgressEvent(context, planId);
+        if (plan.committedAt) {
+            clearInterval(timer);
+            context.response.end();
+        }
+    }, PROGRESS_EVENT_INTERVAL_MS);
+    context.request.on('close', () => clearInterval(timer));
 }
 
 async function readJsonBody(request, fallback) {

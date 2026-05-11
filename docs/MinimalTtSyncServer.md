@@ -163,6 +163,17 @@ Downloads all pull-plan files as JSON:
 
 Stages push-plan files from the same JSON bundle shape.
 
+### `GET /v2/plans/{plan_id}/events`
+
+Streams Server-Sent Events:
+
+```text
+event: progress
+data: {"phase":"transferring","filesTransferred":1,"totalFiles":2,"bytesTransferred":5,"totalBytes":10,"currentPath":"file.txt"}
+```
+
+Use `?once=1` to receive one progress event and close the connection, which is useful for health checks and automated tests.
+
 ### `POST /v2/plans/{plan_id}/commit`
 
 Commits a push plan by atomically moving staged uploads into namespace storage and only then applying remote deletes. Pull-plan commit marks the plan committed without modifying server files.

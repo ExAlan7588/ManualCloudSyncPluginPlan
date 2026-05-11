@@ -80,7 +80,7 @@ TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:pair
 - `TT_SYNC_PUBLIC_URL`：產生配對 URI 時使用的公開 URL
 - `TT_SYNC_PAIRING_TOKEN`：配對必填 token
 
-服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)。
+Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，內容包含 phase、files、bytes 與目前路徑。服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)。
 
 ## WebDAV 使用方式
 
