@@ -65,6 +65,7 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 - 「匯出到檔案」會呼叫既有資料遷移匯出，讓 Android/iOS/桌面用原生方式保存 zip。
 - 「選擇 zip 上傳」會把你選到的 zip 上傳到 WebDAV，並建立 `sync-MMDDHHMMSS.json` manifest。
 - 「下載最舊項目」會從 WebDAV 下載 zip、驗證大小與 SHA-256，然後走既有資料遷移匯入。
+- WebDAV zip 上傳與下載會顯示百分比、已傳輸大小與平均速度。
 - 相容模式匯入是資料遷移語意：合併並覆蓋同路徑檔案，不會刪除本機多出的檔案；完整 mirror 仍需要原生 `cloud_sync_*` 後端。
 
 相容模式的 WebDAV 伺服器必須允許瀏覽器/WebView 直連 CORS，至少要允許 `OPTIONS, GET, PUT, DELETE, PROPFIND, HEAD` 與 `Authorization, Content-Type, Depth` headers。

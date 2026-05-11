@@ -32,6 +32,9 @@ const SYNC_MANIFEST_EXTENSION = '.json';
 const WEBDAV_PROPFIND_BODY = '<?xml version="1.0" encoding="utf-8"?><propfind xmlns="DAV:"><prop><getcontentlength/><getlastmodified/></prop></propfind>';
 const JSON_CONTENT_TYPE = 'application/json';
 const ZIP_CONTENT_TYPE = 'application/zip';
+const TRANSFER_PROGRESS_RENDER_INTERVAL_MS = 250;
+const MILLISECONDS_PER_SECOND = 1000;
+const PERCENT_FACTOR = 100;
 
 const state = {
     busy: false,
@@ -656,6 +659,7 @@ async function compatUploadArchive(file) {
 
     const connection = requireCompatConnection();
     const fileName = nextSyncFileName();
+    setStatus('計算同步包 SHA-256...');
     const digest = await hashBlob(file);
     const manifest = buildManifest(connection.config, fileName, digest);
     const item = itemFromManifest(connection.config, manifestKeyForZip(connection.config.remotePrefix, fileName), manifest);
@@ -666,9 +670,11 @@ async function compatUploadArchive(file) {
 
 async function compatDownloadAndImport(item) {
     const connection = requireCompatConnection();
-    const response = await webDavFetch(connection, 'GET', item.zipKey);
-    const blob = await response.blob();
+    const expectedBytes = Number(item.manifest.sizeBytes || 0);
+    const blob = await downloadWebDavBlobWithProgress(connection, item.zipKey, expectedBytes);
+    setStatus('校驗下載檔案...');
     await verifyDownloadedBlob(blob, item.manifest);
+    setStatus('匯入資料封存...');
     await importArchiveBlob(blob, item.manifest.file);
     await compatDeleteRemotePair(connection, item);
 }
@@ -726,16 +732,14 @@ async function ensureRemoteAbsent(connection, keys) {
 }
 
 async function uploadManifestThenZip(connection, item, manifest, file) {
+    setStatus('上傳同步 manifest...');
     await webDavFetch(connection, 'PUT', item.manifestKey, {
         body: JSON.stringify(manifest, null, 2),
         headers: { 'Content-Type': JSON_CONTENT_TYPE },
     });
 
     try {
-        await webDavFetch(connection, 'PUT', item.zipKey, {
-            body: file,
-            headers: { 'Content-Type': ZIP_CONTENT_TYPE },
-        });
+        await uploadWebDavBlobWithProgress(connection, item.zipKey, file);
     } catch (error) {
         await cleanupFailedManifest(connection, item.manifestKey, error);
     }
@@ -788,6 +792,139 @@ async function webDavFetch(connection, method, key, options = {}) {
 
     await ensureWebDavResponse(response, method, key, Boolean(options.allowNotFound));
     return response;
+}
+
+async function uploadWebDavBlobWithProgress(connection, key, blob) {
+    await webDavXhrTransfer({
+        connection,
+        key,
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': ZIP_CONTENT_TYPE },
+        progressTarget: 'upload',
+        responseType: 'text',
+        totalBytes: blob.size,
+        label: '上傳同步包',
+    });
+}
+
+async function downloadWebDavBlobWithProgress(connection, key, totalBytes) {
+    return webDavXhrTransfer({
+        connection,
+        key,
+        method: 'GET',
+        progressTarget: 'download',
+        responseType: 'blob',
+        totalBytes,
+        label: '下載同步包',
+    });
+}
+
+function webDavXhrTransfer(options) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const report = createTransferProgressReporter(options.label, options.totalBytes);
+        xhr.open(options.method, webDavUrlForKey(options.connection.config, options.key), true);
+        xhr.responseType = options.responseType;
+        setXhrHeaders(xhr, options.connection, options.headers);
+        bindXhrTransferEvents(xhr, options, report, resolve, reject);
+        report(0, options.totalBytes, true);
+        xhr.send(options.body || null);
+    });
+}
+
+function setXhrHeaders(xhr, connection, extraHeaders) {
+    for (const [name, value] of Object.entries(webDavAuthHeaders(connection))) {
+        xhr.setRequestHeader(name, value);
+    }
+    for (const [name, value] of Object.entries(extraHeaders || {})) {
+        xhr.setRequestHeader(name, value);
+    }
+}
+
+function bindXhrTransferEvents(xhr, options, report, resolve, reject) {
+    const progressSource = options.progressTarget === 'upload' ? xhr.upload : xhr;
+    progressSource.onprogress = event => report(event.loaded, progressEventTotal(event, options.totalBytes), false);
+    xhr.onload = () => resolveCompletedXhr(xhr, options, report, resolve, reject);
+    xhr.onerror = () => reject(new Error(`WebDAV ${options.method} 連線失敗，請確認端點與 CORS 設定`));
+    xhr.onabort = () => reject(new Error(`WebDAV ${options.method} 已中止`));
+    xhr.ontimeout = () => reject(new Error(`WebDAV ${options.method} 逾時`));
+}
+
+function resolveCompletedXhr(xhr, options, report, resolve, reject) {
+    const finalBytes = finalTransferBytes(xhr, options);
+    report(finalBytes, finalBytes || options.totalBytes, true);
+    if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.response);
+        return;
+    }
+
+    reject(new Error(xhrFailureMessage(xhr, options)));
+}
+
+function createTransferProgressReporter(label, expectedTotalBytes) {
+    const startedAt = performance.now();
+    let lastRenderAt = 0;
+    return (loadedBytes, totalBytes, force) => {
+        const now = performance.now();
+        if (!force && now - lastRenderAt < TRANSFER_PROGRESS_RENDER_INTERVAL_MS) {
+            return;
+        }
+
+        lastRenderAt = now;
+        setStatus(formatTransferProgress(label, loadedBytes, totalBytes || expectedTotalBytes, startedAt, now));
+    };
+}
+
+function formatTransferProgress(label, loadedBytes, totalBytes, startedAt, now) {
+    const elapsedSeconds = Math.max((now - startedAt) / MILLISECONDS_PER_SECOND, 0.001);
+    const speedBytes = loadedBytes / elapsedSeconds;
+    return [
+        `${label} ${formatTransferPercent(loadedBytes, totalBytes)}`,
+        formatTransferBytes(loadedBytes, totalBytes),
+        `${formatBytes(speedBytes)}/s`,
+    ].join(' | ');
+}
+
+function formatTransferPercent(loadedBytes, totalBytes) {
+    if (!Number.isFinite(totalBytes) || totalBytes <= 0) {
+        return '--';
+    }
+
+    return `${((loadedBytes / totalBytes) * PERCENT_FACTOR).toFixed(1)}%`;
+}
+
+function formatTransferBytes(loadedBytes, totalBytes) {
+    if (!Number.isFinite(totalBytes) || totalBytes <= 0) {
+        return formatBytes(loadedBytes);
+    }
+
+    return `${formatBytes(loadedBytes)} / ${formatBytes(totalBytes)}`;
+}
+
+function progressEventTotal(event, fallbackTotal) {
+    return event.lengthComputable ? event.total : fallbackTotal;
+}
+
+function finalTransferBytes(xhr, options) {
+    if (options.progressTarget === 'upload') {
+        return options.totalBytes;
+    }
+
+    return xhr.response instanceof Blob ? xhr.response.size : options.totalBytes;
+}
+
+function xhrFailureMessage(xhr, options) {
+    const detail = xhrResponseText(xhr);
+    return `WebDAV ${options.method} ${options.key} 回傳 HTTP ${xhr.status}${detail ? `：${detail}` : ''}`;
+}
+
+function xhrResponseText(xhr) {
+    try {
+        return String(xhr.responseText || '').trim();
+    } catch {
+        return '';
+    }
 }
 
 async function ensureWebDavResponse(response, method, key, allowNotFound) {
