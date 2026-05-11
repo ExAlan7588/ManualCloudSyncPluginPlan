@@ -106,6 +106,12 @@ npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-to
 npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json
 ```
 
+device evidence 可先用模板產生；模板內所有檢查預設 `ok=false`，不會通過 final evidence gate：
+
+```bash
+npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
+```
+
 ## WebDAV 使用方式
 
 第一次設定時，預設就是 WebDAV Basic，只需要先填：

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createDeviceEvidenceTemplate } from '../create-device-evidence-template.js';
 import { smokeTtSyncServer } from '../smoke-tt-sync-server.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
@@ -16,6 +17,7 @@ const tests = [
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
+    ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
 
 for (const [name, test] of tests) {
@@ -103,6 +105,19 @@ async function testLocalSmokeEvidence() {
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('smoke report is remote'));
     assert.ok(report.failed.includes('smoke endpoint is non-local'));
+}
+
+async function testDeviceEvidenceTemplateIncomplete() {
+    const template = createDeviceEvidenceTemplate({
+        desktopBuildId: 'desktop-build-fixture',
+        mobileBuildId: 'mobile-build-fixture',
+    });
+    assert.equal(Object.values(template.checks).every(item => item.ok === false), true);
+    const evidence = completeEvidence();
+    evidence.deviceEvidence = template;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('real large first sync completed'));
 }
 
 function completeEvidence() {

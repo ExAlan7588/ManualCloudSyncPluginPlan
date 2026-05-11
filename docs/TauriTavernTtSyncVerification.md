@@ -174,6 +174,12 @@ final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自�
 
 device evidence JSON 需包含：
 
+```bash
+npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
+```
+
+模板會建立完整欄位，但每個檢查都預設 `ok=false`；必須填入真實 evidence 並改成 `ok=true` 後，final evidence gate 才可能通過。
+
 ```json
 {
   "testedAt": "2026-05-12T00:00:00+08:00",
