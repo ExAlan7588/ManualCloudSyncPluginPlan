@@ -169,7 +169,7 @@ function trustedCommandEvidence(item) {
 }
 
 function deployChecks(report) {
-    const names = new Set((report?.checks || []).map(item => item.name));
+    const names = passedCheckNames(report);
     return [
         check('deploy report ok', report?.ok === true, 'deploy report must have ok=true'),
         check('deploy report verifiedAt', hasText(report?.verifiedAt), 'deploy report must include verifiedAt'),
@@ -182,7 +182,7 @@ function deployChecks(report) {
 }
 
 function smokeChecks(report) {
-    const names = new Set((report?.checks || []).map(item => item.name));
+    const names = passedCheckNames(report);
     return [
         check('smoke report ok', report?.ok === true, 'smoke report must have ok=true'),
         check('smoke report completedAt', hasText(report?.completedAt), 'smoke report must include completedAt'),
@@ -411,6 +411,11 @@ function hasPositiveInteger(value) {
 
 function fixturePathsIncludePrimary(report) {
     return Array.isArray(report?.smokePaths) && report.smokePaths.includes(report.smokePath);
+}
+
+function passedCheckNames(report) {
+    const checks = Array.isArray(report?.checks) ? report.checks : [];
+    return new Set(checks.filter(item => item?.ok === true).map(item => item.name));
 }
 
 function formatCheckLine(checkItem) {

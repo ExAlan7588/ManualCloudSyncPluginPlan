@@ -145,7 +145,7 @@ async function runSmoke(runtime) {
 async function assertStatus(runtime, checks) {
     const status = await getJson({ route: '/v2/status', runtime });
     assertCondition(status.ok === true, 'Status endpoint must return ok=true');
-    checks.push({ detail: String(status.service || 'ok'), name: 'status' });
+    recordCheck({ checks, detail: String(status.service || 'ok'), name: 'status' });
     return status;
 }
 
@@ -161,7 +161,7 @@ async function pairDevice(options) {
         runtime: options.runtime,
     });
     assertCondition(Boolean(pair.authToken && pair.deviceId), 'Pairing response must include authToken and deviceId');
-    options.checks.push({ detail: pair.deviceId, name: 'pair' });
+    recordCheck({ checks: options.checks, detail: pair.deviceId, name: 'pair' });
     return pair;
 }
 
@@ -173,7 +173,7 @@ async function openSession(options) {
         token: options.pair.authToken,
     });
     assertCondition(session.deviceId === options.pair.deviceId, 'Session endpoint must echo the paired device id');
-    options.checks.push({ detail: session.openedAt, name: 'session' });
+    recordCheck({ checks: options.checks, detail: session.openedAt, name: 'session' });
 }
 
 async function pushSmokeFile(options) {
@@ -184,7 +184,7 @@ async function pushSmokeFile(options) {
     await assertProgress({ checks: options.checks, expectedPhase: 'transferring', name: 'progress transferring', pair: options.pair, planId: plan.id, runtime: options.runtime });
     const committed = await commitPlan({ pair: options.pair, planId: plan.id, runtime: options.runtime });
     await assertProgress({ checks: options.checks, expectedPhase: 'committed', name: 'progress committed', pair: options.pair, planId: plan.id, runtime: options.runtime });
-    options.checks.push({ detail: committed.id, name: 'push commit' });
+    recordCheck({ checks: options.checks, detail: committed.id, name: 'push commit' });
     return { plan: committed };
 }
 
@@ -207,14 +207,14 @@ async function assertDownloadedFiles(options) {
         assertCondition(downloaded.text === file.content, `Downloaded content must match ${file.path}`);
         assertCondition(downloaded.modifiedMs === String(file.entry.modifiedMs), `Downloaded mtime header must match ${file.path}`);
     }
-    options.checks.push({ detail: `${options.fixture.files.length} files / ${options.fixture.totalBytes} bytes`, name: 'pull mtime header' });
+    recordCheck({ checks: options.checks, detail: `${options.fixture.files.length} files / ${options.fixture.totalBytes} bytes`, name: 'pull mtime header' });
 }
 
 async function assertEmptyDiff(options) {
     const plan = await pullPlan({ localManifest: options.localManifest, pair: options.pair, runtime: options.runtime });
     assertCondition(plan.downloads.length === 0, 'Pull plan must be empty for the full remote manifest snapshot');
     assertCondition(plan.conflicts.length === 0, 'Empty diff must not contain conflicts');
-    options.checks.push({ detail: plan.id, name: 'empty diff' });
+    recordCheck({ checks: options.checks, detail: plan.id, name: 'empty diff' });
 }
 
 async function assertDeviceAndHistory(options) {
@@ -223,13 +223,13 @@ async function assertDeviceAndHistory(options) {
     assertCondition(Boolean(device?.lastSyncAt), 'Device list must show lastSyncAt after commit');
     const history = await getJson({ route: `/v2/history?namespace=${options.pair.namespace}`, runtime: options.runtime, token: options.pair.authToken });
     assertCondition(history.history.some(item => item.planId === options.planId), 'History must include the committed push plan');
-    options.checks.push({ detail: device.lastSyncAt, name: 'device history' });
+    recordCheck({ checks: options.checks, detail: device.lastSyncAt, name: 'device history' });
 }
 
 async function assertProgress(options) {
     const progress = await getProgress({ pair: options.pair, planId: options.planId, runtime: options.runtime });
     assertCondition(progress.phase === options.expectedPhase, `${options.name} expected ${options.expectedPhase}`);
-    options.checks.push({ detail: `${progress.filesTransferred}/${progress.totalFiles}`, name: options.name });
+    recordCheck({ checks: options.checks, detail: `${progress.filesTransferred}/${progress.totalFiles}`, name: options.name });
 }
 
 async function pushPlan(options) {
@@ -437,6 +437,10 @@ function assertCondition(condition, message) {
     if (!condition) {
         throw new Error(message);
     }
+}
+
+function recordCheck(options) {
+    options.checks.push({ detail: options.detail, name: options.name, ok: true });
 }
 
 function normalizeEndpoint(endpoint) {

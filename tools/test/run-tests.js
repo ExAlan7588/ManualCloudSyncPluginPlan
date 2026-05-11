@@ -100,9 +100,11 @@ const tests = [
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
+    ['incremental evidence verifier rejects failed deploy required checks', testFailedDeployRequiredCheck],
     ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
+    ['incremental evidence verifier rejects failed smoke required checks', testFailedSmokeRequiredCheck],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
@@ -214,6 +216,7 @@ function assertDeviceRequirementDocumented(options) {
 
 function assertCheckNames(report) {
     const names = report.checks.map(check => check.name);
+    assert.ok(report.checks.every(check => check.ok === true), 'all smoke checks must report ok=true');
     assert.deepEqual(names, [
         'status',
         'pair',
@@ -258,6 +261,22 @@ async function testMixedDeploySmokeEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('deploy and smoke same URL'));
+}
+
+async function testFailedDeployRequiredCheck() {
+    const evidence = completeEvidence();
+    evidence.deployReport.checks[0].ok = false;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes(`deploy ${evidence.deployReport.checks[0].name}`));
+}
+
+async function testFailedSmokeRequiredCheck() {
+    const evidence = completeEvidence();
+    evidence.smokeReport.checks[0].ok = false;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes(`smoke ${evidence.smokeReport.checks[0].name}`));
 }
 
 async function testMixedServerEvidence() {
@@ -469,7 +488,7 @@ function deployReportFixture() {
 function smokeReportFixture() {
     const smokePath = 'default-user/chats/tt-sync-smoke-fixture.jsonl';
     return {
-        checks: REQUIRED_SMOKE_CHECKS.map(name => ({ detail: 'fixture', name })),
+        checks: REQUIRED_SMOKE_CHECKS.map(name => ({ detail: 'fixture', name, ok: true })),
         completedAt: '2026-05-12T00:01:00+08:00',
         deviceId: 'device-fixture',
         endpoint: 'https://sync.example.com',
