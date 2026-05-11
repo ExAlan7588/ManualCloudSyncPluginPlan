@@ -190,6 +190,16 @@ function consistencyChecks(evidence) {
             'deploy publicUrl and smoke endpoint must match',
         ),
         check(
+            'pull mtime values match',
+            sameNumber(deviceCheckValue(evidence, 'pullMtimePreserved', 'mtime.expectedModifiedMs'), deviceCheckValue(evidence, 'pullMtimePreserved', 'mtime.actualModifiedMs')),
+            'pullMtimePreserved expectedModifiedMs and actualModifiedMs must match',
+        ),
+        check(
+            'interruption hash unchanged',
+            sameText(deviceCheckValue(evidence, 'pullInterruptionSafe', 'interruption.beforeHash'), deviceCheckValue(evidence, 'pullInterruptionSafe', 'interruption.afterHash')),
+            'pullInterruptionSafe beforeHash and afterHash must match',
+        ),
+        check(
             'same server URL',
             sameEndpoint(evidence.smokeReport?.endpoint, evidence.deviceEvidence?.server?.url),
             'smoke endpoint and device evidence server.url must match',
@@ -280,6 +290,14 @@ function normalizeEndpoint(endpoint) {
 
 function sameText(left, right) {
     return hasText(left) && hasText(right) && left.trim() === right.trim();
+}
+
+function sameNumber(left, right) {
+    return Number.isFinite(left) && Number.isFinite(right) && left === right;
+}
+
+function deviceCheckValue(evidence, checkKey, pathValue) {
+    return readPath(evidence.deviceEvidence?.checks?.[checkKey], pathValue);
 }
 
 function reportFor(checks) {

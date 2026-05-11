@@ -185,6 +185,7 @@ device evidence 的 `commandContractVerified.commandReport.source` 與 `commandC
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且包含 direct Node `ExecStart`、hardening、public URL、port、non-placeholder pairing token 與 data dir writable path 檢查；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
 遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、fixture files/bytes 與 smoke paths。
 device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
+`pullMtimePreserved.mtime.expectedModifiedMs` 必須等於 `pullMtimePreserved.mtime.actualModifiedMs`；`pullInterruptionSafe.interruption.beforeHash` 必須等於 `pullInterruptionSafe.interruption.afterHash`。
 
 device evidence JSON 需包含：
 
@@ -249,7 +250,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
     "pullInterruptionSafe": {
       "ok": true,
       "evidence": "interrupted Pull run id and local file hash evidence",
-      "interruption": { "beforeHash": "sha256-before", "afterHash": "sha256-after", "error": "interrupted pull" }
+      "interruption": { "beforeHash": "sha256-stable", "afterHash": "sha256-stable", "error": "interrupted pull" }
     },
     "lanCloudSyncMutex": {
       "ok": true,

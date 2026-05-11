@@ -37,7 +37,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         phone: { savedServerId: 'phone-server-fixture' },
     },
     pullInterruptionSafe: {
-        interruption: { afterHash: 'sha256-after', beforeHash: 'sha256-before', error: 'interrupted pull' },
+        interruption: { afterHash: 'sha256-stable', beforeHash: 'sha256-stable', error: 'interrupted pull' },
     },
     pullMtimePreserved: {
         mtime: { actualModifiedMs: TEST_MTIME_MS, expectedModifiedMs: TEST_MTIME_MS },
@@ -64,6 +64,8 @@ const tests = [
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
+    ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
+    ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
     ['incremental evidence verifier rejects missing device structured fields', testMissingDeviceStructuredFields],
@@ -216,6 +218,22 @@ async function testMixedServerEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('same server URL'));
+}
+
+async function testMtimeMismatch() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.pullMtimePreserved.mtime.actualModifiedMs = TEST_MTIME_MS + 1;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('pull mtime values match'));
+}
+
+async function testInterruptionHashMismatch() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.pullInterruptionSafe.interruption.afterHash = 'sha256-changed';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('interruption hash unchanged'));
 }
 
 async function testMissingSmokeProvenance() {
