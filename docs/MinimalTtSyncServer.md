@@ -43,7 +43,7 @@ After deploying the service, run:
 npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
 ```
 
-The smoke verifier performs real HTTP calls for status, pairing, session open, push plan, file upload, progress events, commit, pull plan, file download, mtime header validation, empty diff, devices, and history. Remote mode leaves one unique smoke file in the selected namespace as deployment evidence and does not run automatic mirror-delete cleanup.
+For larger deployment evidence, add `--bulk-files <count>` and `--bulk-file-bytes <bytes>`. The smoke verifier performs real HTTP calls for status, pairing, session open, push plan, file upload, progress events, commit, pull plan, file download, mtime header validation, empty diff, devices, and history. Remote mode leaves unique smoke files in the selected namespace as deployment evidence and does not run automatic mirror-delete cleanup. The JSON report includes fixture file count, total bytes, and all smoke paths.
 
 ## Pairing URI
 

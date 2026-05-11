@@ -99,7 +99,7 @@ Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，�
 npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
 ```
 
-本機開發可明確使用 `--local` 啟動真實 minimal server 做同一套 smoke。遠端模式會在所選 namespace 留下一個唯一 smoke 檔案作為部署證據，不會自動刪除其他遠端資料。
+部署驗證若要覆蓋大批量首次同步，可加入 `--bulk-files <count>` 與 `--bulk-file-bytes <bytes>`；報告會保存 fixture file count、total bytes 與每個 smoke path。遠端模式會在所選 namespace 留下一組唯一命名的 smoke 檔案作為部署證據，不會自動刪除其他遠端資料。本機開發可明確使用 `--local` 啟動真實 minimal server 做同一套 smoke。
 
 收齊 TauriTavern build command report、遠端 smoke report 與真機 device evidence 後，可用 final evidence gate 檢查是否足以關閉增量同步計畫：
 
@@ -107,7 +107,7 @@ npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-to
 npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.json --smoke /tmp/tt-sync-smoke-report.json --device-evidence /tmp/tt-sync-device-evidence.json
 ```
 
-final evidence gate 會確認 command report 有實際 `scannedAt`、source、scanned file，遠端 smoke report 有 `completedAt`、`smokePath`、`deviceId`、`planIds`，且 device evidence 的 server URL 與遠端 smoke endpoint 一致。
+final evidence gate 會確認 command report 有實際 `scannedAt`、source、scanned file，遠端 smoke report 有 `completedAt`、`smokePath`、`deviceId`、`planIds`、fixture files/bytes/paths，且 device evidence 的 server URL 與遠端 smoke endpoint 一致。
 
 device evidence 可先用模板產生；模板內所有檢查預設 `ok=false`，不會通過 final evidence gate：
 

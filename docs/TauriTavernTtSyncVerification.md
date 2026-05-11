@@ -63,6 +63,12 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
 ```
 
+大批量部署驗證可明確指定 fixture 規模：
+
+```bash
+npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --bulk-files 128 --bulk-file-bytes 2621440 --manifest /tmp/tt-sync-smoke-report.json
+```
+
 本機開發可明確使用：
 
 ```bash
@@ -88,7 +94,8 @@ smoke verifier 會執行真實 HTTP 流程：
 - 工具 exit code 為 `0`。
 - 報告中的 `ok` 為 `true`。
 - 報告包含 status、pair、session、progress、push commit、pull mtime header、empty diff、device history 檢查。
-- 遠端模式會在 namespace 留下一個唯一 smoke 檔案作為部署證據；工具不會自動執行 mirror delete 清理，以避免誤刪既有遠端資料。
+- 報告包含 `fixture.fileCount`、`fixture.totalBytes` 與 `smokePaths`，且 `smokePath` 必須在 `smokePaths` 內。
+- 遠端模式會在 namespace 留下一組唯一命名的 smoke 檔案作為部署證據；工具不會自動執行 mirror delete 清理，以避免誤刪既有遠端資料。
 
 ## 4. Pull mtime 保留
 

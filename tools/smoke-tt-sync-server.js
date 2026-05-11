@@ -10,12 +10,17 @@ import { sha256 } from '../server/lib/manifest.js';
 import { buildPairingUri, startServer } from '../server/tt-sync-server.js';
 
 const DEFAULT_HOST = '127.0.0.1';
+const DEFAULT_FIXTURE_FILE_BYTES = null;
+const DEFAULT_FIXTURE_FILE_COUNT = 1;
 const DEFAULT_DEVICE_PREFIX = 'smoke-device';
 const DEFAULT_NAMESPACE_PREFIX = 'smoke';
 const EXIT_FAILURE = 1;
 const EXIT_SUCCESS = 0;
+const FIXTURE_INDEX_PAD = 4;
 const JSON_INDENT = 2;
 const LOCAL_PORT = 0;
+const MIN_FIXTURE_FILE_BYTES = 0;
+const MIN_FIXTURE_FILE_COUNT = 1;
 const SMOKE_CONTENT_PREFIX = 'tt-sync-smoke';
 const SMOKE_PATH_PREFIX = 'default-user/chats/tt-sync-smoke';
 const SMOKE_RUN_ID_LENGTH = 12;
@@ -37,6 +42,7 @@ export function formatSmokeReport(report) {
         `endpoint: ${report.endpoint}`,
         `namespace: ${report.namespace}`,
         `smoke path: ${report.smokePath}`,
+        `fixture: ${report.fixture.fileCount} files / ${report.fixture.totalBytes} bytes`,
         'checks:',
     ];
     lines.push(...report.checks.map(check => `- ${check.name}: ${check.detail}`));
@@ -53,6 +59,18 @@ async function createRuntime(input) {
 }
 
 function normalizeOptions(input) {
+    const bulkFiles = parseIntegerOption({
+        defaultValue: DEFAULT_FIXTURE_FILE_COUNT,
+        label: '--bulk-files',
+        minimum: MIN_FIXTURE_FILE_COUNT,
+        value: input.bulkFiles,
+    });
+    const bulkFileBytes = parseIntegerOption({
+        defaultValue: DEFAULT_FIXTURE_FILE_BYTES,
+        label: '--bulk-file-bytes',
+        minimum: MIN_FIXTURE_FILE_BYTES,
+        value: input.bulkFileBytes,
+    });
     const namespace = input.namespace || `${DEFAULT_NAMESPACE_PREFIX}-${input.runId}`;
     const deviceName = input.deviceName || `${DEFAULT_DEVICE_PREFIX}-${input.runId}`;
     const pairingToken = input.local ? '' : input.pairingToken || process.env[TOKEN_ENV_NAME] || '';
@@ -65,7 +83,18 @@ function normalizeOptions(input) {
     if (!input.local && !pairingToken) {
         throw new Error('--pairing-token or TT_SYNC_PAIRING_TOKEN is required for remote smoke');
     }
-    return { ...input, deviceName, namespace, pairingToken, startedAt: new Date().toISOString() };
+    return { ...input, bulkFileBytes, bulkFiles, deviceName, namespace, pairingToken, startedAt: new Date().toISOString() };
+}
+
+function parseIntegerOption(options) {
+    if (options.value === undefined || options.value === null) {
+        return options.defaultValue;
+    }
+    const value = Number(options.value);
+    if (!Number.isInteger(value) || value < options.minimum) {
+        throw new Error(`${options.label} must be an integer >= ${options.minimum}`);
+    }
+    return value;
 }
 
 async function createLocalRuntime(options) {
@@ -148,10 +177,10 @@ async function openSession(options) {
 }
 
 async function pushSmokeFile(options) {
-    const plan = await pushPlan({ baseManifest: [], localManifest: [options.fixture.entry], pair: options.pair, runtime: options.runtime });
-    assertOnePath({ entries: plan.uploads, expectedPath: options.fixture.path, label: 'push uploads' });
+    const plan = await pushPlan({ baseManifest: [], localManifest: options.fixture.entries, pair: options.pair, runtime: options.runtime });
+    assertAllPaths({ entries: plan.uploads, expectedPaths: options.fixture.paths, label: 'push uploads' });
     await assertProgress({ checks: options.checks, expectedPhase: 'planned', name: 'progress planned', pair: options.pair, planId: plan.id, runtime: options.runtime });
-    await putFile({ content: options.fixture.content, pair: options.pair, planId: plan.id, runtime: options.runtime, syncPath: options.fixture.path });
+    await uploadFixtureFiles({ fixture: options.fixture, pair: options.pair, planId: plan.id, runtime: options.runtime });
     await assertProgress({ checks: options.checks, expectedPhase: 'transferring', name: 'progress transferring', pair: options.pair, planId: plan.id, runtime: options.runtime });
     const committed = await commitPlan({ pair: options.pair, planId: plan.id, runtime: options.runtime });
     await assertProgress({ checks: options.checks, expectedPhase: 'committed', name: 'progress committed', pair: options.pair, planId: plan.id, runtime: options.runtime });
@@ -159,14 +188,26 @@ async function pushSmokeFile(options) {
     return { plan: committed };
 }
 
+async function uploadFixtureFiles(options) {
+    for (const file of options.fixture.files) {
+        await putFile({ content: file.content, pair: options.pair, planId: options.planId, runtime: options.runtime, syncPath: file.path });
+    }
+}
+
 async function pullSmokeFile(options) {
     const plan = await pullPlan({ localManifest: [], pair: options.pair, runtime: options.runtime });
-    assertOnePath({ entries: plan.downloads, expectedPath: options.fixture.path, label: 'pull downloads' });
-    const downloaded = await getFile({ pair: options.pair, planId: plan.id, runtime: options.runtime, syncPath: options.fixture.path });
-    assertCondition(downloaded.text === options.fixture.content, 'Downloaded content must match uploaded content');
-    assertCondition(downloaded.modifiedMs === String(options.fixture.entry.modifiedMs), 'Downloaded mtime header must match manifest');
-    options.checks.push({ detail: downloaded.modifiedMs, name: 'pull mtime header' });
+    assertAllPaths({ entries: plan.downloads, expectedPaths: options.fixture.paths, label: 'pull downloads' });
+    await assertDownloadedFiles({ checks: options.checks, fixture: options.fixture, pair: options.pair, plan, runtime: options.runtime });
     return { plan, remoteManifest: plan.downloads };
+}
+
+async function assertDownloadedFiles(options) {
+    for (const file of options.fixture.files) {
+        const downloaded = await getFile({ pair: options.pair, planId: options.plan.id, runtime: options.runtime, syncPath: file.path });
+        assertCondition(downloaded.text === file.content, `Downloaded content must match ${file.path}`);
+        assertCondition(downloaded.modifiedMs === String(file.entry.modifiedMs), `Downloaded mtime header must match ${file.path}`);
+    }
+    options.checks.push({ detail: `${options.fixture.files.length} files / ${options.fixture.totalBytes} bytes`, name: 'pull mtime header' });
 }
 
 async function assertEmptyDiff(options) {
@@ -304,9 +345,29 @@ function parseSseProgress(text) {
 }
 
 function smokeFixture(runtime) {
-    const content = `${SMOKE_CONTENT_PREFIX}:${runtime.runId}\n`;
+    const files = Array.from({ length: runtime.bulkFiles }, (_value, index) => smokeFixtureFile({ index, runtime }));
+    const entries = files.map(file => file.entry);
+    const paths = files.map(file => file.path);
+    const totalBytes = entries.reduce((sum, entry) => sum + entry.sizeBytes, 0);
+    return {
+        content: files[0].content,
+        entries,
+        entry: files[0].entry,
+        files,
+        path: files[0].path,
+        paths,
+        totalBytes,
+    };
+}
+
+function smokeFixtureFile(options) {
+    const content = fixtureContent({
+        bytes: options.runtime.bulkFileBytes,
+        index: options.index,
+        runId: options.runtime.runId,
+    });
     const buffer = Buffer.from(content);
-    const smokePath = `${SMOKE_PATH_PREFIX}-${runtime.runId}.jsonl`;
+    const smokePath = `${SMOKE_PATH_PREFIX}-${fixturePathSuffix(options)}.jsonl`;
     return {
         content,
         entry: {
@@ -319,12 +380,39 @@ function smokeFixture(runtime) {
     };
 }
 
+function fixtureContent(options) {
+    const seed = `${SMOKE_CONTENT_PREFIX}:${options.runId}:${options.index}\n`;
+    if (options.bytes === DEFAULT_FIXTURE_FILE_BYTES) {
+        return seed;
+    }
+    return repeatedAscii({ bytes: options.bytes, seed });
+}
+
+function repeatedAscii(options) {
+    let output = options.seed;
+    while (output.length < options.bytes) {
+        output += output;
+    }
+    return output.slice(0, options.bytes);
+}
+
+function fixturePathSuffix(options) {
+    if (options.runtime.bulkFiles === DEFAULT_FIXTURE_FILE_COUNT) {
+        return options.runtime.runId;
+    }
+    return `${options.runtime.runId}-${String(options.index + 1).padStart(FIXTURE_INDEX_PAD, '0')}`;
+}
+
 function smokeReport(options) {
     return {
         checks: options.checks,
         completedAt: new Date().toISOString(),
         deviceId: options.pair.deviceId,
         endpoint: options.runtime.endpoint,
+        fixture: {
+            fileCount: options.fixture.files.length,
+            totalBytes: options.fixture.totalBytes,
+        },
         mode: options.runtime.mode,
         namespace: options.pair.namespace,
         ok: true,
@@ -333,13 +421,16 @@ function smokeReport(options) {
             push: options.pushed.plan.id,
         },
         smokePath: options.fixture.path,
+        smokePaths: options.fixture.paths,
         startedAt: options.runtime.startedAt,
         status: options.status,
     };
 }
 
-function assertOnePath(options) {
-    assertCondition(options.entries.some(entry => entry.path === options.expectedPath), `${options.label} must include ${options.expectedPath}`);
+function assertAllPaths(options) {
+    const paths = new Set(options.entries.map(entry => entry.path));
+    const missing = options.expectedPaths.filter(expectedPath => !paths.has(expectedPath));
+    assertCondition(missing.length === 0, `${options.label} missing ${missing.join(', ')}`);
 }
 
 function assertCondition(condition, message) {
@@ -361,6 +452,8 @@ function parseCliOptions() {
     return parseArgs({
         allowPositionals: false,
         options: {
+            'bulk-file-bytes': { type: 'string' },
+            'bulk-files': { type: 'string' },
             'device-name': { type: 'string' },
             endpoint: { short: 'e', type: 'string' },
             help: { short: 'h', type: 'boolean' },
@@ -377,9 +470,10 @@ function usageText() {
     return [
         'Usage: node tools/smoke-tt-sync-server.js --endpoint <url> --pairing-token <token> [--namespace <name>]',
         '       node tools/smoke-tt-sync-server.js --local',
+        '       node tools/smoke-tt-sync-server.js --endpoint <url> --pairing-token <token> --bulk-files <count> --bulk-file-bytes <bytes>',
         '',
         'Runs a real TT-Sync v2 smoke test: status, pair, session, push, progress, pull, mtime, empty diff, devices, and history.',
-        'Remote mode leaves one unique smoke file in the selected namespace as deployment evidence.',
+        'Remote mode leaves unique smoke files in the selected namespace as deployment evidence.',
     ].join('\n');
 }
 
@@ -402,6 +496,8 @@ async function runCli() {
 
 function cliInput(options) {
     return {
+        bulkFileBytes: options['bulk-file-bytes'],
+        bulkFiles: options['bulk-files'],
         deviceName: options['device-name'],
         endpoint: options.endpoint,
         local: options.local,

@@ -9,9 +9,12 @@ import {
 } from '../verify-incremental-cloud-sync-evidence.js';
 
 const PAIRING_TOKEN_ENV = 'TT_SYNC_PAIRING_TOKEN';
+const TEST_BULK_FILE_BYTES = 128;
+const TEST_BULK_FILES = 3;
 
 const tests = [
     ['server smoke verifier passes against explicit local server', testLocalSmoke],
+    ['server smoke verifier supports bulk fixture', testBulkSmokeFixture],
     ['server smoke verifier requires endpoint or local mode', testRequiresTarget],
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
@@ -19,6 +22,7 @@ const tests = [
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
+    ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
 
@@ -46,6 +50,18 @@ async function testLocalSmoke() {
     assert.match(report.endpoint, /^http:\/\/127\.0\.0\.1:/);
     assert.match(report.namespace, /^smoke-/);
     assert.match(report.smokePath, /^default-user\/chats\/tt-sync-smoke-/);
+    assertCheckNames(report);
+}
+
+async function testBulkSmokeFixture() {
+    const report = await smokeTtSyncServer({
+        bulkFileBytes: TEST_BULK_FILE_BYTES,
+        bulkFiles: TEST_BULK_FILES,
+        local: true,
+    });
+    assert.equal(report.fixture.fileCount, TEST_BULK_FILES);
+    assert.equal(report.fixture.totalBytes, TEST_BULK_FILES * TEST_BULK_FILE_BYTES);
+    assert.equal(report.smokePaths.length, TEST_BULK_FILES);
     assertCheckNames(report);
 }
 
@@ -125,6 +141,16 @@ async function testMissingSmokeProvenance() {
     assert.ok(report.failed.includes('smoke report plan ids'));
 }
 
+async function testMissingSmokeFixtureProvenance() {
+    const evidence = completeEvidence();
+    delete evidence.smokeReport.fixture;
+    delete evidence.smokeReport.smokePaths;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('smoke report fixture files'));
+    assert.ok(report.failed.includes('smoke report fixture paths'));
+}
+
 async function testDeviceEvidenceTemplateIncomplete() {
     const template = createDeviceEvidenceTemplate({
         desktopBuildId: 'desktop-build-fixture',
@@ -158,18 +184,24 @@ function commandReportFixture() {
 }
 
 function smokeReportFixture() {
+    const smokePath = 'default-user/chats/tt-sync-smoke-fixture.jsonl';
     return {
         checks: REQUIRED_SMOKE_CHECKS.map(name => ({ detail: 'fixture', name })),
         completedAt: '2026-05-12T00:01:00+08:00',
         deviceId: 'device-fixture',
         endpoint: 'https://sync.example.com',
+        fixture: {
+            fileCount: TEST_BULK_FILES,
+            totalBytes: TEST_BULK_FILES * TEST_BULK_FILE_BYTES,
+        },
         mode: 'remote',
         ok: true,
         planIds: {
             pull: 'pull-plan-fixture',
             push: 'push-plan-fixture',
         },
-        smokePath: 'default-user/chats/tt-sync-smoke-fixture.jsonl',
+        smokePath,
+        smokePaths: [smokePath],
     };
 }
 

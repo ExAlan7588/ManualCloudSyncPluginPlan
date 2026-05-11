@@ -68,15 +68,15 @@ TT-Sync v2 已經具備很多理想形態：
 - 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
 - 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
 - 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
-- 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke。
-- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 command report、遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate。
+- 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke，並可用 `--bulk-files` / `--bulk-file-bytes` 產生多檔或大檔部署證據。
+- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 command report、帶 fixture provenance 的遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate。
 - 新增 `tools/create-device-evidence-template.js`，可產生所有真機檢查預設 `ok=false` 的 device evidence 模板。
 - 新增 `docs/TauriTavernTtSyncCommandContract.md`，明確定義前端呼叫的 `tt_sync_*` command contract 與後端必須保證的 mtime、atomic write、mutex、error 行為。
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build 是否已包含 `tt_sync_*` commands；需以 `npm run verify:tauritavern -- --source <build>` 產生實際 build 證據。
-- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據。
+- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據，大資料部署驗證可加上 `--bulk-files` / `--bulk-file-bytes`。
 - 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；全部外部證據需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
@@ -253,7 +253,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 1：最小可用增量同步
 
-- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server，並提供 `npm run smoke:tt-sync-server -- --endpoint <url>` 驗證部署；尚未取得真實 VPS smoke 報告。
+- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server，並提供 `npm run smoke:tt-sync-server -- --endpoint <url>` 驗證部署；smoke report 會記錄 fixture files/bytes/paths；尚未取得真實 VPS smoke 報告。
 - [x] 產生配對 URI。結果：`npm run tt-sync:pair` 會依 `TT_SYNC_PAIRING_TOKEN` 產生配對 URI。
 - [ ] 手機與電腦能保存配對服務端。驗證方式已文件化於 `docs/TauriTavernTtSyncVerification.md`；仍需真機 app 後端保存證據。
 - [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
@@ -299,7 +299,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ## 11. 驗證清單
 
-- [x] 首次同步大資料目錄可完成。結果：server test `bulk first sync completes` 覆蓋 128-file first sync fixture；真實 300MB device/VPS 測試仍需外部環境。
+- [x] 首次同步大資料目錄可完成。結果：server test `bulk first sync completes` 覆蓋 128-file first sync fixture，live smoke 也支援 `--bulk-files` / `--bulk-file-bytes` 產生多檔或大檔 HTTP 證據；真實 300MB device/VPS 測試仍需外部環境。
 - [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
 - [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
 - [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。

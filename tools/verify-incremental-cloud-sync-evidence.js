@@ -98,6 +98,9 @@ function smokeChecks(report) {
         check('smoke report deviceId', hasText(report?.deviceId), 'smoke report must include paired deviceId'),
         check('smoke report path', hasText(report?.smokePath), 'smoke report must include smokePath'),
         check('smoke report plan ids', hasText(report?.planIds?.push) && hasText(report?.planIds?.pull), 'smoke report must include push and pull plan ids'),
+        check('smoke report fixture files', hasPositiveInteger(report?.fixture?.fileCount), 'smoke report must include fixture.fileCount > 0'),
+        check('smoke report fixture bytes', hasPositiveInteger(report?.fixture?.totalBytes), 'smoke report must include fixture.totalBytes > 0'),
+        check('smoke report fixture paths', fixturePathsIncludePrimary(report), 'smoke report must include smokePaths containing smokePath'),
         check('smoke report is remote', report?.mode === 'remote', 'final evidence requires a remote deployed server smoke report'),
         check('smoke endpoint is non-local', isNonLocalEndpoint(report?.endpoint), 'smoke endpoint must not be localhost or loopback'),
         ...REQUIRED_SMOKE_CHECKS.map(name => check(`smoke ${name}`, names.has(name), `${name} check is required`)),
@@ -191,6 +194,14 @@ function check(name, ok, detail) {
 
 function hasText(value) {
     return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasPositiveInteger(value) {
+    return Number.isInteger(value) && value > 0;
+}
+
+function fixturePathsIncludePrimary(report) {
+    return Array.isArray(report?.smokePaths) && report.smokePaths.includes(report.smokePath);
 }
 
 function formatCheckLine(checkItem) {
