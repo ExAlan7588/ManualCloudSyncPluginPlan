@@ -503,7 +503,7 @@ function parseCliOptions() {
 
 function usageText() {
     return [
-        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --mobile-commands <mobile-command-report.json> --desktop-commands <desktop-command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json>',
+        'Usage: node tools/verify-incremental-cloud-sync-evidence.js --mobile-commands <mobile-command-report.json> --desktop-commands <desktop-command-report.json> --events <event-report.json> --deploy <deploy-report.json> --smoke <smoke-report.json> --device-evidence <device-evidence.json> --manifest <final-evidence-report.json>',
         '',
         'Validates the external evidence needed to close docs/IncrementalCloudSyncPlan.md without accepting local-only proxy signals.',
     ].join('\n');
