@@ -56,7 +56,7 @@ Validate a real VPS env file without placeholder allowance:
 npm run verify:tt-sync-deploy -- --service /etc/systemd/system/manual-cloud-tt-sync.service --env /etc/manual-cloud-tt-sync.env
 ```
 
-The verifier checks service hardening, direct Node `ExecStart`, required env keys, public URL syntax, TCP port syntax, data directory writability, and rejects placeholder pairing tokens unless `--allow-placeholders` is explicit.
+The verifier checks service hardening, direct Node `ExecStart`, required env keys, public URL syntax, TCP port syntax, data directory writability, and rejects placeholder pairing tokens unless `--allow-placeholders` is explicit. Its JSON report includes `publicUrl` so the final evidence gate can compare it with the remote smoke endpoint.
 
 ## Live Smoke Verification
 

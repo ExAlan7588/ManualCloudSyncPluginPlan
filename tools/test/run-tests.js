@@ -60,6 +60,7 @@ const tests = [
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
+    ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
@@ -199,6 +200,14 @@ async function testLocalSmokeEvidence() {
     assert.ok(report.failed.includes('smoke endpoint is non-local'));
 }
 
+async function testMixedDeploySmokeEvidence() {
+    const evidence = completeEvidence();
+    evidence.deployReport.publicUrl = 'https://deploy-other.example.com';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy and smoke same URL'));
+}
+
 async function testMixedServerEvidence() {
     const evidence = completeEvidence();
     evidence.deviceEvidence.server.url = 'https://other-sync.example.com';
@@ -289,6 +298,7 @@ function deployReportFixture() {
         checks: REQUIRED_DEPLOY_CHECKS.map(name => ({ detail: 'fixture', name, ok: true })),
         envPath: '/etc/manual-cloud-tt-sync.env',
         ok: true,
+        publicUrl: 'https://sync.example.com',
         servicePath: '/etc/systemd/system/manual-cloud-tt-sync.service',
         verifiedAt: '2026-05-12T00:00:30+08:00',
     };

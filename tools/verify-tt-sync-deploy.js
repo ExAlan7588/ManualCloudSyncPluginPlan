@@ -28,7 +28,13 @@ export async function verifyTtSyncDeploy(options = {}) {
         ...envChecks({ allowPlaceholders, env }),
         ...consistencyChecks({ env, service }),
     ];
-    return reportFor({ allowPlaceholders, checks, envPath: input.envPath, servicePath: input.servicePath });
+    return reportFor({
+        allowPlaceholders,
+        checks,
+        envPath: input.envPath,
+        publicUrl: firstValue(env, 'TT_SYNC_PUBLIC_URL'),
+        servicePath: input.servicePath,
+    });
 }
 
 export function formatDeployReport(report) {
@@ -166,6 +172,7 @@ function reportFor(options) {
         envPath: options.envPath,
         failed: failed.map(item => item.name),
         ok: failed.length === 0,
+        publicUrl: options.publicUrl,
         servicePath: options.servicePath,
         verifiedAt: new Date().toISOString(),
     };

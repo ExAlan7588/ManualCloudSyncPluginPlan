@@ -138,6 +138,7 @@ function deployChecks(report) {
         check('deploy report verifiedAt', hasText(report?.verifiedAt), 'deploy report must include verifiedAt'),
         check('deploy report service path', hasText(report?.servicePath), 'deploy report must include servicePath'),
         check('deploy report env path', hasText(report?.envPath), 'deploy report must include envPath'),
+        check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
         check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
         ...REQUIRED_DEPLOY_CHECKS.map(name => check(`deploy ${name}`, names.has(name), `${name} check is required`)),
     ];
@@ -173,6 +174,11 @@ function deviceChecks(evidence) {
 
 function consistencyChecks(evidence) {
     return [
+        check(
+            'deploy and smoke same URL',
+            sameEndpoint(evidence.deployReport?.publicUrl, evidence.smokeReport?.endpoint),
+            'deploy publicUrl and smoke endpoint must match',
+        ),
         check(
             'same server URL',
             sameEndpoint(evidence.smokeReport?.endpoint, evidence.deviceEvidence?.server?.url),
