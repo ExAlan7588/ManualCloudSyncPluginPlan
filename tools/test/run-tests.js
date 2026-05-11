@@ -94,12 +94,14 @@ const tests = [
     ['incremental evidence verifier rejects source commands without handler evidence', testMissingCommandHandlerEvidence],
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
     ['incremental evidence verifier rejects missing deploy evidence', testMissingDeployEvidence],
+    ['incremental evidence verifier rejects failed deploy report status', testFailedDeployReportStatus],
     ['incremental evidence verifier rejects placeholder deploy evidence', testPlaceholderDeployEvidence],
     ['incremental evidence verifier rejects failed deploy required checks', testFailedDeployRequiredCheck],
     ['incremental evidence verifier rejects deploy checks without detail', testDeployCheckMissingDetail],
     ['incremental evidence verifier rejects device records without ids', testMissingDeviceIds],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
+    ['incremental evidence verifier rejects failed smoke report status', testFailedSmokeReportStatus],
     ['incremental evidence verifier rejects failed smoke required checks', testFailedSmokeRequiredCheck],
     ['incremental evidence verifier rejects smoke checks without detail', testSmokeCheckMissingDetail],
     ['incremental evidence verifier rejects failed extra report checks', testFailedExtraReportCheck],
@@ -224,12 +226,28 @@ async function testFailedDeployRequiredCheck() {
     assert.ok(report.failed.includes(`deploy ${evidence.deployReport.checks[0].name}`));
 }
 
+async function testFailedDeployReportStatus() {
+    const evidence = completeEvidence();
+    evidence.deployReport.ok = false;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report ok'));
+}
+
 async function testFailedSmokeRequiredCheck() {
     const evidence = completeEvidence();
     evidence.smokeReport.checks[0].ok = false;
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes(`smoke ${evidence.smokeReport.checks[0].name}`));
+}
+
+async function testFailedSmokeReportStatus() {
+    const evidence = completeEvidence();
+    evidence.smokeReport.ok = false;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('smoke report ok'));
 }
 
 async function testDeployCheckMissingDetail() {
