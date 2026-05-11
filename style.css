@@ -29,6 +29,10 @@
     margin: 8px 0;
 }
 
+#manual_cloud_sync_settings .mcs-panel {
+    margin: 8px 0;
+}
+
 #manual_cloud_sync_settings .mcs-checkbox {
     align-self: end;
     flex-direction: row;
@@ -67,4 +71,66 @@
 
 #manual_cloud_sync_settings .mcs-empty {
     opacity: 0.8;
+}
+
+#manual_cloud_sync_settings .mcs-sync-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+    margin: 8px 0;
+}
+
+#manual_cloud_sync_settings h4 {
+    margin: 8px 0 6px;
+}
+
+#manual_cloud_sync_settings .mcs-metrics {
+    display: grid;
+    gap: 6px;
+}
+
+#manual_cloud_sync_settings .mcs-metric {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+#manual_cloud_sync_settings .mcs-metric-label {
+    min-width: 0;
+    opacity: 0.8;
+    overflow-wrap: anywhere;
+}
+
+#manual_cloud_sync_settings .mcs-conflicts {
+    display: grid;
+    gap: 6px;
+}
+
+#manual_cloud_sync_settings .mcs-conflict {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+#manual_cloud_sync_settings .mcs-conflict-main {
+    min-width: 0;
+}
+
+#manual_cloud_sync_settings .mcs-conflict-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+#manual_cloud_sync_settings .mcs-conflict-actions [data-selected] {
+    outline: 2px solid var(--SmartThemeQuoteColor);
 }

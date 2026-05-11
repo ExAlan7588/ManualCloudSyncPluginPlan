@@ -5,6 +5,86 @@
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
         <div class="inline-drawer-content">
+            <div class="inline-drawer mcs-panel" id="mcs_tts_panel">
+                <div class="inline-drawer-toggle inline-drawer-header">
+                    <b>增量 TT-Sync</b>
+                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                </div>
+                <div class="inline-drawer-content">
+                    <small id="mcs_tts_status" class="extensions_info"></small>
+
+                    <div class="mcs-grid">
+                        <label>
+                            <span>配對 URI</span>
+                            <input id="mcs_tts_pair_uri" class="text_pole" type="text" autocomplete="off" />
+                        </label>
+                        <label>
+                            <span>裝置名稱</span>
+                            <input id="mcs_tts_device_name" class="text_pole" type="text" autocomplete="off" />
+                        </label>
+                    </div>
+
+                    <div class="flex-container flexGap5 mcs-toolbar">
+                        <button id="mcs_tts_pair" class="menu_button menu_button_icon" type="button">
+                            <i class="fa-solid fa-link"></i>
+                            <span>配對</span>
+                        </button>
+                        <button id="mcs_tts_refresh_servers" class="menu_button menu_button_icon" type="button">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>刷新服務端</span>
+                        </button>
+                    </div>
+
+                    <div class="mcs-grid">
+                        <label>
+                            <span>服務端</span>
+                            <select id="mcs_tts_server" class="text_pole"></select>
+                        </label>
+                    </div>
+
+                    <div class="flex-container flexGap5 mcs-toolbar">
+                        <button id="mcs_tts_check_diff" class="menu_button menu_button_icon" type="button">
+                            <i class="fa-solid fa-code-compare"></i>
+                            <span>檢查差異</span>
+                        </button>
+                        <button id="mcs_tts_push" class="menu_button menu_button_icon" type="button">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Push</span>
+                        </button>
+                        <button id="mcs_tts_pull" class="menu_button menu_button_icon" type="button">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                            <span>Pull</span>
+                        </button>
+                        <button id="mcs_tts_unpair" class="menu_button menu_button_icon" type="button">
+                            <i class="fa-solid fa-link-slash"></i>
+                            <span>解除配對</span>
+                        </button>
+                    </div>
+
+                    <div class="mcs-sync-grid">
+                        <section>
+                            <h4>差異摘要</h4>
+                            <div id="mcs_tts_summary" class="mcs-metrics"></div>
+                        </section>
+                        <section>
+                            <h4>傳輸進度</h4>
+                            <div id="mcs_tts_progress" class="mcs-metrics"></div>
+                        </section>
+                    </div>
+
+                    <section>
+                        <h4>衝突清單</h4>
+                        <div id="mcs_tts_conflicts" class="mcs-conflicts"></div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="inline-drawer mcs-panel" id="mcs_archive_panel">
+                <div class="inline-drawer-toggle inline-drawer-header">
+                    <b>完整封存交棒同步</b>
+                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                </div>
+                <div class="inline-drawer-content">
             <small id="mcs_mode_notice" class="extensions_info"></small>
 
             <div class="flex-container flexGap5 mcs-toolbar">
@@ -132,6 +212,8 @@
 
             <small id="mcs_status" class="extensions_info"></small>
             <div id="mcs_queue" class="mcs-queue"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

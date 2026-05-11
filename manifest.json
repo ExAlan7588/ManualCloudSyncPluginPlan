@@ -6,7 +6,7 @@
     "js": "index.js",
     "css": "style.css",
     "author": "ExAlan7588",
-    "version": "1.1.1",
-    "description": "TauriTavern 的手動 WebDAV/S3 雲端交棒同步面板，含手機資料遷移相容模式。",
+    "version": "1.2.0",
+    "description": "TauriTavern 的手動 WebDAV/S3 交棒同步與 TT-Sync 增量同步入口，含手機資料遷移相容模式。",
     "homePage": "https://github.com/ExAlan7588/ManualCloudSyncPluginPlan"
 }

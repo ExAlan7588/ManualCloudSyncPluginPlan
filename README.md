@@ -1,11 +1,17 @@
 # 手動雲端同步
 
-這是 TauriTavern 的手動雲端交棒同步插件。插件會先偵測目前的 TauriTavern 是否提供 `cloud_sync_*` 原生命令；有的話使用完整原生同步，沒有的話改用「資料遷移相容模式」支援手機舊版 app。
+這是 TauriTavern 的手動雲端交棒同步插件。插件包含兩個入口：
+
+- `增量 TT-Sync`：連到 TauriTavern 既有 TT-Sync v2 後端命令，走配對式增量同步。
+- `完整封存交棒同步`：使用既有 `cloud_sync_*` 原生命令；沒有這些命令時，明確改用資料遷移相容模式支援手機舊版 app。
 
 支援：
 
 - WebDAV：Basic 帳密或 Bearer Token。
 - S3 相容儲存：含 Path Style 模式。
+- TT-Sync 配對、服務端列表、差異摘要、Push、Pull、解除配對入口。
+- 增量同步進度欄位：phase、檔案數、bytes、平均速度、目前檔案。
+- 增量同步衝突清單與「使用本機 / 使用遠端」決策 UI。
 - 手動上傳完整資料封存。
 - 手動下載遠端佇列中最舊的一包。
 - 顯示遠端佇列並手動刪除遠端項目。
@@ -23,7 +29,18 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 ## 必要條件
 
-這個 repo 只包含前端插件。完整 mirror 同步需要 TauriTavern 版本提供下列原生命令：
+這個 repo 只包含前端插件。增量 TT-Sync 需要 TauriTavern 版本提供下列原生命令：
+
+- `tt_sync_pair`
+- `tt_sync_list_servers`
+- `tt_sync_check_diff`
+- `tt_sync_push`
+- `tt_sync_pull`
+- `tt_sync_unpair`
+
+插件會直接呼叫上述命令，不會模擬成功；缺少命令時會顯示後端不支援的錯誤。
+
+完整 mirror 封存同步需要 TauriTavern 版本提供下列原生命令：
 
 - `cloud_sync_get_config`
 - `cloud_sync_save_config`
@@ -33,6 +50,17 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 - `cloud_sync_delete_remote_item`
 
 如果這些命令不存在，插件會在畫面上明確切到資料遷移相容模式，不會模擬成功，也不會靜默降級。
+
+## 增量 TT-Sync 使用方式
+
+1. 在 VPS 或同網路主機啟動 TT-Sync v2 服務。
+2. 取得服務端配對 URI。
+3. 在 `增量 TT-Sync` 面板填入配對 URI 與裝置名稱後按「配對」。
+4. 按「刷新服務端」確認已保存的服務端。
+5. 按「檢查差異」檢視待上傳、待下載、待刪除與衝突摘要。
+6. 沒有未處理衝突時，可按 `Push` 或 `Pull`。
+
+如果後端回傳 conflict 清單，面板會要求每個路徑選擇「使用本機」或「使用遠端」後才允許 Push/Pull。這個插件只負責 UI 與 command 呼叫；manifest 掃描、plan、原子寫入、mtime 保留、mirror delete 與 commit 必須由 TauriTavern TT-Sync 後端實作。
 
 ## WebDAV 使用方式
 

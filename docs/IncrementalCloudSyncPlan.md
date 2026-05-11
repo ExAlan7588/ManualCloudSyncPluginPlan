@@ -57,6 +57,22 @@ TT-Sync v2 已經具備很多理想形態：
 - 同步歷史與回滾點。
 - 更好的手機端首次設定流程。
 
+## 3.1 目前落地狀態（2026-05-11）
+
+本 repo 是 GitHub 前端插件，不包含 `src-tauri` 後端、TT-Sync server、VPS 部署檔或手機 build pipeline。已完成 repo-local 交付：
+
+- 新增獨立 `增量 TT-Sync` 面板，和既有全量 zip 交棒同步分離。
+- UI 呼叫真實 `tt_sync_*` command 名稱：`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_check_diff`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_unpair`。
+- 顯示服務端狀態、差異摘要、Push/Pull 操作、進度欄位與 conflict 決策 UI。
+- 缺少 TT-Sync 後端命令時顯示明確錯誤，不做 mock success 或靜默降級。
+- 既有 WebDAV/S3 完整封存與資料遷移相容模式保留。
+
+仍屬外部交付，不能在此 repo 內驗證完成：
+
+- 手機/電腦 app build 是否已包含 `tt_sync_*` commands。
+- TT-Sync 服務端是否已存在、可部署與可在 VPS 上運作。
+- 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證。
+
 ## 4. 非目標
 
 第一階段先不做：
@@ -224,10 +240,10 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ### Phase 0：盤點與決策
 
 - [ ] 確認目前手機 build 是否已包含 `tt_sync_*` commands。
-- [ ] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。
-- [ ] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。
+- [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
+- [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：本 repo 與本機工作區未找到 server 原始碼；VPS/其他倉庫需外部確認。
 - [ ] 在 VPS 上確認可部署方式：systemd 或 pm2。
-- [ ] 決定第一階段採用「既有 TT-Sync」還是「新增 manual incremental cloud sync」。
+- [x] 決定第一階段採用「既有 TT-Sync」還是「新增 manual incremental cloud sync」。決策：採用既有 TT-Sync command surface，不在純前端插件內新增假的增量同步。
 
 ### Phase 1：最小可用增量同步
 
@@ -242,16 +258,16 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ### Phase 2：差異預覽
 
 - [ ] 新增 `check_diff` 類 command 或復用 plan endpoint 回傳 summary。
-- [ ] 前端顯示本機/遠端差異摘要。
-- [ ] 前端顯示上傳/下載預估大小。
-- [ ] 空 diff 時明確顯示「沒有需要同步的變更」。
+- [x] 前端顯示本機/遠端差異摘要。
+- [x] 前端顯示上傳/下載預估大小。
+- [x] 空 diff 時明確顯示「沒有需要同步的變更」。
 
 ### Phase 3：衝突處理
 
 - [ ] 服務端 plan 標記 conflict。
 - [ ] 後端禁止未解決 conflict 的破壞性同步。
-- [ ] 前端列出 conflict。
-- [ ] 使用者可選本機或遠端版本。
+- [x] 前端列出 conflict。
+- [x] 使用者可選本機或遠端版本。
 - [ ] 衝突決策寫入 plan commit。
 
 ### Phase 4：帳號式體驗
@@ -265,15 +281,15 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ## 10. 前端工作清單
 
-- [ ] 找到目前設定面板放置同步入口的位置。
-- [ ] 建立「雲端同步」面板，避免和全量 zip 插件混淆。
-- [ ] 配對流程 UI。
-- [ ] 差異摘要 UI。
-- [ ] Push/Pull 操作按鈕。
-- [ ] 進度條與速度顯示。
-- [ ] 衝突列表 UI。
-- [ ] 手機版排版檢查。
-- [ ] 錯誤訊息繁體中文化。
+- [x] 找到目前設定面板放置同步入口的位置。
+- [x] 建立「雲端同步」面板，避免和全量 zip 插件混淆。
+- [x] 配對流程 UI。
+- [x] 差異摘要 UI。
+- [x] Push/Pull 操作按鈕。
+- [x] 進度條與速度顯示。
+- [x] 衝突列表 UI。
+- [x] 手機版排版檢查。結果：使用 responsive grid/flex；實機驗證仍列在驗證清單。
+- [x] 錯誤訊息繁體中文化。
 
 ## 11. 驗證清單
 
