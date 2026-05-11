@@ -8,6 +8,14 @@ const RELOAD_DELAY_MS = 800;
 const BYTE_UNIT_STEP = 1024;
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 const DEFAULT_S3_REGION = 'us-east-1';
+const DEFAULT_REMOTE_PREFIX = 'manual-cloud-sync';
+const LOCAL_WEBDAV_ENDPOINT = 'http://127.0.0.1:1900/';
+const LOCAL_WEBDAV_USERNAME = 'webdav';
+const BACKEND_WEBDAV = 'web_dav';
+const BACKEND_S3 = 's3';
+const AUTH_BASIC = 'basic';
+const AUTH_BEARER = 'bearer';
+const SHA_PREVIEW_LENGTH = 8;
 const STATIC_CONTAINER_ID = 'manual_cloud_sync_container';
 const SETTINGS_CONTAINER_ID = 'manual_cloud_sync_settings';
 const EXTENSION_SETTINGS_TARGETS = ['extensions_settings2', 'extensions_settings'];
@@ -39,7 +47,7 @@ function setStatus(message) {
 
 function setBusy(busy) {
     state.busy = busy;
-    $('#mcs_save_config, #mcs_refresh_queue, #mcs_upload_now, #mcs_download_now')
+    $('#mcs_save_config, #mcs_refresh_queue, #mcs_upload_now, #mcs_download_now, #mcs_use_local_webdav')
         .prop('disabled', busy);
 }
 
@@ -68,7 +76,7 @@ function readConfig() {
         version: CONFIG_VERSION,
         backend: $('#mcs_backend').val(),
         endpoint: String($('#mcs_endpoint').val() || '').trim(),
-        remotePrefix: String($('#mcs_remote_prefix').val() || '').trim(),
+        remotePrefix: String($('#mcs_remote_prefix').val() || '').trim() || DEFAULT_REMOTE_PREFIX,
         deviceId: String($('#mcs_device_id').val() || '').trim(),
         webdav: {
             authMode: $('#mcs_webdav_auth_mode').val(),
@@ -99,11 +107,11 @@ function readSecrets() {
 
 function fillConfig(view) {
     const config = view?.config || {};
-    $('#mcs_backend').val(config.backend || 'web_dav');
+    $('#mcs_backend').val(config.backend || BACKEND_WEBDAV);
     $('#mcs_endpoint').val(config.endpoint || '');
-    $('#mcs_remote_prefix').val(config.remotePrefix || '');
+    $('#mcs_remote_prefix').val(config.remotePrefix || DEFAULT_REMOTE_PREFIX);
     $('#mcs_device_id').val(config.deviceId || '');
-    $('#mcs_webdav_auth_mode').val(config.webdav?.authMode || 'basic');
+    $('#mcs_webdav_auth_mode').val(config.webdav?.authMode || AUTH_BASIC);
     $('#mcs_webdav_username').val(config.webdav?.username || '');
     $('#mcs_s3_bucket').val(config.s3?.bucket || '');
     $('#mcs_s3_region').val(config.s3?.region || DEFAULT_S3_REGION);
@@ -126,12 +134,14 @@ function clearSecretInputs() {
 }
 
 function refreshBackendFields() {
-    const backend = String($('#mcs_backend').val() || 'web_dav');
-    const webdavAuthMode = String($('#mcs_webdav_auth_mode').val() || 'basic');
-    $('#mcs_webdav_fields').toggle(backend === 'web_dav');
-    $('#mcs_s3_fields').toggle(backend === 's3');
-    $('.mcs-basic-field').toggle(webdavAuthMode === 'basic');
-    $('.mcs-bearer-field').toggle(webdavAuthMode === 'bearer');
+    const backend = String($('#mcs_backend').val() || BACKEND_WEBDAV);
+    const webdavAuthMode = String($('#mcs_webdav_auth_mode').val() || AUTH_BASIC);
+    const isWebDav = backend === BACKEND_WEBDAV;
+    const isBasic = webdavAuthMode === AUTH_BASIC;
+    $('#mcs_webdav_basic_credentials').toggle(isWebDav && isBasic);
+    $('#mcs_webdav_advanced_fields').toggle(isWebDav);
+    $('#mcs_s3_fields').toggle(backend === BACKEND_S3);
+    $('.mcs-bearer-field').toggle(isWebDav && webdavAuthMode === AUTH_BEARER);
 }
 
 async function loadConfig() {
@@ -142,16 +152,100 @@ async function loadConfig() {
 }
 
 async function saveConfig() {
+    const config = readConfig();
+    const secrets = readSecrets();
+    validateBeforeSave(config, secrets);
     const view = await invokeCommand('cloud_sync_save_config', {
         dto: {
-            config: readConfig(),
-            secrets: readSecrets(),
+            config,
+            secrets,
         },
     });
     state.configView = view;
     clearSecretInputs();
     fillConfig(view);
     return view;
+}
+
+function validateBeforeSave(config, secrets) {
+    validateEndpoint(config.endpoint);
+    validateRemotePrefix(config.remotePrefix);
+
+    if (config.backend === BACKEND_WEBDAV) {
+        validateWebDavConfig(config, secrets);
+        return;
+    }
+
+    if (config.backend === BACKEND_S3) {
+        validateS3Config(config, secrets);
+        return;
+    }
+
+    throw new Error(`不支援的同步後端：${config.backend}`);
+}
+
+function validateEndpoint(endpoint) {
+    if (!endpoint) {
+        throw new Error('請填寫端點 URL');
+    }
+
+    let url;
+    try {
+        url = new URL(endpoint);
+    } catch {
+        throw new Error('端點 URL 格式不正確');
+    }
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('端點 URL 必須使用 http 或 https');
+    }
+}
+
+function validateRemotePrefix(remotePrefix) {
+    if (remotePrefix.includes('\\')) {
+        throw new Error('遠端路徑前綴必須使用 /，不能使用 \\');
+    }
+
+    if (remotePrefix.split('/').some(segment => segment === '..')) {
+        throw new Error('遠端路徑前綴不能包含 .. 路徑片段');
+    }
+}
+
+function validateWebDavConfig(config, secrets) {
+    const authMode = config.webdav.authMode || AUTH_BASIC;
+    if (authMode === AUTH_BASIC) {
+        requireText(config.webdav.username, '請填寫 WebDAV 使用者名稱');
+        requireSecret(secrets.webdavPassword, 'hasWebdavPassword', '請填寫 WebDAV 密碼');
+        return;
+    }
+
+    if (authMode === AUTH_BEARER) {
+        requireSecret(secrets.webdavToken, 'hasWebdavToken', '請填寫 WebDAV Bearer Token');
+        return;
+    }
+
+    throw new Error(`不支援的 WebDAV 驗證方式：${authMode}`);
+}
+
+function validateS3Config(config, secrets) {
+    requireText(config.s3.bucket, '請填寫 S3 Bucket');
+    requireText(config.s3.region, '請填寫 S3 Region');
+    requireSecret(secrets.s3AccessKey, 'hasS3AccessKey', '請填寫 S3 Access Key');
+    requireSecret(secrets.s3SecretKey, 'hasS3SecretKey', '請填寫 S3 Secret Key');
+}
+
+function requireText(value, message) {
+    if (!String(value || '').trim()) {
+        throw new Error(message);
+    }
+}
+
+function requireSecret(value, savedKey, message) {
+    if (String(value || '').trim() || Boolean(state.configView?.secrets?.[savedKey])) {
+        return;
+    }
+
+    throw new Error(message);
 }
 
 async function onSaveClick() {
@@ -260,7 +354,8 @@ function queueItemMeta(item) {
     return [
         formatBytes(Number(manifest.sizeBytes || 0)),
         manifest.createdAt || '',
-        manifest.deviceId || '',
+        manifest.deviceId ? `來源：${manifest.deviceId}` : '',
+        manifest.sha256 ? `SHA-256：${manifest.sha256.slice(0, SHA_PREVIEW_LENGTH)}` : '',
     ].filter(Boolean).join(' | ');
 }
 
@@ -294,6 +389,16 @@ function formatBytes(sizeBytes) {
         unitIndex += 1;
     }
     return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${BYTE_UNITS[unitIndex]}`;
+}
+
+function applyLocalWebDavPreset() {
+    $('#mcs_backend').val(BACKEND_WEBDAV);
+    $('#mcs_endpoint').val(LOCAL_WEBDAV_ENDPOINT);
+    $('#mcs_remote_prefix').val(DEFAULT_REMOTE_PREFIX);
+    $('#mcs_webdav_auth_mode').val(AUTH_BASIC);
+    $('#mcs_webdav_username').val(LOCAL_WEBDAV_USERNAME);
+    refreshBackendFields();
+    setStatus('已套用本機 WebDAV 開發服務設定，請填入密碼後儲存');
 }
 
 function findExtensionSettingsTarget() {
@@ -333,6 +438,7 @@ jQuery(async () => {
     $('#mcs_refresh_queue').on('click', onRefreshQueueClick);
     $('#mcs_upload_now').on('click', onUploadClick);
     $('#mcs_download_now').on('click', onDownloadClick);
+    $('#mcs_use_local_webdav').on('click', applyLocalWebDavPreset);
 
     try {
         await loadConfig();

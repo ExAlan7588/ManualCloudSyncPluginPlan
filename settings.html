@@ -5,6 +5,13 @@
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
         <div class="inline-drawer-content">
+            <div class="flex-container flexGap5 mcs-toolbar">
+                <button id="mcs_use_local_webdav" class="menu_button menu_button_icon" type="button">
+                    <i class="fa-solid fa-laptop-code"></i>
+                    <span>使用本機 WebDAV 開發服務</span>
+                </button>
+            </div>
+
             <div class="mcs-grid">
                 <label>
                     <span>同步後端</span>
@@ -17,35 +24,16 @@
                     <span>端點 URL</span>
                     <input id="mcs_endpoint" class="text_pole" type="url" autocomplete="off" />
                 </label>
-                <label>
-                    <span>遠端路徑前綴</span>
-                    <input id="mcs_remote_prefix" class="text_pole" type="text" autocomplete="off" />
-                </label>
-                <label>
-                    <span>裝置 ID</span>
-                    <input id="mcs_device_id" class="text_pole" type="text" autocomplete="off" />
-                </label>
             </div>
 
-            <div id="mcs_webdav_fields" class="mcs-grid">
+            <div id="mcs_webdav_basic_credentials" class="mcs-grid">
                 <label>
-                    <span>驗證方式</span>
-                    <select id="mcs_webdav_auth_mode" class="text_pole">
-                        <option value="basic">Basic 帳密</option>
-                        <option value="bearer">Bearer Token</option>
-                    </select>
-                </label>
-                <label class="mcs-basic-field">
                     <span>使用者名稱</span>
                     <input id="mcs_webdav_username" class="text_pole" type="text" autocomplete="username" />
                 </label>
-                <label class="mcs-basic-field">
+                <label>
                     <span>密碼</span>
                     <input id="mcs_webdav_password" class="text_pole" type="password" autocomplete="new-password" />
-                </label>
-                <label class="mcs-bearer-field">
-                    <span>Token</span>
-                    <input id="mcs_webdav_token" class="text_pole" type="password" autocomplete="new-password" />
                 </label>
             </div>
 
@@ -74,6 +62,39 @@
                     <input id="mcs_s3_path_style" type="checkbox" />
                     <span>Path Style</span>
                 </label>
+            </div>
+
+            <div class="inline-drawer mcs-advanced">
+                <div class="inline-drawer-toggle inline-drawer-header">
+                    <b>進階設定</b>
+                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                </div>
+                <div class="inline-drawer-content">
+                    <div class="mcs-grid">
+                        <label>
+                            <span>遠端路徑前綴</span>
+                            <input id="mcs_remote_prefix" class="text_pole" type="text" autocomplete="off" />
+                        </label>
+                        <label>
+                            <span>裝置 ID</span>
+                            <input id="mcs_device_id" class="text_pole" type="text" autocomplete="off" placeholder="留空時儲存後自動生成" />
+                        </label>
+                    </div>
+
+                    <div id="mcs_webdav_advanced_fields" class="mcs-grid">
+                        <label>
+                            <span>WebDAV 驗證方式</span>
+                            <select id="mcs_webdav_auth_mode" class="text_pole">
+                                <option value="basic">Basic 帳密</option>
+                                <option value="bearer">Bearer Token</option>
+                            </select>
+                        </label>
+                        <label class="mcs-bearer-field">
+                            <span>Bearer Token</span>
+                            <input id="mcs_webdav_token" class="text_pole" type="password" autocomplete="new-password" />
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div class="flex-container flexGap5">

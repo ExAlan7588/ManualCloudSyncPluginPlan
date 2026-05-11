@@ -35,16 +35,38 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 ## WebDAV 使用方式
 
-在插件面板中選擇 WebDAV 後，填入：
+第一次設定時，預設就是 WebDAV Basic，只需要先填：
 
-- 同步後端：`WebDAV`
 - 端點 URL：你的 WebDAV 目錄 URL，例如 `https://example.com/dav/tauritavern/`
-- 遠端路徑前綴：可留空，或填 `manual-cloud-sync`
-- 裝置 ID：用來識別這台裝置，例如 `pc-home`、`iphone`、`vps-test`
-- 驗證方式：依 VPS 設定選 `Basic 帳密` 或 `Bearer Token`
-- 使用者名稱 / 密碼 或 Token：填 WebDAV 的實際憑證
+- 使用者名稱：WebDAV Basic 帳號
+- 密碼：WebDAV Basic 密碼
 
-按「儲存」後，可用「立即上傳」產生遠端同步包；另一台裝置安裝同一插件並填同一組 WebDAV 設定後，按「重新整理佇列」再按「下載最舊項目」即可套用。
+進階設定中可調整：
+
+- 遠端路徑前綴：預設 `manual-cloud-sync`
+- 裝置 ID：留空時會在儲存後由後端自動生成並回填
+- WebDAV 驗證方式：可改用 Bearer Token
+
+本機開發時可按「使用本機 WebDAV 開發服務」，插件會套入：
+
+- 端點 URL：`http://127.0.0.1:1900/`
+- 遠端路徑前綴：`manual-cloud-sync`
+- 驗證方式：Basic 帳密
+- 使用者名稱：`webdav`
+
+按「儲存」後，可用「立即上傳」產生遠端同步包；另一台裝置安裝同一插件並填同一組 WebDAV 設定後，按「重新整理佇列」再按「下載最舊項目」即可套用。下載會以 mirror 語意覆蓋本機資料。
+
+## S3 使用方式
+
+將同步後端切換成 `S3` 後，S3 欄位才會展開。此時需要填：
+
+- 端點 URL
+- Bucket
+- Region
+- Access Key
+- Secret Key
+- Session Token，可留空
+- Path Style，依你的 S3 相容服務設定決定
 
 ## 同步模型
 
