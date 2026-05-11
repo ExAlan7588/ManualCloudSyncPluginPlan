@@ -20,17 +20,17 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 
 - `tt_sync_pair`
 - `tt_sync_list_servers`
-- `tt_sync_check_diff`
 - `tt_sync_push`
 - `tt_sync_pull`
-- `tt_sync_unpair`
+- `tt_sync_remove_server`
 
 通過標準：
 
 - 工具 exit code 為 `0`。
 - 報告中的 `missingCommands` 為空陣列。
 - 每個 command 都有至少一個實際檔案命中。
-- command report 必須包含 `sourceKind`。`sourceKind=build-artifact` 時，command evidence 必須來自可信 build artifact；`sourceKind=source-tree` 或 `source-file` 時，command evidence 必須同時包含 Tauri command 宣告與 handler 註冊。文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
+- command report 必須包含 `sourceKind`。`sourceKind=build-artifact` 時，command evidence 必須來自可信 build artifact；`sourceKind=source-tree` 或 `source-file` 時，command evidence 必須同時包含 Rust Tauri command 宣告與 handler 註冊，包含 `tauri::generate_handler!` 內的 `super::tt_sync_commands::<command>` registry 形式。文件、README、測試 fixture 或其他一般文字命中只會列在 `ignoredFiles`，不能用來關閉 build command 檢查。
+- 目前上游 command surface 沒有獨立 `tt_sync_check_diff`；驗證不要求也不接受把不存在的 dry-run command 當作完成證據。
 
 失敗時工具會列出缺少的 command 並以非零 exit code 結束；這代表該 build 不能被本插件視為增量同步可用。
 
@@ -46,9 +46,9 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 
 驗證步驟：
 
-1. 在手機 TauriTavern 的 `增量 TT-Sync` 面板輸入同一個配對 URI 和手機裝置名稱。
+1. 在手機 TauriTavern 的 `增量 TT-Sync` 面板輸入同一個配對 URI。
 2. 點選配對，重新整理服務端列表。
-3. 在電腦 TauriTavern 重複同樣流程，使用不同裝置名稱。
+3. 在電腦 TauriTavern 重複同樣流程。
 4. 關閉並重開 app 後再次刷新服務端列表。
 
 通過標準：
@@ -235,7 +235,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
       "evidence": "backend command contract test report path or build verification id",
       "contract": {
         "reportId": "contract-test-report-id",
-        "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_check_diff", "tt_sync_push", "tt_sync_pull", "tt_sync_unpair"]
+        "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_push", "tt_sync_pull", "tt_sync_remove_server"]
       },
       "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/src/TauriTavern", "sourceKind": "source-tree" }
     },

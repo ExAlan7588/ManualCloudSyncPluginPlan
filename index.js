@@ -339,8 +339,9 @@ function bindIncrementalPanel() {
     bindTtSyncPanel({
         confirm: Popup.show.confirm,
         invokeCommand,
+        listen: window.__TAURI__?.event?.listen?.bind(window.__TAURI__.event),
         runAction,
-        setStatus,
+        scheduleReload: () => setTimeout(() => location.reload(), RELOAD_DELAY_MS),
     });
 }
 

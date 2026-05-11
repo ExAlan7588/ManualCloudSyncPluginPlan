@@ -9,9 +9,9 @@
 
 - WebDAV：Basic 帳密或 Bearer Token。
 - S3 相容儲存：含 Path Style 模式。
-- TT-Sync 配對、服務端列表、差異摘要、Push、Pull、解除配對入口。
-- 增量同步進度欄位：phase、檔案數、bytes、平均速度、目前檔案。
-- 增量同步衝突清單與「使用本機 / 使用遠端」決策 UI。
+- TT-Sync 配對、服務端列表、Push、Pull、解除配對入口。
+- 增量同步進度欄位：phase、檔案數、bytes、目前檔案。
+- 增量同步完成摘要：方向、檔案數、bytes、刪除檔案。
 - 手動上傳完整資料封存。
 - 手動下載遠端佇列中最舊的一包。
 - 顯示遠端佇列並手動刪除遠端項目。
@@ -33,10 +33,9 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 - `tt_sync_pair`
 - `tt_sync_list_servers`
-- `tt_sync_check_diff`
 - `tt_sync_push`
 - `tt_sync_pull`
-- `tt_sync_unpair`
+- `tt_sync_remove_server`
 
 插件會直接呼叫上述命令，不會模擬成功；缺少命令時會顯示後端不支援的錯誤。
 
@@ -66,12 +65,12 @@ TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/Ta
 
 1. 在 VPS 或同網路主機啟動 TT-Sync v2 服務。
 2. 取得服務端配對 URI。
-3. 在 `增量 TT-Sync` 面板填入配對 URI 與裝置名稱後按「配對」。
+3. 在 `增量 TT-Sync` 面板填入配對 URI 後按「配對」。
 4. 按「刷新服務端」確認已保存的服務端。
-5. 按「檢查差異」檢視待上傳、待下載、待刪除與衝突摘要。
-6. 沒有未處理衝突時，可按 `Push` 或 `Pull`。
+5. 選擇 `Incremental` 或 `Mirror` 同步模式。
+6. 按 `Push` 或 `Pull` 執行同步。
 
-如果後端回傳 conflict 清單，面板會要求每個路徑選擇「使用本機」或「使用遠端」後才允許 Push/Pull。這個插件只負責 UI 與 command 呼叫；manifest 掃描、plan、原子寫入、mtime 保留、mirror delete 與 commit 必須由 TauriTavern TT-Sync 後端實作。
+目前上游 TauriTavern command surface 沒有獨立 dry-run diff command；插件不呼叫不存在的 `tt_sync_check_diff`，也不會用 fake summary 模擬成功。這個插件只負責 UI 與 command 呼叫；manifest 掃描、plan、原子寫入、mtime 保留、mirror delete、mutex 與 commit 必須由 TauriTavern TT-Sync 後端實作。
 
 ## Minimal TT-Sync Server
 

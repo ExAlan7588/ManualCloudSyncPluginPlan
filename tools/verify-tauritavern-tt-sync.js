@@ -8,10 +8,9 @@ import { inflateRawSync } from 'node:zlib';
 export const REQUIRED_TT_SYNC_COMMANDS = Object.freeze([
     'tt_sync_pair',
     'tt_sync_list_servers',
-    'tt_sync_check_diff',
     'tt_sync_push',
     'tt_sync_pull',
-    'tt_sync_unpair',
+    'tt_sync_remove_server',
 ]);
 
 const COMMAND_ENCODING = 'utf8';
@@ -209,10 +208,10 @@ function evidenceFor(options) {
     }
     const text = options.buffer.toString(COMMAND_ENCODING);
     const evidence = [];
-    if (hasTauriCommandDeclaration({ command: options.command, text })) {
+    if (hasTauriCommandDeclaration({ command: options.command, label: options.label, text })) {
         evidence.push({ kind: 'tauri-command-declaration', trusted: true });
     }
-    if (hasTauriHandlerRegistration({ command: options.command, text })) {
+    if (hasTauriHandlerRegistration({ command: options.command, label: options.label, text })) {
         evidence.push({ kind: 'tauri-handler-registration', trusted: true });
     }
     return evidence.length > 0 ? evidence : [{ kind: 'untrusted-string', trusted: false }];
@@ -354,6 +353,9 @@ function compareEvidence(left, right) {
 }
 
 function hasTauriCommandDeclaration(options) {
+    if (!isRustSource(options.label)) {
+        return false;
+    }
     const escaped = escapeRegex(options.command);
     const visibility = '(?:pub(?:\\([^)]*\\))?\\s+)?';
     const pattern = new RegExp(`#\\[\\s*tauri::command[^\\]]*\\][\\s\\S]{0,300}\\b${visibility}(?:async\\s+)?fn\\s+${escaped}\\b`);
@@ -361,9 +363,29 @@ function hasTauriCommandDeclaration(options) {
 }
 
 function hasTauriHandlerRegistration(options) {
+    if (!isRustSource(options.label)) {
+        return false;
+    }
+    return hasGenerateHandlerRegistration(options) || hasQualifiedRustHandlerRegistration(options);
+}
+
+function hasGenerateHandlerRegistration(options) {
     const escaped = escapeRegex(options.command);
     const pattern = new RegExp(`tauri::generate_handler!\\s*\\[[\\s\\S]{0,2000}\\b${escaped}\\b[\\s\\S]{0,2000}\\]`);
     return pattern.test(options.text);
+}
+
+function hasQualifiedRustHandlerRegistration(options) {
+    if (!options.text.includes('tauri::generate_handler!')) {
+        return false;
+    }
+    const escaped = escapeRegex(options.command);
+    const pattern = new RegExp(`\\bsuper::[A-Za-z0-9_:]+::${escaped}\\b`);
+    return pattern.test(options.text);
+}
+
+function isRustSource(label) {
+    return path.extname(artifactLabel(label)).toLowerCase() === '.rs';
 }
 
 function escapeRegex(value) {

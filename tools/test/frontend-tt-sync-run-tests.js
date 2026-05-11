@@ -12,23 +12,21 @@ const TT_SYNC_MODULE = new URL('../../modules/tt-sync.js', import.meta.url);
 
 const REQUIRED_TT_SYNC_IDS = Object.freeze([
     'mcs_tts_pair_uri',
-    'mcs_tts_device_name',
     'mcs_tts_pair',
     'mcs_tts_refresh_servers',
     'mcs_tts_server',
-    'mcs_tts_check_diff',
+    'mcs_tts_mode',
     'mcs_tts_push',
     'mcs_tts_pull',
     'mcs_tts_unpair',
     'mcs_tts_summary',
     'mcs_tts_progress',
-    'mcs_tts_conflicts',
 ]);
 
 const tests = [
     ['TT-Sync settings UI exposes required controls', testRequiredUiIds],
     ['TT-Sync frontend calls required backend commands', testRequiredCommands],
-    ['TT-Sync transfer sends conflict decisions after conflict guard', testConflictDecisionPayload],
+    ['TT-Sync frontend uses upstream command payloads', testUpstreamCommandPayloads],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
 ];
 
@@ -58,13 +56,15 @@ async function testRequiredCommands() {
     }
 }
 
-async function testConflictDecisionPayload() {
+async function testUpstreamCommandPayloads() {
     const source = await readFile(TT_SYNC_MODULE, 'utf8');
-    const guardIndex = source.indexOf('assertNoUnresolvedConflicts(state);');
-    const invokeIndex = source.indexOf('deps.invokeCommand(TT_COMMANDS[direction]');
-    assert.ok(guardIndex >= 0, 'transfer must guard unresolved conflicts');
-    assert.ok(invokeIndex > guardIndex, 'transfer must guard conflicts before invoking backend');
-    assert.ok(source.includes('conflictDecisions: state.conflictDecisions'), 'transfer dto must include conflict decisions');
+    assert.ok(source.includes('deps.invokeCommand(TT_COMMANDS.pair, { pairUri })'), 'pair must use pairUri payload');
+    assert.ok(source.includes('serverDeviceId: requireSelectedServerId()'), 'transfer must use serverDeviceId payload');
+    assert.ok(source.includes('mode: selectedSyncMode()'), 'transfer must send SyncMode payload');
+    assert.ok(source.includes('server?.server_device_id'), 'server list must handle upstream snake_case ids');
+    assert.ok(source.includes('server?.base_url'), 'server list must handle upstream base_url');
+    assert.equal(source.includes('tt_sync_check_diff'), false, 'frontend must not call absent check_diff command');
+    assert.equal(source.includes('conflictDecisions'), false, 'frontend must not send unsupported conflict decisions');
 }
 
 function testMissingTtSyncCommandError() {

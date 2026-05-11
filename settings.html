@@ -18,10 +18,6 @@
                             <span>配對 URI</span>
                             <input id="mcs_tts_pair_uri" class="text_pole" type="text" autocomplete="off" />
                         </label>
-                        <label>
-                            <span>裝置名稱</span>
-                            <input id="mcs_tts_device_name" class="text_pole" type="text" autocomplete="off" />
-                        </label>
                     </div>
 
                     <div class="flex-container flexGap5 mcs-toolbar">
@@ -40,13 +36,16 @@
                             <span>服務端</span>
                             <select id="mcs_tts_server" class="text_pole"></select>
                         </label>
+                        <label>
+                            <span>同步模式</span>
+                            <select id="mcs_tts_mode" class="text_pole">
+                                <option value="Incremental">Incremental</option>
+                                <option value="Mirror">Mirror</option>
+                            </select>
+                        </label>
                     </div>
 
                     <div class="flex-container flexGap5 mcs-toolbar">
-                        <button id="mcs_tts_check_diff" class="menu_button menu_button_icon" type="button">
-                            <i class="fa-solid fa-code-compare"></i>
-                            <span>檢查差異</span>
-                        </button>
                         <button id="mcs_tts_push" class="menu_button menu_button_icon" type="button">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
                             <span>Push</span>
@@ -63,7 +62,7 @@
 
                     <div class="mcs-sync-grid">
                         <section>
-                            <h4>差異摘要</h4>
+                            <h4>最近同步結果</h4>
                             <div id="mcs_tts_summary" class="mcs-metrics"></div>
                         </section>
                         <section>
@@ -72,10 +71,6 @@
                         </section>
                     </div>
 
-                    <section>
-                        <h4>衝突清單</h4>
-                        <div id="mcs_tts_conflicts" class="mcs-conflicts"></div>
-                    </section>
                 </div>
             </div>
 

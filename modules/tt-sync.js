@@ -1,16 +1,22 @@
 import { formatBytes } from './format.js';
 
 const TT_COMMANDS = {
-    checkDiff: 'tt_sync_check_diff',
     listServers: 'tt_sync_list_servers',
     pair: 'tt_sync_pair',
     pull: 'tt_sync_pull',
     push: 'tt_sync_push',
-    unpair: 'tt_sync_unpair',
+    removeServer: 'tt_sync_remove_server',
 };
-const CONFLICT_LOCAL = 'local';
-const CONFLICT_REMOTE = 'remote';
+const TT_SYNC_EVENTS = Object.freeze({
+    completed: 'tt_sync:completed',
+    error: 'tt_sync:error',
+    progress: 'tt_sync:progress',
+});
+const DEFAULT_SYNC_MODE = 'Incremental';
+const SYNC_MODES = new Set([DEFAULT_SYNC_MODE, 'Mirror']);
 const EMPTY_VALUE = '未回傳';
+
+let eventListenersInstalled = false;
 
 export function bindTtSyncPanel(deps) {
     const controller = createTtSyncController(deps);
@@ -21,8 +27,6 @@ export function bindTtSyncPanel(deps) {
 
 function createTtSyncController(deps) {
     const state = {
-        conflictDecisions: {},
-        conflicts: [],
         servers: [],
     };
     return {
@@ -34,25 +38,23 @@ function createTtSyncController(deps) {
 function bindEvents(deps, state) {
     $('#mcs_tts_pair').on('click', () => pairServer(deps, state));
     $('#mcs_tts_refresh_servers').on('click', () => refreshServers(deps, state));
-    $('#mcs_tts_check_diff').on('click', () => checkDiff(deps, state));
     $('#mcs_tts_push').on('click', () => runTransfer(deps, state, 'push'));
     $('#mcs_tts_pull').on('click', () => runTransfer(deps, state, 'pull'));
-    $('#mcs_tts_unpair').on('click', () => unpairServer(deps, state));
+    $('#mcs_tts_unpair').on('click', () => removeServer(deps, state));
     $('#mcs_tts_server').on('change', () => renderSelectedServer(state));
+    installTtSyncEventListeners(deps, state);
 }
 
 function renderInitialState() {
     renderTtStatus('尚未讀取服務端');
-    renderDiffSummary(null);
+    renderTransferSummary(null);
     renderProgress(null);
-    renderConflicts([], {});
 }
 
 async function pairServer(deps, state) {
     await deps.runAction('TT-Sync 服務端已配對', async () => {
-        const dto = readPairDto();
-        const result = await deps.invokeCommand(TT_COMMANDS.pair, { dto });
-        renderProgress(result?.progress || result);
+        const pairUri = readPairUri();
+        await deps.invokeCommand(TT_COMMANDS.pair, { pairUri });
         await loadServers(deps, state);
     });
 }
@@ -60,20 +62,6 @@ async function pairServer(deps, state) {
 async function refreshServers(deps, state) {
     await deps.runAction('TT-Sync 服務端已更新', async () => {
         await loadServers(deps, state);
-    });
-}
-
-async function checkDiff(deps, state) {
-    await deps.runAction('TT-Sync 差異摘要已更新', async () => {
-        const serverId = requireSelectedServerId();
-        const result = await deps.invokeCommand(TT_COMMANDS.checkDiff, {
-            dto: { serverId },
-        });
-        state.conflictDecisions = {};
-        state.conflicts = conflictListFrom(result);
-        renderDiffSummary(result);
-        renderProgress(result?.progress || result?.summary || null);
-        renderConflicts(state.conflicts, state.conflictDecisions);
     });
 }
 
@@ -86,23 +74,19 @@ async function runTransfer(deps, state, direction) {
     }
 
     await deps.runAction(`TT-Sync ${directionLabel(direction)} 完成`, async () => {
-        assertNoUnresolvedConflicts(state);
-        const result = await deps.invokeCommand(TT_COMMANDS[direction], {
-            dto: transferDto(direction, state),
-        });
-        renderDiffSummary(result);
-        renderProgress(result?.progress || result?.summary || result);
-        state.conflicts = conflictListFrom(result);
-        renderConflicts(state.conflicts, state.conflictDecisions);
+        renderProgress(submittedProgress(direction));
+        await deps.invokeCommand(TT_COMMANDS[direction], transferArgs());
+        await loadServers(deps, state);
     });
 }
 
-async function unpairServer(deps, state) {
+async function removeServer(deps, state) {
     await deps.runAction('TT-Sync 服務端已解除配對', async () => {
-        const serverId = requireSelectedServerId();
-        await deps.invokeCommand(TT_COMMANDS.unpair, { dto: { serverId } });
-        state.conflictDecisions = {};
-        state.conflicts = [];
+        await deps.invokeCommand(TT_COMMANDS.removeServer, {
+            serverDeviceId: requireSelectedServerId(),
+        });
+        renderTransferSummary(null);
+        renderProgress(null);
         await loadServers(deps, state);
     });
 }
@@ -114,33 +98,70 @@ async function loadServers(deps, state) {
     renderSelectedServer(state);
 }
 
-function readPairDto() {
-    const pairingUri = String($('#mcs_tts_pair_uri').val() || '').trim();
-    if (!pairingUri) {
+function installTtSyncEventListeners(deps, state) {
+    if (eventListenersInstalled) {
+        return;
+    }
+    if (typeof deps.listen !== 'function') {
+        renderTtStatus('目前環境無法訂閱 TT-Sync 進度事件');
+        return;
+    }
+
+    eventListenersInstalled = true;
+    void Promise.all([
+        deps.listen(TT_SYNC_EVENTS.progress, event => handleProgressEvent(event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.completed, event => handleCompletedEvent(deps, state, event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.error, event => handleErrorEvent(event?.payload)),
+    ]).catch(error => {
+        eventListenersInstalled = false;
+        renderTtStatus(`TT-Sync 事件訂閱失敗：${errorMessage(error)}`);
+    });
+}
+
+function handleProgressEvent(payload) {
+    renderProgress(payload);
+    renderTtStatus(progressStatus(payload));
+}
+
+function handleCompletedEvent(deps, state, payload) {
+    renderTransferSummary(payload);
+    renderProgress(payload);
+    renderTtStatus(`TT-Sync ${directionLabel(payload?.direction)} 完成`);
+    void loadServers(deps, state).catch(error => {
+        renderTtStatus(`TT-Sync 服務端列表更新失敗：${errorMessage(error)}`);
+    });
+    if (isPullDirection(payload) && typeof deps.scheduleReload === 'function') {
+        deps.scheduleReload();
+    }
+}
+
+function handleErrorEvent(payload) {
+    renderProgress(payload);
+    renderTtStatus(`TT-Sync ${directionLabel(payload?.direction)} 失敗：${errorMessage(payload?.message)}`);
+}
+
+function readPairUri() {
+    const pairUri = String($('#mcs_tts_pair_uri').val() || '').trim();
+    if (!pairUri) {
         throw new Error('請填寫 TT-Sync 配對 URI');
     }
 
+    return pairUri;
+}
+
+function transferArgs() {
     return {
-        deviceName: String($('#mcs_tts_device_name').val() || '').trim() || null,
-        pairingUri,
+        mode: selectedSyncMode(),
+        serverDeviceId: requireSelectedServerId(),
     };
 }
 
-function transferDto(direction, state) {
-    return {
-        conflictDecisions: state.conflictDecisions,
-        direction,
-        serverId: requireSelectedServerId(),
-    };
-}
-
-function assertNoUnresolvedConflicts(state) {
-    const unresolved = state.conflicts
-        .map(conflictPath)
-        .filter(path => path && !state.conflictDecisions[path]);
-    if (unresolved.length > 0) {
-        throw new Error(`尚有未處理衝突：${unresolved.join('、')}`);
+function selectedSyncMode() {
+    const mode = String($('#mcs_tts_mode').val() || DEFAULT_SYNC_MODE).trim();
+    if (!SYNC_MODES.has(mode)) {
+        throw new Error(`不支援的 TT-Sync 模式：${mode}`);
     }
+    return mode;
 }
 
 function renderServerOptions(servers) {
@@ -163,22 +184,15 @@ function renderSelectedServer(state) {
     renderTtStatus(server ? serverStatus(server) : '未選擇服務端');
 }
 
-function renderDiffSummary(result) {
-    const summary = summaryFrom(result);
+function renderTransferSummary(result) {
     const container = document.getElementById('mcs_tts_summary');
     container.replaceChildren();
-    if (!summary) {
-        container.appendChild(emptyInfo('尚未檢查差異'));
+    if (!result) {
+        container.appendChild(emptyInfo('尚無同步結果'));
         return;
     }
 
-    const rows = diffRows(summary, result);
-    if (isKnownEmptyDiff(rows)) {
-        container.appendChild(emptyInfo('沒有需要同步的變更'));
-        return;
-    }
-
-    for (const row of rows) {
+    for (const row of transferSummaryRows(result)) {
         container.appendChild(metricElement(row.label, row.value));
     }
 }
@@ -196,97 +210,37 @@ function renderProgress(progress) {
     }
 }
 
-function renderConflicts(conflicts, decisions) {
-    const container = document.getElementById('mcs_tts_conflicts');
-    container.replaceChildren();
-    if (!Array.isArray(conflicts) || conflicts.length === 0) {
-        container.appendChild(emptyInfo('沒有衝突'));
-        return;
-    }
-
-    for (const conflict of conflicts) {
-        container.appendChild(conflictElement(conflict, conflicts, decisions));
-    }
-}
-
-function conflictElement(conflict, conflicts, decisions) {
-    const path = conflictPath(conflict);
-    const root = document.createElement('div');
-    root.className = 'mcs-conflict';
-    root.append(conflictMain(conflict), conflictActions({ conflicts, decisions, path }));
-    return root;
-}
-
-function conflictMain(conflict) {
-    const main = document.createElement('div');
-    main.className = 'mcs-conflict-main';
-    const title = document.createElement('div');
-    title.className = 'mcs-item-title';
-    title.textContent = conflictPath(conflict) || '(未命名路徑)';
-    const meta = document.createElement('div');
-    meta.className = 'mcs-item-meta';
-    meta.textContent = conflictMeta(conflict);
-    main.append(title, meta);
-    return main;
-}
-
-function conflictActions(options) {
-    const actions = document.createElement('div');
-    actions.className = 'mcs-conflict-actions';
-    actions.append(
-        conflictDecisionButton({ ...options, choice: CONFLICT_LOCAL }),
-        conflictDecisionButton({ ...options, choice: CONFLICT_REMOTE }),
-    );
-    return actions;
-}
-
-function conflictDecisionButton(options) {
-    const button = document.createElement('button');
-    button.className = 'menu_button menu_button_icon margin0';
-    button.type = 'button';
-    button.textContent = options.choice === CONFLICT_LOCAL ? '使用本機' : '使用遠端';
-    button.toggleAttribute('data-selected', options.decisions[options.path] === options.choice);
-    button.addEventListener('click', () => {
-        options.decisions[options.path] = options.choice;
-        renderConflicts(options.conflicts, options.decisions);
-    });
-    return button;
-}
-
-function diffRows(summary, result) {
+function transferSummaryRows(result) {
     return [
-        { label: '待上傳檔案', value: formatOptionalCount(firstValue(summary, ['uploadFiles', 'filesToUpload', 'pushFiles'], countArray(result?.uploads))) },
-        { label: '待上傳大小', value: formatOptionalBytes(firstValue(summary, ['uploadBytes', 'bytesToUpload', 'pushBytes'])) },
-        { label: '待下載檔案', value: formatOptionalCount(firstValue(summary, ['downloadFiles', 'filesToDownload', 'pullFiles'], countArray(result?.downloads))) },
-        { label: '待下載大小', value: formatOptionalBytes(firstValue(summary, ['downloadBytes', 'bytesToDownload', 'pullBytes'])) },
-        { label: '待刪除檔案', value: formatOptionalCount(firstValue(summary, ['deleteFiles', 'filesToDelete'], countArray(result?.deletes))) },
-        { label: '衝突檔案', value: formatOptionalCount(firstValue(summary, ['conflictFiles', 'conflicts'], countArray(conflictListFrom(result)))) },
+        { label: '方向', value: directionLabel(result?.direction) },
+        { label: '檔案數', value: formatOptionalCount(firstValue(result, ['files_total', 'filesTotal', 'totalFiles'])) },
+        { label: '大小', value: formatOptionalBytes(firstValue(result, ['bytes_total', 'bytesTotal', 'totalBytes'])) },
+        { label: '刪除檔案', value: formatOptionalCount(firstValue(result, ['files_deleted', 'filesDeleted', 'deletedFiles'])) },
     ];
 }
 
 function progressRows(progress) {
     return [
         { label: 'phase', value: stringValue(firstValue(progress, ['phase', 'stage'])) },
-        { label: 'files', value: progressPair(progress, ['filesTransferred', 'completedFiles'], ['totalFiles', 'fileTotal']) },
-        { label: 'bytes', value: bytesPair(progress, ['bytesTransferred', 'completedBytes'], ['totalBytes', 'byteTotal']) },
-        { label: '平均速度', value: formatOptionalSpeed(firstValue(progress, ['averageBytesPerSecond', 'speedBytesPerSecond'])) },
-        { label: '目前檔案', value: stringValue(firstValue(progress, ['currentPath', 'currentFile'])) },
+        { label: 'files', value: progressPair(progress, ['files_done', 'filesDone', 'filesTransferred', 'completedFiles'], ['files_total', 'filesTotal', 'totalFiles', 'fileTotal']) },
+        { label: 'bytes', value: bytesPair(progress, ['bytes_done', 'bytesDone', 'bytesTransferred', 'completedBytes'], ['bytes_total', 'bytesTotal', 'totalBytes', 'byteTotal']) },
+        { label: '目前檔案', value: stringValue(firstValue(progress, ['current_path', 'currentPath', 'currentFile'])) },
     ];
 }
 
-function conflictMeta(conflict) {
-    return [
-        localRemoteMeta('本機', conflict?.local),
-        localRemoteMeta('遠端', conflict?.remote),
-    ].filter(Boolean).join(' | ') || EMPTY_VALUE;
+function submittedProgress(direction) {
+    return {
+        bytes_done: 0,
+        bytes_total: 0,
+        direction: directionLabel(direction),
+        files_done: 0,
+        files_total: 0,
+        phase: 'Submitted',
+    };
 }
 
-function localRemoteMeta(label, value) {
-    if (!value) {
-        return '';
-    }
-
-    return `${label}: ${formatOptionalBytes(value.sizeBytes)} ${stringValue(value.modifiedMs || value.modifiedAt)}`;
+function progressStatus(progress) {
+    return `TT-Sync ${directionLabel(progress?.direction)} ${stringValue(progress?.phase)}`;
 }
 
 function metricElement(label, value) {
@@ -341,44 +295,47 @@ function serverListFrom(result) {
     return [];
 }
 
-function summaryFrom(result) {
-    if (!result) {
-        return null;
-    }
-    return result.summary || result.diff || result;
-}
-
-function conflictListFrom(result) {
-    if (Array.isArray(result?.conflicts)) {
-        return result.conflicts;
-    }
-    if (Array.isArray(result?.summary?.conflicts)) {
-        return result.summary.conflicts;
-    }
-    return [];
-}
-
-function conflictPath(conflict) {
-    return String(conflict?.path || conflict?.filePath || conflict?.relativePath || '').trim();
-}
-
 function serverIdOf(server) {
-    return String(server?.id || server?.serverId || server?.name || server?.endpoint || '').trim();
+    return String(server?.server_device_id || server?.serverDeviceId || server?.serverId || server?.id || '').trim();
 }
 
 function serverLabel(server) {
     return [
-        server?.name || server?.label || server?.endpoint || serverIdOf(server),
-        server?.status || '',
+        server?.server_device_name || server?.serverDeviceName || server?.name || serverIdOf(server),
+        server?.base_url || server?.baseUrl || server?.endpoint || '',
     ].filter(Boolean).join(' | ');
 }
 
 function serverStatus(server) {
     return [
-        server?.endpoint ? `端點：${server.endpoint}` : '',
-        server?.lastSyncAt ? `最後同步：${server.lastSyncAt}` : '',
-        server?.status ? `狀態：${server.status}` : '',
+        serverBaseUrl(server) ? `端點：${serverBaseUrl(server)}` : '',
+        server?.last_sync_ms ? `最後同步：${timestampText(server.last_sync_ms)}` : '',
+        permissionsText(server?.permissions),
     ].filter(Boolean).join(' | ') || '已選擇服務端';
+}
+
+function serverBaseUrl(server) {
+    return server?.base_url || server?.baseUrl || server?.endpoint || '';
+}
+
+function permissionsText(permissions) {
+    if (!permissions) {
+        return '';
+    }
+    return `權限：read=${booleanText(permissions.read)}, write=${booleanText(permissions.write)}, mirror_delete=${booleanText(permissions.mirror_delete)}`;
+}
+
+function booleanText(value) {
+    return value ? 'yes' : 'no';
+}
+
+function timestampText(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+        return stringValue(value);
+    }
+    const date = new Date(number);
+    return Number.isNaN(date.getTime()) ? stringValue(value) : date.toISOString();
 }
 
 function firstValue(object, keys, fallback) {
@@ -390,15 +347,7 @@ function firstValue(object, keys, fallback) {
     return fallback;
 }
 
-function countArray(value) {
-    return Array.isArray(value) ? value.length : undefined;
-}
-
 function formatOptionalCount(value) {
-    if (Array.isArray(value)) {
-        return String(value.length);
-    }
-
     const number = Number(value);
     return Number.isFinite(number) ? String(number) : EMPTY_VALUE;
 }
@@ -406,16 +355,6 @@ function formatOptionalCount(value) {
 function formatOptionalBytes(value) {
     const number = Number(value);
     return Number.isFinite(number) ? formatBytes(number) : EMPTY_VALUE;
-}
-
-function formatOptionalSpeed(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? `${formatBytes(number)}/s` : EMPTY_VALUE;
-}
-
-function stringValue(value) {
-    const text = String(value || '').trim();
-    return text || EMPTY_VALUE;
 }
 
 function progressPair(progress, completedKeys, totalKeys) {
@@ -436,10 +375,29 @@ function bytesPair(progress, completedKeys, totalKeys) {
     return `${formatOptionalBytes(completed)} / ${formatOptionalBytes(total)}`;
 }
 
-function isKnownEmptyDiff(rows) {
-    return rows.every(row => row.value === '0' || row.value === '0 B');
+function directionLabel(direction) {
+    const value = String(direction || '').toLowerCase();
+    if (value === 'push') {
+        return 'Push';
+    }
+    if (value === 'pull') {
+        return 'Pull';
+    }
+    return EMPTY_VALUE;
 }
 
-function directionLabel(direction) {
-    return direction === 'push' ? 'Push' : 'Pull';
+function isPullDirection(payload) {
+    return String(payload?.direction || '').toLowerCase() === 'pull';
+}
+
+function stringValue(value) {
+    const text = String(value || '').trim();
+    return text || EMPTY_VALUE;
+}
+
+function errorMessage(error) {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    return stringValue(error);
 }

@@ -7,7 +7,8 @@ import { REQUIRED_TT_SYNC_COMMANDS, verifyTauriTavernCommands } from '../verify-
 
 const VERIFIER_FIXTURE_DIR = 'src-tauri/src';
 const VERIFIER_FIXTURE_FILE = 'commands.rs';
-const VERIFIER_MISSING_COMMAND = 'tt_sync_unpair';
+const VERIFIER_REGISTRY_FILE = 'registry.rs';
+const VERIFIER_MISSING_COMMAND = 'tt_sync_remove_server';
 const ZIP_CENTRAL_COMPRESSED_SIZE_OFFSET = 20;
 const ZIP_CENTRAL_FIXED_BYTES = 46;
 const ZIP_CENTRAL_LOCAL_HEADER_OFFSET = 42;
@@ -122,8 +123,10 @@ async function withVerifierFixture(callback) {
 async function writeVerifierFixture(options) {
     const fixtureDir = path.join(options.root, VERIFIER_FIXTURE_DIR);
     const fixturePath = path.join(fixtureDir, VERIFIER_FIXTURE_FILE);
+    const registryPath = path.join(fixtureDir, VERIFIER_REGISTRY_FILE);
     await mkdir(fixtureDir, { recursive: true });
-    await writeFile(fixturePath, verifierSourceFor(options.commands));
+    await writeFile(fixturePath, declarationSourceFor(options.commands));
+    await writeFile(registryPath, handlerSourceFor(options.commands));
 }
 
 function verifierSourceFor(commands) {
@@ -135,7 +138,8 @@ function declarationSourceFor(commands) {
 }
 
 function handlerSourceFor(commands) {
-    return `tauri::generate_handler![${commands.join(', ')}];`;
+    const entries = commands.map(command => `super::tt_sync_commands::${command},`).join('\n');
+    return `pub fn invoke_handler() {\ntauri::generate_handler![\n${entries}\n];\n}`;
 }
 
 function zipArtifactFor(options) {

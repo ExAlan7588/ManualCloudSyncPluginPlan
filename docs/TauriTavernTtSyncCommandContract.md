@@ -8,81 +8,86 @@
 
 - `tt_sync_pair`
 - `tt_sync_list_servers`
-- `tt_sync_check_diff`
 - `tt_sync_push`
 - `tt_sync_pull`
-- `tt_sync_unpair`
+- `tt_sync_remove_server`
 
-除 `tt_sync_list_servers` 外，所有命令都以 `{ dto: ... }` 作為 Tauri invoke payload。
+目前上游 TauriTavern TT-Sync v2 command surface 沒有獨立 dry-run diff command。前端不得呼叫不存在的 `tt_sync_check_diff`，也不得用 fake diff summary 模擬成功。
 
 ## 2. Shared Types
 
-### Server
+### Sync Mode
+
+```json
+"Incremental"
+```
+
+可接受值：
+
+- `Incremental`
+- `Mirror`
+
+### Paired Server
+
+`tt_sync_list_servers` 與 `tt_sync_pair` 回傳的 server 欄位以目前上游 DTO 為準：
 
 ```json
 {
-  "serverId": "server-id",
-  "name": "VPS",
-  "endpoint": "https://sync.example.com",
-  "status": "ok",
-  "lastSyncAt": "2026-05-12T00:00:00+08:00"
+  "server_device_id": "server-device-id",
+  "server_device_name": "VPS",
+  "base_url": "https://sync.example.com",
+  "spki_sha256": "base64url-spki-pin",
+  "permissions": {
+    "read": true,
+    "write": true,
+    "mirror_delete": false
+  },
+  "paired_at_ms": 1778515200000,
+  "last_sync_ms": null
 }
 ```
 
-前端會用 `id`、`serverId`、`name` 或 `endpoint` 其中之一當作選項 value；後端應優先回傳穩定 `serverId`。
+前端也會接受 camelCase 相容欄位，但後端契約以 snake_case 為 canonical。
 
-### Manifest Entry
+### Progress Event
+
+後端在同步過程中發出 Tauri event `tt_sync:progress`：
 
 ```json
 {
-  "path": "default-user/chats/example.jsonl",
-  "sizeBytes": 123,
-  "modifiedMs": 1778515200000,
-  "sha256": "optional-lowercase-hex"
+  "direction": "Push",
+  "phase": "Uploading",
+  "files_done": 1,
+  "files_total": 3,
+  "bytes_done": 123,
+  "bytes_total": 456,
+  "current_path": "default-user/chats/example.jsonl"
 }
 ```
 
-### Summary
+### Completed Event
+
+後端在同步完成時發出 Tauri event `tt_sync:completed`：
 
 ```json
 {
-  "uploadFiles": 1,
-  "uploadBytes": 123,
-  "downloadFiles": 0,
-  "downloadBytes": 0,
-  "deleteFiles": 0,
-  "conflictFiles": 0
+  "direction": "Push",
+  "files_total": 3,
+  "bytes_total": 456,
+  "files_deleted": 0
 }
 ```
 
-### Progress
+### Error Event
+
+後端在同步失敗時發出 Tauri event `tt_sync:error`：
 
 ```json
 {
-  "phase": "planned",
-  "filesTransferred": 0,
-  "totalFiles": 1,
-  "bytesTransferred": 0,
-  "totalBytes": 123,
-  "averageBytesPerSecond": 0,
-  "currentPath": "default-user/chats/example.jsonl"
+  "direction": "Pull",
+  "message": "TT-Sync server does not grant read permission"
 }
 ```
-
-### Conflict
-
-```json
-{
-  "path": "default-user/chats/example.jsonl",
-  "local": { "path": "default-user/chats/example.jsonl", "sizeBytes": 120, "modifiedMs": 1778515200000 },
-  "remote": { "path": "default-user/chats/example.jsonl", "sizeBytes": 123, "modifiedMs": 1778515201000 }
-}
-```
-
-Conflict decision values are only:
-
-- `local`
-- `remote`
 
 ## 3. Commands
 
@@ -92,29 +97,17 @@ Payload:
 
 ```json
 {
-  "dto": {
-    "pairingUri": "tt-sync://pair?...",
-    "deviceName": "phone"
-  }
+  "pairUri": "tt-sync://pair?..."
 }
 ```
 
 Required behavior:
 
-- Validate and complete pairing against the TT-Sync server.
+- Validate the pairing URI and reject malformed, expired, or untrusted values.
+- Complete pairing against the TT-Sync server.
 - Persist the paired server in TauriTavern backend storage.
 - Persist device identity and namespace/auth material outside frontend localStorage.
-- Return enough data for progress/status rendering.
-
-Response:
-
-```json
-{
-  "serverId": "server-id",
-  "endpoint": "https://sync.example.com",
-  "progress": { "phase": "paired" }
-}
-```
+- Return the paired server DTO or throw an explicit error.
 
 ### `tt_sync_list_servers`
 
@@ -123,66 +116,27 @@ Payload: none.
 Response:
 
 ```json
-{
-  "servers": [
-    {
-      "serverId": "server-id",
-      "name": "VPS",
-      "endpoint": "https://sync.example.com",
-      "status": "ok",
-      "lastSyncAt": "2026-05-12T00:00:00+08:00"
-    }
-  ]
-}
+[
+  {
+    "server_device_id": "server-device-id",
+    "server_device_name": "VPS",
+    "base_url": "https://sync.example.com",
+    "permissions": {
+      "read": true,
+      "write": true,
+      "mirror_delete": false
+    },
+    "paired_at_ms": 1778515200000,
+    "last_sync_ms": null
+  }
+]
 ```
 
 Required behavior:
 
 - Read persisted paired servers from backend storage.
-- Return the same server after app restart until explicitly unpaired.
-
-### `tt_sync_check_diff`
-
-Payload:
-
-```json
-{
-  "dto": {
-    "serverId": "server-id"
-  }
-}
-```
-
-Required behavior:
-
-- Scan the local TauriTavern data root into a manifest.
-- Exclude LAN Sync, manual-cloud-sync, incremental-cloud-sync state files, and `_tauritavern/.ios-policy.json`.
-- Ask the selected TT-Sync server for a push/pull plan or equivalent diff summary.
-- Return conflicts without mutating local or remote files.
-
-Response:
-
-```json
-{
-  "summary": {
-    "uploadFiles": 1,
-    "uploadBytes": 123,
-    "downloadFiles": 0,
-    "downloadBytes": 0,
-    "deleteFiles": 0,
-    "conflictFiles": 0
-  },
-  "progress": {
-    "phase": "planned",
-    "filesTransferred": 0,
-    "totalFiles": 1,
-    "bytesTransferred": 0,
-    "totalBytes": 123,
-    "currentPath": "default-user/chats/example.jsonl"
-  },
-  "conflicts": []
-}
-```
+- Return the same server after app restart until explicitly removed.
+- Keep server IDs stable across Push, Pull, remove, and final evidence reports.
 
 ### `tt_sync_push`
 
@@ -190,48 +144,23 @@ Payload:
 
 ```json
 {
-  "dto": {
-    "serverId": "server-id",
-    "direction": "push",
-    "conflictDecisions": {
-      "default-user/chats/example.jsonl": "local"
-    }
-  }
+  "serverDeviceId": "server-device-id",
+  "mode": "Incremental"
 }
 ```
 
 Required behavior:
 
 - Refuse to start if LAN Sync or another cloud sync operation is active.
-- Build a push plan from local and remote manifests.
+- Scan the local TauriTavern data root into a manifest.
+- Exclude LAN Sync, manual-cloud-sync, incremental-cloud-sync state files, and `_tauritavern/.ios-policy.json`.
+- Ask the selected TT-Sync server for a push plan.
 - Upload only changed files.
-- Refuse destructive commit when server reports unresolved conflicts.
-- Apply `conflictDecisions` at commit time.
 - Do not perform remote mirror delete until all required uploads are staged and commit succeeds.
-- Emit or return progress data with files and bytes.
+- Emit `tt_sync:progress` events with files and bytes.
+- Emit `tt_sync:completed` with transferred file/byte totals, or `tt_sync:error` with an explicit failure message.
 
-Response:
-
-```json
-{
-  "summary": {
-    "uploadFiles": 1,
-    "uploadBytes": 123,
-    "downloadFiles": 0,
-    "downloadBytes": 0,
-    "deleteFiles": 0,
-    "conflictFiles": 0
-  },
-  "progress": {
-    "phase": "committed",
-    "filesTransferred": 1,
-    "totalFiles": 1,
-    "bytesTransferred": 123,
-    "totalBytes": 123
-  },
-  "conflicts": []
-}
-```
+The command may return `null`/unit on success because completion data is delivered through events.
 
 ### `tt_sync_pull`
 
@@ -239,37 +168,29 @@ Payload:
 
 ```json
 {
-  "dto": {
-    "serverId": "server-id",
-    "direction": "pull",
-    "conflictDecisions": {
-      "default-user/chats/example.jsonl": "remote"
-    }
-  }
+  "serverDeviceId": "server-device-id",
+  "mode": "Incremental"
 }
 ```
 
 Required behavior:
 
 - Refuse to start if LAN Sync or another cloud sync operation is active.
-- Download only changed files.
+- Download only changed files from the selected TT-Sync server.
 - Apply writes atomically: write to a temporary file, fsync/close when supported, then rename.
 - Preserve remote `modifiedMs` as local filesystem mtime after successful write.
 - Never replace a valid existing local file with a partial download.
 - Apply local mirror delete only after all required downloads are safely staged.
-- Surface network and filesystem errors to the frontend.
+- Emit `tt_sync:progress`, `tt_sync:completed`, and `tt_sync:error` events with the same semantics as Push.
+- Refresh TauriTavern runtime caches after successful Pull before completion is surfaced.
 
-Response shape matches `tt_sync_push`.
-
-### `tt_sync_unpair`
+### `tt_sync_remove_server`
 
 Payload:
 
 ```json
 {
-  "dto": {
-    "serverId": "server-id"
-  }
+  "serverDeviceId": "server-device-id"
 }
 ```
 
@@ -277,19 +198,18 @@ Required behavior:
 
 - Remove the selected paired server from backend storage.
 - Keep local Tavern data files untouched.
-- Return `{ "ok": true }` or an equivalent success object.
+- Return success or throw an explicit error.
 
 ## 4. Error Contract
 
-Errors must be explicit. The frontend displays thrown command errors through `normalizeError()`.
+Errors must be explicit. The frontend displays thrown command errors through `normalizeError()` and displays `tt_sync:error` event messages in the TT-Sync panel.
 
 Required error cases:
 
 - Missing or invalid paired server.
 - Invalid pairing URI.
-- Authentication failure.
+- Authentication or permission failure.
 - Network failure.
-- Conflict decision missing or invalid.
 - LAN Sync / cloud sync mutex violation.
 - Local manifest scan failure.
 - Atomic write or mtime preservation failure.
