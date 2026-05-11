@@ -181,13 +181,14 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 ```
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
-command report 必須包含 `scannedAt`、實際 source 與 scanned file count。
+command report 必須包含可解析 timestamp 的 `scannedAt`、實際 source 與 scanned file count。
 每個 command 必須包含 verifier 產生的 trusted `evidence`，其 kind 必須是 `tauri-command-declaration`、`tauri-handler-registration` 或 `build-artifact-string`。
 `realLargeFirstSyncCompleted.metrics.totalBytes` 必須至少為 300MiB。
 device evidence 的 `commandContractVerified.commandReport.source` 與 `commandContractVerified.commandReport.scannedAt` 必須和頂層 command report 一致，且 `commandContractVerified.contract.commands` 必須覆蓋全部必要 `tt_sync_*` commands。
 deploy report 必須來自不使用 `--allow-placeholders` 的真實 env 驗證，且所有 deploy checks 都必須有 name/detail 並是 `ok=true`；deploy report 的 `publicUrl` 必須和遠端 smoke endpoint 一致。
-遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、`status.version`、fixture files/bytes 與 smoke paths，且所有 smoke checks 都必須有 name/detail 並是 `ok=true`。
+遠端 smoke report 必須包含可解析 timestamp 的 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、`status.version`、fixture files/bytes 與 smoke paths，且所有 smoke checks 都必須有 name/detail 並是 `ok=true`。
 device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL，phone/desktop saved server URL 也必須和 `server.url` 一致，且 Android/desktop device record 都必須包含可追溯的 `deviceId`。
+device evidence 的 `testedAt`、`commandReport.scannedAt`、phone/desktop `restartVerifiedAt` 與 Android `capturedAt` 都必須是可解析 timestamp。
 `pullMtimePreserved.mtime.expectedModifiedMs` 必須等於 `pullMtimePreserved.mtime.actualModifiedMs`；`pullInterruptionSafe.interruption.beforeHash` 必須等於 `pullInterruptionSafe.interruption.afterHash`。
 
 device evidence JSON 需包含：

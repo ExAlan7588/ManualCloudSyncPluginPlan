@@ -108,6 +108,7 @@ const tests = [
     ['incremental evidence verifier rejects failed smoke required checks', testFailedSmokeRequiredCheck],
     ['incremental evidence verifier rejects smoke checks without detail', testSmokeCheckMissingDetail],
     ['incremental evidence verifier rejects failed extra report checks', testFailedExtraReportCheck],
+    ['incremental evidence verifier rejects invalid timestamps', testInvalidEvidenceTimestamp],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
@@ -306,6 +307,21 @@ async function testFailedExtraReportCheck() {
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('deploy report checks passed'));
     assert.ok(report.failed.includes('smoke report checks passed'));
+}
+
+async function testInvalidEvidenceTimestamp() {
+    const evidence = completeEvidence();
+    evidence.commandReport.scannedAt = 'not-a-date';
+    evidence.deviceEvidence.checks.commandContractVerified.commandReport.scannedAt = 'not-a-date';
+    evidence.deviceEvidence.checks.androidWeakNetworkErrorVisible.android.capturedAt = 'not-a-date';
+    evidence.deviceEvidence.testedAt = 'not-a-date';
+    evidence.smokeReport.completedAt = 'not-a-date';
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('command report scannedAt'));
+    assert.ok(report.failed.includes('device evidence testedAt'));
+    assert.ok(report.failed.includes('smoke report completedAt'));
+    assert.ok(report.failed.includes('Android weak-network error is visible'));
 }
 
 async function testMixedServerEvidence() {

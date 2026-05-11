@@ -31,6 +31,7 @@ export const REQUIRED_DEPLOY_CHECKS = Object.freeze([
 const FIELD_POSITIVE_NUMBER = 'positiveNumber';
 const FIELD_TEXT = 'text';
 const FIELD_TEXT_ARRAY = 'textArray';
+const FIELD_TIMESTAMP = 'timestamp';
 const MIN_REAL_LARGE_SYNC_BYTES = 300 * 1024 * 1024;
 
 export const REQUIRED_DEVICE_CHECKS = Object.freeze([
@@ -42,14 +43,14 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
     ['commandContractVerified', 'TauriTavern backend command contract verified', [
         ['contract.commands', FIELD_TEXT_ARRAY],
         ['contract.reportId', FIELD_TEXT],
-        ['commandReport.scannedAt', FIELD_TEXT],
+        ['commandReport.scannedAt', FIELD_TIMESTAMP],
         ['commandReport.source', FIELD_TEXT],
     ]],
     ['phoneDesktopPairingSaved', 'phone and desktop save paired server', [
-        ['desktop.restartVerifiedAt', FIELD_TEXT],
+        ['desktop.restartVerifiedAt', FIELD_TIMESTAMP],
         ['desktop.savedServerId', FIELD_TEXT],
         ['desktop.savedServerUrl', FIELD_TEXT],
-        ['phone.restartVerifiedAt', FIELD_TEXT],
+        ['phone.restartVerifiedAt', FIELD_TIMESTAMP],
         ['phone.savedServerId', FIELD_TEXT],
         ['phone.savedServerUrl', FIELD_TEXT],
     ]],
@@ -81,7 +82,7 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['mutex.visibleError', FIELD_TEXT],
     ]],
     ['androidWeakNetworkErrorVisible', 'Android weak-network error is visible', [
-        ['android.capturedAt', FIELD_TEXT],
+        ['android.capturedAt', FIELD_TIMESTAMP],
         ['android.errorCode', FIELD_TEXT],
         ['android.networkProfile', FIELD_TEXT],
         ['android.operation', FIELD_TEXT],
@@ -142,7 +143,7 @@ async function loadReport(options) {
 function commandChecks(report) {
     return [
         check('command report ok', report?.ok === true, 'command report must have ok=true'),
-        check('command report scannedAt', hasText(report?.scannedAt), 'command report must include scannedAt'),
+        check('command report scannedAt', isTimestamp(report?.scannedAt), 'command report must include a parseable scannedAt timestamp'),
         check('command report source', hasText(report?.source), 'command report must include source path or artifact'),
         check('command report scanned files', Number(report?.scannedFiles) > 0, 'command report must scan at least one file'),
         check('no missing commands', Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, 'missingCommands must be empty'),
@@ -172,7 +173,7 @@ function deployChecks(report) {
     const names = passedCheckNames(report);
     return [
         check('deploy report ok', report?.ok === true, 'deploy report must have ok=true'),
-        check('deploy report verifiedAt', hasText(report?.verifiedAt), 'deploy report must include verifiedAt'),
+        check('deploy report verifiedAt', isTimestamp(report?.verifiedAt), 'deploy report must include a parseable verifiedAt timestamp'),
         check('deploy report service path', hasText(report?.servicePath), 'deploy report must include servicePath'),
         check('deploy report env path', hasText(report?.envPath), 'deploy report must include envPath'),
         check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
@@ -186,7 +187,7 @@ function smokeChecks(report) {
     const names = passedCheckNames(report);
     return [
         check('smoke report ok', report?.ok === true, 'smoke report must have ok=true'),
-        check('smoke report completedAt', hasText(report?.completedAt), 'smoke report must include completedAt'),
+        check('smoke report completedAt', isTimestamp(report?.completedAt), 'smoke report must include a parseable completedAt timestamp'),
         check('smoke report deviceId', hasText(report?.deviceId), 'smoke report must include paired deviceId'),
         check('smoke report path', hasText(report?.smokePath), 'smoke report must include smokePath'),
         check('smoke report plan ids', hasText(report?.planIds?.push) && hasText(report?.planIds?.pull), 'smoke report must include push and pull plan ids'),
@@ -203,7 +204,7 @@ function smokeChecks(report) {
 
 function deviceChecks(evidence) {
     return [
-        check('device evidence testedAt', hasText(evidence?.testedAt), 'device evidence must include testedAt'),
+        check('device evidence testedAt', isTimestamp(evidence?.testedAt), 'device evidence must include a parseable testedAt timestamp'),
         check('device evidence server URL', hasText(evidence?.server?.url), 'device evidence must include server.url'),
         check('mobile build id', hasText(evidence?.tauriTavern?.mobileBuildId), 'mobile build id is required'),
         check('desktop build id', hasText(evidence?.tauriTavern?.desktopBuildId), 'desktop build id is required'),
@@ -313,6 +314,9 @@ function fieldValuePasses(value, type) {
     if (type === FIELD_TEXT_ARRAY) {
         return Array.isArray(value) && value.length > 0 && value.every(hasText);
     }
+    if (type === FIELD_TIMESTAMP) {
+        return isTimestamp(value);
+    }
     throw new Error(`Unknown evidence field type: ${type}`);
 }
 
@@ -405,6 +409,10 @@ function check(name, ok, detail) {
 
 function hasText(value) {
     return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isTimestamp(value) {
+    return hasText(value) && Number.isFinite(Date.parse(value));
 }
 
 function hasPositiveInteger(value) {
