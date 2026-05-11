@@ -18,15 +18,44 @@ export const REQUIRED_SMOKE_CHECKS = Object.freeze([
     'device history',
 ]);
 
+const FIELD_POSITIVE_NUMBER = 'positiveNumber';
+const FIELD_TEXT = 'text';
+
 export const REQUIRED_DEVICE_CHECKS = Object.freeze([
-    ['realLargeFirstSyncCompleted', 'real large first sync completed'],
-    ['commandContractVerified', 'TauriTavern backend command contract verified'],
-    ['phoneDesktopPairingSaved', 'phone and desktop save paired server'],
-    ['liveProgressBridgeVisible', 'live progress bridge visible in TauriTavern'],
-    ['pullMtimePreserved', 'pull preserves local filesystem mtime'],
-    ['pullInterruptionSafe', 'pull interruption keeps existing local files safe'],
-    ['lanCloudSyncMutex', 'LAN Sync and cloud sync are mutually exclusive'],
-    ['androidWeakNetworkErrorVisible', 'Android weak-network error is visible'],
+    ['realLargeFirstSyncCompleted', 'real large first sync completed', [
+        ['metrics.durationMs', FIELD_POSITIVE_NUMBER],
+        ['metrics.fileCount', FIELD_POSITIVE_NUMBER],
+        ['metrics.totalBytes', FIELD_POSITIVE_NUMBER],
+    ]],
+    ['commandContractVerified', 'TauriTavern backend command contract verified', [
+        ['commandReport.scannedAt', FIELD_TEXT],
+        ['commandReport.source', FIELD_TEXT],
+    ]],
+    ['phoneDesktopPairingSaved', 'phone and desktop save paired server', [
+        ['desktop.savedServerId', FIELD_TEXT],
+        ['phone.savedServerId', FIELD_TEXT],
+    ]],
+    ['liveProgressBridgeVisible', 'live progress bridge visible in TauriTavern', [
+        ['progress.eventCount', FIELD_POSITIVE_NUMBER],
+        ['progress.lastPhase', FIELD_TEXT],
+    ]],
+    ['pullMtimePreserved', 'pull preserves local filesystem mtime', [
+        ['mtime.actualModifiedMs', FIELD_POSITIVE_NUMBER],
+        ['mtime.expectedModifiedMs', FIELD_POSITIVE_NUMBER],
+    ]],
+    ['pullInterruptionSafe', 'pull interruption keeps existing local files safe', [
+        ['interruption.afterHash', FIELD_TEXT],
+        ['interruption.beforeHash', FIELD_TEXT],
+        ['interruption.error', FIELD_TEXT],
+    ]],
+    ['lanCloudSyncMutex', 'LAN Sync and cloud sync are mutually exclusive', [
+        ['mutex.blockedOperation', FIELD_TEXT],
+        ['mutex.visibleError', FIELD_TEXT],
+    ]],
+    ['androidWeakNetworkErrorVisible', 'Android weak-network error is visible', [
+        ['android.networkProfile', FIELD_TEXT],
+        ['android.visibleError', FIELD_TEXT],
+    ]],
 ]);
 
 const EXIT_FAILURE = 1;
@@ -129,16 +158,39 @@ function consistencyChecks(evidence) {
 }
 
 function deviceCheck(evidence, item) {
-    const [key, label] = item;
+    const [key, label, fieldSpecs] = item;
     const value = evidence?.checks?.[key];
-    return check(label, deviceCheckPasses(value), `${key} must be ok=true with evidence text`);
+    const fields = requiredFieldPaths(fieldSpecs).join(', ');
+    return check(label, deviceCheckPasses(value, fieldSpecs), `${key} must be ok=true with evidence text and fields: ${fields}`);
 }
 
-function deviceCheckPasses(value) {
+function deviceCheckPasses(value, fieldSpecs) {
     if (value === true) {
         return false;
     }
-    return value?.ok === true && hasText(value.evidence);
+    return value?.ok === true && hasText(value.evidence) && requiredFieldsPass(value, fieldSpecs);
+}
+
+function requiredFieldsPass(value, fieldSpecs) {
+    return fieldSpecs.every(fieldSpec => fieldValuePasses(readPath(value, fieldSpec[0]), fieldSpec[1]));
+}
+
+function fieldValuePasses(value, type) {
+    if (type === FIELD_POSITIVE_NUMBER) {
+        return hasPositiveInteger(value);
+    }
+    if (type === FIELD_TEXT) {
+        return hasText(value);
+    }
+    throw new Error(`Unknown evidence field type: ${type}`);
+}
+
+function readPath(object, pathValue) {
+    return pathValue.split('.').reduce((value, key) => value?.[key], object);
+}
+
+function requiredFieldPaths(fieldSpecs) {
+    return fieldSpecs.map(fieldSpec => fieldSpec[0]);
 }
 
 function hasDeviceCoverage(evidence) {

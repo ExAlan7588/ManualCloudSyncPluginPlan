@@ -36,8 +36,12 @@ export function createDeviceEvidenceTemplate(options = {}) {
 }
 
 function deviceCheckTemplate(item) {
-    const [key, label] = item;
-    return [key, { evidence: '', ok: false, requiredEvidence: label }];
+    const [key, label, fieldSpecs] = item;
+    return [key, { evidence: '', ok: false, requiredEvidence: label, requiredFields: requiredFieldPaths(fieldSpecs) }];
+}
+
+function requiredFieldPaths(fieldSpecs) {
+    return fieldSpecs.map(fieldSpec => fieldSpec[0]);
 }
 
 function parseCliOptions() {

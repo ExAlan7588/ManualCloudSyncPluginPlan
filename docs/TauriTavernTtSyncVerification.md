@@ -180,7 +180,7 @@ npm run verify:incremental-evidence -- --commands /tmp/tt-sync-command-report.js
 
 final evidence gate 會拒絕 `--local` smoke report；部署證據必須來自非 localhost / loopback 的遠端 URL。
 command report 必須包含 `scannedAt`、實際 source 與 scanned file count。
-遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId` 與 push/pull `planIds`。
+遠端 smoke report 必須包含 `completedAt`、`smokePath`、`deviceId`、push/pull `planIds`、fixture files/bytes 與 smoke paths。
 device evidence 的 `server.url` 必須和遠端 smoke report 的 endpoint 是同一個 URL。
 
 device evidence JSON 需包含：
@@ -189,7 +189,7 @@ device evidence JSON 需包含：
 npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
 ```
 
-模板會建立完整欄位，但每個檢查都預設 `ok=false`；必須填入真實 evidence 並改成 `ok=true` 後，final evidence gate 才可能通過。
+模板會建立完整欄位，但每個檢查都預設 `ok=false`；必須填入真實 evidence、補齊 required fields 並改成 `ok=true` 後，final evidence gate 才可能通過。
 
 ```json
 {
@@ -206,16 +206,49 @@ npm run evidence:device-template -- --output /tmp/tt-sync-device-evidence.json
     "url": "https://sync.example.com"
   },
   "checks": {
-    "realLargeFirstSyncCompleted": { "ok": true, "evidence": "300MB first sync report path or run id" },
-    "commandContractVerified": { "ok": true, "evidence": "backend command contract test report path or build verification id" },
-    "phoneDesktopPairingSaved": { "ok": true, "evidence": "both devices still list server after restart" },
-    "liveProgressBridgeVisible": { "ok": true, "evidence": "progress event capture or screen recording id" },
-    "pullMtimePreserved": { "ok": true, "evidence": "mtime before/after shell output path" },
-    "pullInterruptionSafe": { "ok": true, "evidence": "interrupted Pull run id and local file hash evidence" },
-    "lanCloudSyncMutex": { "ok": true, "evidence": "mutex rejection log path" },
-    "androidWeakNetworkErrorVisible": { "ok": true, "evidence": "Android weak-network error capture id" }
+    "realLargeFirstSyncCompleted": {
+      "ok": true,
+      "evidence": "300MB first sync report path or run id",
+      "metrics": { "durationMs": 120000, "fileCount": 128, "totalBytes": 335544320 }
+    },
+    "commandContractVerified": {
+      "ok": true,
+      "evidence": "backend command contract test report path or build verification id",
+      "commandReport": { "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern.apk" }
+    },
+    "phoneDesktopPairingSaved": {
+      "ok": true,
+      "evidence": "both devices still list server after restart",
+      "phone": { "savedServerId": "phone-server-id" },
+      "desktop": { "savedServerId": "desktop-server-id" }
+    },
+    "liveProgressBridgeVisible": {
+      "ok": true,
+      "evidence": "progress event capture or screen recording id",
+      "progress": { "eventCount": 12, "lastPhase": "committed" }
+    },
+    "pullMtimePreserved": {
+      "ok": true,
+      "evidence": "mtime before/after shell output path",
+      "mtime": { "expectedModifiedMs": 1778500000000, "actualModifiedMs": 1778500000000 }
+    },
+    "pullInterruptionSafe": {
+      "ok": true,
+      "evidence": "interrupted Pull run id and local file hash evidence",
+      "interruption": { "beforeHash": "sha256-before", "afterHash": "sha256-after", "error": "interrupted pull" }
+    },
+    "lanCloudSyncMutex": {
+      "ok": true,
+      "evidence": "mutex rejection log path",
+      "mutex": { "blockedOperation": "lan_sync_start while tt_sync_pull is active", "visibleError": "Cloud sync already running" }
+    },
+    "androidWeakNetworkErrorVisible": {
+      "ok": true,
+      "evidence": "Android weak-network error capture id",
+      "android": { "networkProfile": "Android emulator weak network", "visibleError": "TT-Sync failed: network timeout" }
+    }
   }
 }
 ```
 
-每個 check 必須是 `{ "ok": true, "evidence": "..." }`；單純布林值 `true` 不會被接受為完成證據。
+每個 check 必須是 `{ "ok": true, "evidence": "...", ...requiredFields }`；單純布林值 `true` 或只有文字 evidence 不會被接受為完成證據。

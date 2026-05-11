@@ -11,6 +11,36 @@ import {
 const PAIRING_TOKEN_ENV = 'TT_SYNC_PAIRING_TOKEN';
 const TEST_BULK_FILE_BYTES = 128;
 const TEST_BULK_FILES = 3;
+const TEST_MTIME_MS = 1778500000000;
+const TEST_SYNC_DURATION_MS = 120000;
+
+const DEVICE_CHECK_FIXTURES = Object.freeze({
+    androidWeakNetworkErrorVisible: {
+        android: { networkProfile: 'Android emulator 3G loss profile', visibleError: 'TT-Sync failed: network timeout' },
+    },
+    commandContractVerified: {
+        commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/builds/TauriTavern.apk' },
+    },
+    lanCloudSyncMutex: {
+        mutex: { blockedOperation: 'lan_sync_start while tt_sync_push is active', visibleError: 'Cloud sync already running' },
+    },
+    liveProgressBridgeVisible: {
+        progress: { eventCount: TEST_BULK_FILES, lastPhase: 'committed' },
+    },
+    phoneDesktopPairingSaved: {
+        desktop: { savedServerId: 'desktop-server-fixture' },
+        phone: { savedServerId: 'phone-server-fixture' },
+    },
+    pullInterruptionSafe: {
+        interruption: { afterHash: 'sha256-after', beforeHash: 'sha256-before', error: 'interrupted pull' },
+    },
+    pullMtimePreserved: {
+        mtime: { actualModifiedMs: TEST_MTIME_MS, expectedModifiedMs: TEST_MTIME_MS },
+    },
+    realLargeFirstSyncCompleted: {
+        metrics: { durationMs: TEST_SYNC_DURATION_MS, fileCount: TEST_BULK_FILES, totalBytes: TEST_BULK_FILES * TEST_BULK_FILE_BYTES },
+    },
+});
 
 const tests = [
     ['server smoke verifier passes against explicit local server', testLocalSmoke],
@@ -23,6 +53,7 @@ const tests = [
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects missing smoke provenance', testMissingSmokeProvenance],
     ['incremental evidence verifier rejects missing smoke fixture provenance', testMissingSmokeFixtureProvenance],
+    ['incremental evidence verifier rejects missing device structured fields', testMissingDeviceStructuredFields],
     ['device evidence template starts incomplete', testDeviceEvidenceTemplateIncomplete],
 ];
 
@@ -151,6 +182,14 @@ async function testMissingSmokeFixtureProvenance() {
     assert.ok(report.failed.includes('smoke report fixture paths'));
 }
 
+async function testMissingDeviceStructuredFields() {
+    const evidence = completeEvidence();
+    delete evidence.deviceEvidence.checks.pullMtimePreserved.mtime;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('pull preserves local filesystem mtime'));
+}
+
 async function testDeviceEvidenceTemplateIncomplete() {
     const template = createDeviceEvidenceTemplate({
         desktopBuildId: 'desktop-build-fixture',
@@ -225,7 +264,7 @@ function deviceEvidenceFixture() {
 
 function deviceCheckEntry(item) {
     const [key, label] = item;
-    return [key, { evidence: `${label} evidence`, ok: true }];
+    return [key, { evidence: `${label} evidence`, ok: true, ...DEVICE_CHECK_FIXTURES[key] }];
 }
 
 function restorePairingToken(previousToken) {

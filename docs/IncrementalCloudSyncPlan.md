@@ -70,7 +70,7 @@ TT-Sync v2 已經具備很多理想形態：
 - 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
 - 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke，並可用 `--bulk-files` / `--bulk-file-bytes` 產生多檔或大檔部署證據。
 - 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 command report、帶 fixture provenance 的遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate。
-- 新增 `tools/create-device-evidence-template.js`，可產生所有真機檢查預設 `ok=false` 的 device evidence 模板。
+- 新增 `tools/create-device-evidence-template.js`，可產生所有真機檢查預設 `ok=false` 並列出 required fields 的 device evidence 模板。
 - 新增 `docs/TauriTavernTtSyncCommandContract.md`，明確定義前端呼叫的 `tt_sync_*` command contract 與後端必須保證的 mtime、atomic write、mutex、error 行為。
 
 仍屬外部交付，不能在此 repo 內驗證完成：
@@ -324,5 +324,5 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 2. 依 `docs/TauriTavernTtSyncCommandContract.md` 實作並檢查 TauriTavern 後端 `tt_sync_*` command contract。
 3. 依 `docs/TauriTavernTtSyncVerification.md` 保存配對、mtime、中斷安全、互斥與弱網路證據。
 4. Minimal TT-Sync server 已在本 repo 內提供；真實 VPS 啟動與端到端同步需保存 `smoke:tt-sync-server` 報告作為部署環境證據。
-5. 可先用 `npm run evidence:device-template -- --output <device-evidence.json>` 建立真機證據模板；模板預設 `ok=false`，不會被 final gate 視為完成。
+5. 可先用 `npm run evidence:device-template -- --output <device-evidence.json>` 建立真機證據模板；模板預設 `ok=false` 且列出每項 required fields，不會被 final gate 視為完成。
 6. 使用 `npm run verify:incremental-evidence -- --commands <command-report.json> --smoke <remote-smoke-report.json> --device-evidence <device-evidence.json>` 做最終證據 gate。
