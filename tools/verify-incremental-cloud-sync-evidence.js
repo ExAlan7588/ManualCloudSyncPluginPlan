@@ -29,6 +29,7 @@ export const REQUIRED_DEPLOY_CHECKS = Object.freeze([
 ]);
 
 const FIELD_POSITIVE_NUMBER = 'positiveNumber';
+const FIELD_NON_NEGATIVE_NUMBER = 'nonNegativeNumber';
 const FIELD_TEXT = 'text';
 const FIELD_TEXT_ARRAY = 'textArray';
 const FIELD_TIMESTAMP = 'timestamp';
@@ -61,6 +62,20 @@ export const REQUIRED_DEVICE_CHECKS = Object.freeze([
         ['progress.eventCount', FIELD_POSITIVE_NUMBER],
         ['progress.filesTransferred', FIELD_POSITIVE_NUMBER],
         ['progress.lastPhase', FIELD_TEXT],
+    ]],
+    ['preTransferDiffVisible', 'pre-transfer diff summary visible in plugin UI', [
+        ['diff.capturedAt', FIELD_TIMESTAMP],
+        ['diff.conflictFiles', FIELD_NON_NEGATIVE_NUMBER],
+        ['diff.deleteFiles', FIELD_NON_NEGATIVE_NUMBER],
+        ['diff.downloadFiles', FIELD_NON_NEGATIVE_NUMBER],
+        ['diff.uploadFiles', FIELD_NON_NEGATIVE_NUMBER],
+    ]],
+    ['conflictResolutionVisible', 'conflict resolution visible in plugin UI', [
+        ['conflict.capturedAt', FIELD_TIMESTAMP],
+        ['conflict.localChoiceLabel', FIELD_TEXT],
+        ['conflict.path', FIELD_TEXT],
+        ['conflict.remoteChoiceLabel', FIELD_TEXT],
+        ['conflict.selectedDecision', FIELD_TEXT],
     ]],
     ['pullMtimePreserved', 'pull preserves local filesystem mtime', [
         ['mtime.actualModifiedMs', FIELD_POSITIVE_NUMBER],
@@ -354,6 +369,9 @@ function fieldValuePasses(value, type) {
     if (type === FIELD_POSITIVE_NUMBER) {
         return hasPositiveInteger(value);
     }
+    if (type === FIELD_NON_NEGATIVE_NUMBER) {
+        return hasNonNegativeInteger(value);
+    }
     if (type === FIELD_TEXT) {
         return hasText(value);
     }
@@ -463,6 +481,10 @@ function isTimestamp(value) {
 
 function hasPositiveInteger(value) {
     return Number.isInteger(value) && value > 0;
+}
+
+function hasNonNegativeInteger(value) {
+    return Number.isInteger(value) && value >= 0;
 }
 
 function fixturePathsIncludePrimary(report) {

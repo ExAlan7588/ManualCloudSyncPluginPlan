@@ -32,6 +32,15 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         contract: { commands: REQUIRED_TT_SYNC_COMMANDS, reportId: 'contract-test-report-fixture' },
         commandReport: { scannedAt: '2026-05-12T00:00:00+08:00', source: '/src/TauriTavern', sourceKind: 'source-tree' },
     },
+    conflictResolutionVisible: {
+        conflict: {
+            capturedAt: '2026-05-12T00:04:00+08:00',
+            localChoiceLabel: '使用本機',
+            path: 'default-user/chats/conflict-fixture.jsonl',
+            remoteChoiceLabel: '使用遠端',
+            selectedDecision: 'local',
+        },
+    },
     lanCloudSyncMutex: {
         mutex: {
             blockedOperation: 'lan_sync_start while tt_sync_push is active',
@@ -61,6 +70,15 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
             restartVerifiedAt: '2026-05-12T00:02:00+08:00',
             savedServerId: 'minimal-default',
             savedServerUrl: 'https://sync.example.com',
+        },
+    },
+    preTransferDiffVisible: {
+        diff: {
+            capturedAt: '2026-05-12T00:04:30+08:00',
+            conflictFiles: 1,
+            deleteFiles: 0,
+            downloadFiles: 1,
+            uploadFiles: 1,
         },
     },
     pullInterruptionSafe: {

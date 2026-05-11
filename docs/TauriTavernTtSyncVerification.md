@@ -264,6 +264,28 @@ final evidence gate 會檢查下列 dot-path 欄位：
         "lastPhase": "committed"
       }
     },
+    "preTransferDiffVisible": {
+      "ok": true,
+      "evidence": "pre-transfer diff screenshot or event capture id",
+      "diff": {
+        "capturedAt": "2026-05-12T00:04:00+08:00",
+        "uploadFiles": 1,
+        "downloadFiles": 1,
+        "deleteFiles": 0,
+        "conflictFiles": 1
+      }
+    },
+    "conflictResolutionVisible": {
+      "ok": true,
+      "evidence": "conflict resolution screenshot or interaction capture id",
+      "conflict": {
+        "capturedAt": "2026-05-12T00:04:30+08:00",
+        "path": "default-user/chats/conflict.jsonl",
+        "localChoiceLabel": "使用本機",
+        "remoteChoiceLabel": "使用遠端",
+        "selectedDecision": "local"
+      }
+    },
     "pullMtimePreserved": {
       "ok": true,
       "evidence": "mtime before/after shell output path",
@@ -308,3 +330,4 @@ final evidence gate 會檢查下列 dot-path 欄位：
 ```
 
 每個 check 必須是 `{ "ok": true, "evidence": "...", ...requiredFields }`；單純布林值 `true` 或只有文字 evidence 不會被接受為完成證據。
+新增或更新 device evidence 時，final gate 會逐一檢查下列 dot-path 欄位，包含 `diff.capturedAt`、`diff.uploadFiles`、`diff.downloadFiles`、`diff.deleteFiles`、`diff.conflictFiles`、`conflict.capturedAt`、`conflict.path`、`conflict.localChoiceLabel`、`conflict.remoteChoiceLabel`、`conflict.selectedDecision`。
