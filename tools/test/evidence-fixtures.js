@@ -12,6 +12,7 @@ import {
 export const TEST_BULK_FILE_BYTES = 128;
 export const TEST_BULK_FILES = 3;
 export const TEST_MTIME_MS = 1778500000000;
+export const TEST_SYNC_URL = 'https://sync.fixture.test';
 
 const TEST_REAL_LARGE_SYNC_BYTES = 335544320;
 const TEST_SYNC_DURATION_MS = 120000;
@@ -76,12 +77,12 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
         desktop: {
             restartVerifiedAt: '2026-05-12T00:02:00+08:00',
             savedServerId: 'minimal-default',
-            savedServerUrl: 'https://sync.example.com',
+            savedServerUrl: TEST_SYNC_URL,
         },
         phone: {
             restartVerifiedAt: '2026-05-12T00:02:00+08:00',
             savedServerId: 'minimal-default',
-            savedServerUrl: 'https://sync.example.com',
+            savedServerUrl: TEST_SYNC_URL,
         },
     },
     preTransferDiffVisible: {
@@ -216,7 +217,7 @@ export function deployReportFixture() {
         checks: REQUIRED_DEPLOY_CHECKS.map(name => ({ detail: 'fixture', name, ok: true })),
         envPath: '/etc/manual-cloud-tt-sync.env',
         ok: true,
-        publicUrl: 'https://sync.example.com',
+        publicUrl: TEST_SYNC_URL,
         servicePath: '/etc/systemd/system/manual-cloud-tt-sync.service',
         verifiedAt: '2026-05-12T00:00:30+08:00',
     };
@@ -230,7 +231,7 @@ export function deviceEvidenceFixture() {
             { deviceId: 'desktop-device-fixture', model: 'Workstation', platform: 'Linux desktop' },
         ],
         server: {
-            url: 'https://sync.example.com',
+            url: TEST_SYNC_URL,
         },
         tauriTavern: {
             desktopBuildId: 'desktop-build-fixture',
@@ -246,7 +247,7 @@ export function smokeReportFixture() {
         checks: REQUIRED_SMOKE_CHECKS.map(name => ({ detail: 'fixture', name, ok: true })),
         completedAt: '2026-05-12T00:01:00+08:00',
         deviceId: 'device-fixture',
-        endpoint: 'https://sync.example.com',
+        endpoint: TEST_SYNC_URL,
         fixture: {
             fileCount: TEST_BULK_FILES,
             totalBytes: TEST_BULK_FILES * TEST_BULK_FILE_BYTES,

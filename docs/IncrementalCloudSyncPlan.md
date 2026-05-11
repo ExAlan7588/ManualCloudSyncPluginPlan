@@ -70,7 +70,7 @@ TT-Sync v2 已經具備很多理想形態：
 - 新增無第三方依賴的 Minimal TT-Sync server artifact，可保存 namespace、manifest、files、plans，並支援 per-file/bundle transfer 與 commit。
 - 新增 `tools/verify-tauritavern-tt-sync.js`，可掃描 TauriTavern source tree、APK/AAB 或桌面 build artifact 是否包含必要 `tt_sync_*` command 名稱。
 - 新增 `tools/smoke-tt-sync-server.js`，可對實際 TT-Sync URL 跑 status、pair、session、Push、progress、Pull、mtime header、empty diff 與 device/history smoke，並可用 `--bulk-files` / `--bulk-file-bytes` 產生多檔或大檔部署證據。
-- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 `sourceKind=build-artifact` 的實際手機與桌面 build command reports、`sourceKind=source-tree` 且含 diff/conflict surface 的 event surface report、service/env path 為非範例絕對路徑的真實 VPS deploy report、帶 fixture provenance 且必要 check 皆通過的遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate；device evidence 內的 command 與 event surface report reference consistency 也必須對齊頂層 reports。
+- 新增 `tools/verify-incremental-cloud-sync-evidence.js`，可在 `sourceKind=build-artifact` 的實際手機與桌面 build command reports、`sourceKind=source-tree` 且含 diff/conflict surface 的 event surface report、service/env path 為非範例絕對路徑且 URL 不是 example placeholder domains 的真實 VPS deploy report、帶 fixture provenance 且必要 check 皆通過的遠端 smoke report 與真機 device evidence 都齊全時作為 final evidence gate；device evidence 內的 command 與 event surface report reference consistency 也必須對齊頂層 reports。
 - 新增 `tools/create-device-evidence-template.js`，可產生所有真機檢查預設 `ok=false` 並列出 required fields 的 device evidence 模板。
 - 新增 `docs/TauriTavernTtSyncCommandContract.md`，明確定義前端呼叫的 `tt_sync_*` command contract 與後端必須保證的 mtime、atomic write、mutex、error 行為。
 

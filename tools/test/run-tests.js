@@ -51,6 +51,7 @@ const tests = [
     ['incremental evidence verifier rejects smoke checks without detail', testSmokeCheckMissingDetail],
     ['incremental evidence verifier rejects failed extra report checks', testFailedExtraReportCheck],
     ['incremental evidence verifier rejects invalid timestamps', testInvalidEvidenceTimestamp],
+    ['incremental evidence verifier rejects placeholder evidence URLs', testPlaceholderEvidenceUrls],
     ['incremental evidence verifier rejects deploy smoke URL mismatch', testMixedDeploySmokeEvidence],
     ['incremental evidence verifier rejects mixed server evidence', testMixedServerEvidence],
     ['incremental evidence verifier rejects saved pairing URL mismatch', testSavedPairingUrlMismatch],
@@ -247,6 +248,21 @@ async function testInvalidEvidenceTimestamp() {
     assert.ok(report.failed.includes('device evidence testedAt'));
     assert.ok(report.failed.includes('smoke report completedAt'));
     assert.ok(report.failed.includes('Android weak-network error is visible'));
+}
+
+async function testPlaceholderEvidenceUrls() {
+    const evidence = completeEvidence();
+    const placeholderUrl = 'https://sync.example.com';
+    evidence.deployReport.publicUrl = placeholderUrl;
+    evidence.smokeReport.endpoint = placeholderUrl;
+    evidence.deviceEvidence.server.url = placeholderUrl;
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.phone.savedServerUrl = placeholderUrl;
+    evidence.deviceEvidence.checks.phoneDesktopPairingSaved.desktop.savedServerUrl = placeholderUrl;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('deploy report public URL is not placeholder'));
+    assert.ok(report.failed.includes('smoke endpoint is not placeholder'));
+    assert.ok(report.failed.includes('device evidence server URL is not placeholder'));
 }
 
 async function testMixedServerEvidence() {

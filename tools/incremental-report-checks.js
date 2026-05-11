@@ -4,6 +4,8 @@ import {
     REQUIRED_SMOKE_CHECKS,
 } from './incremental-evidence-schema.js';
 
+const PLACEHOLDER_HOSTS = new Set(['example.com', 'example.net', 'example.org']);
+
 export function deployChecks(report) {
     const names = passedCheckNames(report);
     return [
@@ -14,6 +16,7 @@ export function deployChecks(report) {
         check('deploy report real service path', isFinalDeployPath(report?.servicePath), 'final deploy servicePath must be an absolute non-template path'),
         check('deploy report real env path', isFinalDeployPath(report?.envPath), 'final deploy envPath must be an absolute non-template path'),
         check('deploy report public URL', hasText(report?.publicUrl), 'deploy report must include publicUrl'),
+        check('deploy report public URL is not placeholder', isNonPlaceholderUrl(report?.publicUrl), 'deploy publicUrl must not use example placeholder domains'),
         check('deploy report real env mode', report?.allowPlaceholders === false, 'final evidence deploy report must not allow placeholders'),
         check('deploy report checks passed', reportChecksPassed(report), 'deploy report checks must all be ok=true with name and detail'),
         ...REQUIRED_DEPLOY_CHECKS.map(name => check(`deploy ${name}`, names.has(name), `${name} check is required`)),
@@ -34,10 +37,20 @@ export function smokeChecks(report) {
         check('smoke report fixture paths', fixturePathsIncludePrimary(report), 'smoke report must include smokePaths containing smokePath'),
         check('smoke report is remote', report?.mode === 'remote', 'final evidence requires a remote deployed server smoke report'),
         check('smoke endpoint is non-local', isNonLocalEndpoint(report?.endpoint), 'smoke endpoint must not be localhost or loopback'),
+        check('smoke endpoint is not placeholder', isNonPlaceholderUrl(report?.endpoint), 'smoke endpoint must not use example placeholder domains'),
         check('smoke status version', hasText(report?.status?.version), 'smoke report must include status.version'),
         check('smoke report checks passed', reportChecksPassed(report), 'smoke report checks must all be ok=true with name and detail'),
         ...REQUIRED_SMOKE_CHECKS.map(name => check(`smoke ${name}`, names.has(name), `${name} check is required`)),
     ];
+}
+
+export function isNonPlaceholderUrl(value) {
+    const parsed = parseHttpUrl(value);
+    if (!parsed) {
+        return false;
+    }
+    const host = parsed.hostname.toLowerCase();
+    return !PLACEHOLDER_HOSTS.has(host) && !host.endsWith('.example.com');
 }
 
 function isFinalDeployPath(value) {
@@ -49,11 +62,16 @@ function isFinalDeployPath(value) {
 }
 
 function isNonLocalEndpoint(endpoint) {
+    const parsed = parseHttpUrl(endpoint);
+    return Boolean(parsed && !['127.0.0.1', '::1', 'localhost'].includes(parsed.hostname.toLowerCase()));
+}
+
+function parseHttpUrl(value) {
     try {
-        const host = new URL(endpoint).hostname.toLowerCase();
-        return !['127.0.0.1', '::1', 'localhost'].includes(host);
+        const parsed = new URL(value);
+        return ['http:', 'https:'].includes(parsed.protocol) ? parsed : null;
     } catch {
-        return false;
+        return null;
     }
 }
 
