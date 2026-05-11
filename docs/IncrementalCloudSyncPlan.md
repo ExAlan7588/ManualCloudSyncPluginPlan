@@ -57,7 +57,7 @@ TT-Sync v2 已經具備很多理想形態：
 - 同步歷史與回滾點。
 - 更好的手機端首次設定流程。
 
-## 3.1 目前落地狀態（2026-05-11）
+## 3.1 目前落地狀態（2026-05-12）
 
 本 repo 是 GitHub 前端插件，原本不包含 `src-tauri` 後端、TT-Sync server、VPS 部署檔或手機 build pipeline。已完成 repo-local 交付：
 
@@ -312,13 +312,13 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [x] 同步狀態目錄不會被同步。結果：Minimal server 會拒收 LAN Sync、manual/incremental sync 狀態與 iOS policy cache 路徑。
 - [ ] Android 手機弱網路下錯誤可見。驗證方式已文件化；仍需 Android 弱網路測試證據。
 
-## 12. 開放問題
+## 12. 決策紀錄與剩餘依賴
 
-- 是否直接使用既有 TT-Sync v2 做第一階段？
-- TT-Sync 服務端目前是否已有可部署實作？
-- 第一版是否接受配對式，而不是帳號密碼登入？
-- 衝突第一版要阻止同步，還是允許「整批以本機覆蓋」與「整批以遠端覆蓋」？
-- 圖片/附件是否要提供可選同步 scope，讓使用者先只同步聊天與設定？
+- 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_check_diff`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_unpair`，不在純前端插件內新增假的增量同步。
+- TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。實際 VPS 上線狀態仍需外部 smoke report 證明。
+- 第一版接受配對式流程；帳號式能力已在 Minimal server 內提供 login、token refresh、device list、history 與 rollback endpoints，真實產品流程仍取決於 TauriTavern app 整合。
+- 衝突第一版採保守策略：未解決 conflict 時阻止破壞性 commit；使用者需對每個 conflict 選擇本機或遠端版本。
+- 圖片/附件不在第一階段拆成獨立可選 scope；同步範圍沿用 TT-Sync/LAN Sync scope 規則，並強制排除同步狀態與本機 cache 路徑。
 
 ## 13. 外部驗證入口
 
