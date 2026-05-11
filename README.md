@@ -87,3 +87,7 @@ Android release 版若封鎖 `http://100.x.x.x` 這類明文 Tailscale 端點，
 ## 同步模型
 
 每次上傳都會建立一組 `sync-MMDDHHMMSS.zip` 和同名 `.json` manifest。下載時會處理最舊的一包，先驗證大小與 SHA-256，再以 mirror 語意套用本機資料。匯入成功後才刪除遠端 zip 與 manifest。
+
+## 後續計畫
+
+增量同步與 VPS 端後續工作請看：[docs/IncrementalCloudSyncPlan.md](docs/IncrementalCloudSyncPlan.md)。
