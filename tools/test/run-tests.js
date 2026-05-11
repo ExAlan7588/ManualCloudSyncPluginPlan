@@ -9,6 +9,7 @@ import {
     REQUIRED_DEVICE_CHECKS,
     REQUIRED_SMOKE_CHECKS,
     verifyIncrementalCloudSyncEvidence,
+    writeManifest,
 } from '../verify-incremental-cloud-sync-evidence.js';
 
 const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContract.md', import.meta.url);
@@ -90,6 +91,7 @@ const DEVICE_CHECK_FIXTURES = Object.freeze({
 const tests = [
     ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
+    ['incremental evidence verifier writes manifest report', testFinalEvidenceManifestWritten],
     ['incremental evidence verifier labels malformed JSON input', testMalformedEvidenceJson],
     ['incremental evidence verifier labels missing JSON input', testMissingEvidenceJsonFile],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
@@ -171,6 +173,20 @@ async function testCompleteEvidence() {
     const report = await verifyIncrementalCloudSyncEvidence(completeEvidence());
     assert.equal(report.ok, true);
     assert.deepEqual(report.failed, []);
+}
+
+async function testFinalEvidenceManifestWritten() {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-final-report-'));
+    try {
+        const manifestPath = path.join(tempDir, 'final-report.json');
+        const report = await verifyIncrementalCloudSyncEvidence(completeEvidence());
+        await writeManifest({ manifestPath, report });
+        const saved = JSON.parse(await readFile(manifestPath, 'utf8'));
+        assert.equal(saved.ok, true);
+        assert.equal(saved.verifiedAt, report.verifiedAt);
+    } finally {
+        await rm(tempDir, { force: true, recursive: true });
+    }
 }
 
 async function testMalformedEvidenceJson() {

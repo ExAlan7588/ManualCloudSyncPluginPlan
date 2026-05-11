@@ -539,7 +539,7 @@ function cliInput(options) {
     };
 }
 
-async function writeManifest(options) {
+export async function writeManifest(options) {
     if (!options.manifestPath) {
         return;
     }
