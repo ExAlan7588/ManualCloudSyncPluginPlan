@@ -40,6 +40,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 - Minimal TT-Sync server 或上游 TT-Sync server 已在可被手機與電腦連到的 URL 啟動。
 - 已設定 `TT_SYNC_PAIRING_TOKEN` 並產生配對 URI。
 - 手機與電腦 build 都已通過 command surface 檢查。
+- TauriTavern 後端符合 `docs/TauriTavernTtSyncCommandContract.md` 的 command contract。
 
 驗證步驟：
 

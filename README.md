@@ -47,6 +47,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 ```
 
 完整的真機與 VPS 驗證清單請看：[docs/TauriTavernTtSyncVerification.md](docs/TauriTavernTtSyncVerification.md)。
+TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/TauriTavernTtSyncCommandContract.md](docs/TauriTavernTtSyncCommandContract.md)。
 
 完整 mirror 封存同步需要 TauriTavern 版本提供下列原生命令：
 
