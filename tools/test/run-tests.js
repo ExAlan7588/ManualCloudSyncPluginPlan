@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createDeviceEvidenceTemplate } from '../create-device-evidence-template.js';
 import { smokeTtSyncServer } from '../smoke-tt-sync-server.js';
 import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
@@ -10,10 +11,12 @@ import {
 } from '../verify-incremental-cloud-sync-evidence.js';
 
 const PAIRING_TOKEN_ENV = 'TT_SYNC_PAIRING_TOKEN';
+const COMMAND_CONTRACT_DOC = new URL('../../docs/TauriTavernTtSyncCommandContract.md', import.meta.url);
 const TEST_BULK_FILE_BYTES = 128;
 const TEST_BULK_FILES = 3;
 const TEST_MTIME_MS = 1778500000000;
 const TEST_SYNC_DURATION_MS = 120000;
+const VERIFICATION_DOC = new URL('../../docs/TauriTavernTtSyncVerification.md', import.meta.url);
 
 const DEVICE_CHECK_FIXTURES = Object.freeze({
     androidWeakNetworkErrorVisible: {
@@ -50,6 +53,7 @@ const tests = [
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
     ['deploy verifier accepts repo template placeholders explicitly', testDeployVerifierTemplate],
     ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
+    ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier rejects missing device evidence', testMissingDeviceEvidence],
     ['incremental evidence verifier rejects local smoke as final evidence', testLocalSmokeEvidence],
@@ -129,6 +133,25 @@ async function testDeployVerifierRejectsPlaceholderToken() {
     const report = await verifyTtSyncDeploy();
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('env pairing token is not placeholder'));
+}
+
+async function testVerificationDocsCoverage() {
+    const contract = await readFile(COMMAND_CONTRACT_DOC, 'utf8');
+    const verification = await readFile(VERIFICATION_DOC, 'utf8');
+    for (const command of REQUIRED_TT_SYNC_COMMANDS) {
+        assert.ok(contract.includes(command), `${command} missing from command contract doc`);
+    }
+    for (const item of REQUIRED_DEVICE_CHECKS) {
+        assertDeviceRequirementDocumented({ item, verification });
+    }
+}
+
+function assertDeviceRequirementDocumented(options) {
+    const [key, _label, fieldSpecs] = options.item;
+    assert.ok(options.verification.includes(key), `${key} missing from verification doc`);
+    for (const fieldSpec of fieldSpecs) {
+        assert.ok(options.verification.includes(fieldSpec[0]), `${fieldSpec[0]} missing from verification doc`);
+    }
 }
 
 function assertCheckNames(report) {
