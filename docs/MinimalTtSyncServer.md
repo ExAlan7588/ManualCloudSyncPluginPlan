@@ -143,6 +143,11 @@ Returns files to download and local files that the client should delete in mirro
 
 Downloads a remote file from a pull plan.
 
+Response headers include:
+
+- `X-TT-Sync-Modified-Ms`: manifest mtime in milliseconds.
+- `Last-Modified`: HTTP date derived from `modifiedMs`.
+
 ### `PUT /v2/plans/{plan_id}/files/{path_b64}`
 
 Stages one uploaded file for a push plan.

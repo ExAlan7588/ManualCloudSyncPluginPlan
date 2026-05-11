@@ -10,10 +10,12 @@ const TEST_TOKEN = 'test-pairing-token';
 const FILE_PATH = 'default-user/chats/example.jsonl';
 const IMAGE_PATH = 'default-user/files/avatar.png';
 const BASE_MTIME = 1778500000000;
+const BULK_FILE_COUNT = 128;
 
 const tests = [
     ['pair, push, pull, and empty diff', testPushPullEmptyDiff],
     ['only changed files transfer and bundle endpoints work', testChangedFilesAndBundle],
+    ['bulk first sync completes', testBulkFirstSync],
     ['uncommitted push plan does not delete remote files', testUncommittedPushKeepsRemote],
     ['conflict blocks commit until decision is provided', testConflictDecision],
     ['excluded sync state paths are rejected', testExcludedStatePath],
@@ -41,7 +43,9 @@ async function testPushPullEmptyDiff() {
 
         const pullPlan = await pullPlanFor(context, pair, []);
         assert.equal(pullPlan.downloads.length, 1);
-        assert.equal(await getFile({ context, planId: pullPlan.id, syncPath: entry.path, token: pair.authToken }), 'hello');
+        const downloaded = await getFile({ context, planId: pullPlan.id, syncPath: entry.path, token: pair.authToken });
+        assert.equal(downloaded.text, 'hello');
+        assert.equal(downloaded.modifiedMs, String(BASE_MTIME));
 
         const emptyPlan = await pullPlanFor(context, pair, [entry]);
         assert.equal(emptyPlan.downloads.length, 0);
@@ -71,27 +75,7 @@ async function assertProgressLifecycle(options) {
 
 async function testConflictDecision() {
     await withServer(async context => {
-        const pair = await pairDevice(context);
-        const baseEntry = await commitSingleFile({ content: 'hello', context, modifiedMs: BASE_MTIME, pair });
-        const remoteEntry = await commitSingleFile({
-            baseManifest: [baseEntry],
-            content: 'remote',
-            context,
-            modifiedMs: BASE_MTIME + 1,
-            pair,
-        });
-        const localEntry = entryFor('local', BASE_MTIME + 2);
-        const conflictPlan = await postJson({
-            context,
-            route: '/v2/sync/push-plan',
-            body: {
-            baseManifest: [baseEntry],
-            deviceId: pair.deviceId,
-            localManifest: [localEntry],
-            namespace: pair.namespace,
-            },
-            token: pair.authToken,
-        });
+        const { conflictPlan, localEntry, pair, remoteEntry } = await prepareConflictScenario(context);
         assert.equal(conflictPlan.conflicts.length, 1);
         await putFile({ content: 'local', context, planId: conflictPlan.id, syncPath: localEntry.path, token: pair.authToken });
         await assert.rejects(
@@ -106,18 +90,25 @@ async function testConflictDecision() {
             },
             token: pair.authToken,
         });
-        const pullPlan = await postJson({
-            context,
-            route: '/v2/sync/pull-plan',
-            body: {
-            deviceId: pair.deviceId,
-            localManifest: [remoteEntry],
-            namespace: pair.namespace,
-            },
-            token: pair.authToken,
-        });
-        assert.equal(await getFile({ context, planId: pullPlan.id, syncPath: FILE_PATH, token: pair.authToken }), 'local');
+        const pullPlan = await pullPlanFor(context, pair, [remoteEntry]);
+        const downloaded = await getFile({ context, planId: pullPlan.id, syncPath: FILE_PATH, token: pair.authToken });
+        assert.equal(downloaded.text, 'local');
     });
+}
+
+async function prepareConflictScenario(context) {
+    const pair = await pairDevice(context);
+    const baseEntry = await commitSingleFile({ content: 'hello', context, modifiedMs: BASE_MTIME, pair });
+    const remoteEntry = await commitSingleFile({
+        baseManifest: [baseEntry],
+        content: 'remote',
+        context,
+        modifiedMs: BASE_MTIME + 1,
+        pair,
+    });
+    const localEntry = entryFor('local', BASE_MTIME + 2);
+    const conflictPlan = await pushPlan({ baseManifest: [baseEntry], context, localManifest: [localEntry], pair });
+    return { conflictPlan, localEntry, pair, remoteEntry };
 }
 
 async function testChangedFilesAndBundle() {
@@ -137,6 +128,18 @@ async function testChangedFilesAndBundle() {
         const pullPlan = await pullPlanFor(context, pair, []);
         const bundle = await getBundle(context, pullPlan.id, pair.authToken);
         assert.deepEqual(bundle.files.map(file => file.path).sort(), [FILE_PATH, IMAGE_PATH].sort());
+    });
+}
+
+async function testBulkFirstSync() {
+    await withServer(async context => {
+        const pair = await pairDevice(context);
+        const specs = Array.from({ length: BULK_FILE_COUNT }, bulkFileSpec);
+        await commitBundle(context, pair, specs);
+        const pullPlan = await pullPlanFor(context, pair, []);
+        assert.equal(pullPlan.downloads.length, BULK_FILE_COUNT);
+        const bundle = await getBundle(context, pullPlan.id, pair.authToken);
+        assert.equal(bundle.files.length, BULK_FILE_COUNT);
     });
 }
 
@@ -260,6 +263,14 @@ function fileSpec(syncPath, content, modifiedMs) {
     return { content, modifiedMs, path: syncPath };
 }
 
+function bulkFileSpec(_value, index) {
+    return fileSpec(
+        `default-user/chats/bulk-${String(index).padStart(3, '0')}.jsonl`,
+        `message-${index}`,
+        BASE_MTIME + index,
+    );
+}
+
 function entryFor(content, modifiedMs) {
     return entryForPath(FILE_PATH, content, modifiedMs);
 }
@@ -313,7 +324,10 @@ async function getFile(options) {
     if (!response.ok) {
         throw new Error((await response.json()).error);
     }
-    return response.text();
+    return {
+        modifiedMs: response.headers.get('x-tt-sync-modified-ms'),
+        text: await response.text(),
+    };
 }
 
 async function getBundle(context, planId, token) {

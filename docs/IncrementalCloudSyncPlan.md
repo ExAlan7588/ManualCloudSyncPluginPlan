@@ -294,11 +294,11 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ## 11. 驗證清單
 
-- [ ] 首次同步大資料目錄可完成。
+- [x] 首次同步大資料目錄可完成。結果：server test `bulk first sync completes` 覆蓋 128-file first sync fixture；真實 300MB device/VPS 測試仍需外部環境。
 - [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
 - [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
 - [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。
-- [ ] Pull 後本機檔案 mtime 保留。
+- [ ] Pull 後本機檔案 mtime 保留。服務端已回傳 `X-TT-Sync-Modified-Ms` 與 `Last-Modified`；本機檔案 mtime 套用仍需 TauriTavern 後端/裝置驗證。
 - [x] Push commit 前斷線不造成遠端 mirror delete。結果：server test `uncommitted push plan does not delete remote files`。
 - [ ] Pull 寫入中斷不破壞本機既有檔案。
 - [ ] LAN Sync 與雲端同步不能並行。

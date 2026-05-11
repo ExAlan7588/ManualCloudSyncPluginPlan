@@ -117,6 +117,8 @@ async function downloadPlanFile(context, plan, syncPath) {
     context.response.writeHead(200, {
         'Content-Length': buffer.length,
         'Content-Type': BINARY_TYPE,
+        'Last-Modified': new Date(entry.modifiedMs).toUTCString(),
+        'X-TT-Sync-Modified-Ms': String(entry.modifiedMs),
     });
     context.response.end(buffer);
 }
