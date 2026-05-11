@@ -89,6 +89,7 @@ const tests = [
     ['verification docs cover command contract and device fields', testVerificationDocsCoverage],
     ['incremental evidence verifier accepts complete external evidence', testCompleteEvidence],
     ['incremental evidence verifier labels malformed JSON input', testMalformedEvidenceJson],
+    ['incremental evidence verifier labels missing JSON input', testMissingEvidenceJsonFile],
     ['incremental evidence verifier rejects mixed command report evidence', testMixedCommandReportEvidence],
     ['incremental evidence verifier rejects untrusted command evidence', testUntrustedCommandEvidence],
     ['incremental evidence verifier rejects source commands without handler evidence', testMissingCommandHandlerEvidence],
@@ -174,6 +175,23 @@ async function testMalformedEvidenceJson() {
                 smokeReport: smokeReportFixture(),
             }),
             /command report must be valid JSON/,
+        );
+    } finally {
+        await rm(tempDir, { force: true, recursive: true });
+    }
+}
+
+async function testMissingEvidenceJsonFile() {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-missing-evidence-'));
+    try {
+        await assert.rejects(
+            verifyIncrementalCloudSyncEvidence({
+                commandReportPath: path.join(tempDir, 'missing-command-report.json'),
+                deployReport: deployReportFixture(),
+                deviceEvidence: deviceEvidenceFixture(),
+                smokeReport: smokeReportFixture(),
+            }),
+            /command report cannot be read:/,
         );
     } finally {
         await rm(tempDir, { force: true, recursive: true });
