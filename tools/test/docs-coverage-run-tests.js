@@ -72,6 +72,8 @@ function assertFinalEvidenceManifestDocumented(options) {
     assert.ok(options.contract.includes('--manifest <final-evidence-report.json>'), 'contract final evidence manifest output missing');
     assert.ok(options.verifier.includes('--manifest <final-evidence-report.json>'), 'verifier usage manifest output missing');
     assert.ok(options.contract.includes('event surface report reference consistency'), 'contract final evidence event surface reference missing');
+    assert.ok(options.readme.includes('event surface report reference consistency'), 'README final evidence event surface reference missing');
+    assert.ok(options.plan.includes('event surface report reference consistency'), 'plan final evidence event surface reference missing');
     assert.ok(options.readme.includes('--mobile-commands /tmp/tt-sync-mobile-command-report.json'), 'README final evidence mobile command input missing');
     assert.ok(options.readme.includes('--desktop-commands /tmp/tt-sync-desktop-command-report.json'), 'README final evidence desktop command input missing');
     assert.ok(options.verification.includes('--mobile-commands /tmp/tt-sync-mobile-command-report.json'), 'verification final evidence mobile command input missing');
