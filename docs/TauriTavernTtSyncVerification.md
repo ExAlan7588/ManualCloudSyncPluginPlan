@@ -71,7 +71,7 @@ event surface report 必須包含 `tool=verify-tauritavern-events` 與 `schemaVe
 
 - 工具 exit code 為 `0`。
 - 報告中的 `missingEvents` 與 `missingPayloadFields` 都是空陣列。
-- `diffConflictSurface` 只作為實際 surface 證據；final evidence gate 會要求 `preTransferDiffEvent`、`conflictEvent`、`conflictDto`、`conflictDecisionPayload` 都存在。目前上游沒有 `tt_sync:diff`、`tt_sync:conflict`、`conflictDecisions` 或 `TtSyncConflict` DTO，不能把缺失的 dry-run diff / conflict UI 視為完成。
+- `diffConflictSurface` 只作為實際 surface 證據；final evidence gate 會要求 `preTransferDiffEvent`、`conflictEvent`、`conflictDto`、`conflictDecisionPayload` 都存在。更新後的 TauriTavern source tree 已補上 `tt_sync:diff`、`tt_sync:conflict`、`conflictDecisions` 與 `TtSyncConflict` DTO surface，因此 event surface report 可以通過；剩下的仍是實際 deploy / smoke / device evidence。
 
 ## 3. 配對保存檢查
 

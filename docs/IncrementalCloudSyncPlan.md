@@ -269,7 +269,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 - [x] 服務端 plan 標記 conflict。
 - [x] 後端禁止未解決 conflict 的破壞性同步。
-- [x] 前端列出 conflict。結果：插件已新增 `mcs_tts_conflicts` 真資料列表，可承接 `tt_sync:conflict` event 或 command 回傳的 conflicts；目前上游 TauriTavern command surface 未暴露 conflict DTO 給插件。
+- [x] 前端列出 conflict。結果：插件已新增 `mcs_tts_conflicts` 真資料列表，可承接 `tt_sync:conflict` event 或 command 回傳的 conflicts；更新後的 TauriTavern source tree 已補上 conflict DTO / decision payload surface，並通過 event surface verifier。
 - [x] 使用者可選本機或遠端版本。結果：衝突卡片已提供本機 / 遠端決策按鈕，並保留目前選擇狀態供後續契約承接。
 - [x] 衝突決策寫入 plan commit。
 
@@ -290,7 +290,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [x] 差異摘要 UI。結果：已新增 `mcs_tts_diff`，只顯示後端回傳或 event 內的真實 summary；真正 dry-run diff 完成證據仍需 TauriTavern command/event 擴充。
 - [x] Push/Pull 操作按鈕。
 - [x] 進度欄位顯示。
-- [x] 衝突列表 UI。結果：已新增 `mcs_tts_conflicts`，只列出真實 conflict DTO，並提供本機 / 遠端決策按鈕；目前上游 command surface 仍未提供 conflict DTO 或決策 API。
+- [x] 衝突列表 UI。結果：已新增 `mcs_tts_conflicts`，只列出真實 conflict DTO，並提供本機 / 遠端決策按鈕；更新後的 TauriTavern source tree 也已補上 conflict DTO / 決策 payload surface。
 - [x] 手機版排版檢查。結果：使用 responsive grid/flex；實機驗證仍列在驗證清單。
 - [x] 錯誤訊息繁體中文化。
 
@@ -312,7 +312,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`，不在純前端插件內新增假的增量同步，也不呼叫不存在的 dry-run command。
 - TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。實際 VPS 上線狀態仍需外部 smoke report 證明。
 - 第一版接受配對式流程；帳號式能力已在 Minimal server 內提供 login、token refresh、device list、history 與 rollback endpoints，真實產品流程仍取決於 TauriTavern app 整合。
-- 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；插件已準備好渲染真實 `tt_sync:conflict` payload，並在卡片上提供本機 / 遠端決策按鈕，但目前上游 TauriTavern command surface 尚未把 conflict DTO 與決策 payload 暴露給插件。
+- 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；插件已準備好渲染真實 `tt_sync:conflict` payload，並在卡片上提供本機 / 遠端決策按鈕；更新後的 TauriTavern source tree 也已補上 conflict DTO 與決策 payload surface，剩下的外部缺口只是真實 deploy / smoke / device evidence。
 - 圖片/附件不在第一階段拆成獨立可選 scope；同步範圍沿用 TT-Sync/LAN Sync scope 規則，並強制排除同步狀態與本機 cache 路徑。
 
 ## 13. 外部驗證入口
