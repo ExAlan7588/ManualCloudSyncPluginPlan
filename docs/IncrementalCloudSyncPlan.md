@@ -78,8 +78,8 @@ TT-Sync v2 已經具備很多理想形態：
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build command evidence 已用 `/tmp/TauriTavern-inspect` 的 Android `x86_64` universal debug APK 與 Linux desktop release binary 產生並通過 verifier；Android clean APK 也已在 Android 15 emulator 載入 TauriTavern 基礎 UI，證據位於 `/tmp/tt-sync-android-runtime-evidence-run5`。Android runtime command 證據位於 `/tmp/tt-sync-android-command-probe` 與 `/tmp/tt-sync-android-sync-probe`：透過 WebView Chrome DevTools Protocol 呼叫真實 `window.__TAURI__.core.invoke('tt_sync_pair')` / `tt_sync_list_servers`，並在 app 重啟後確認 `paired-servers.json` 保存 server `f18da39c-9044-43bf-8eef-6babb2cc01ef`；更新後也呼叫真實 `tt_sync_push` / `tt_sync_pull`，捕捉 `tt_sync:progress` 與 `tt_sync:completed`，其中 push 完成 164 檔 / 7,858,061 bytes。Linux desktop runtime 證據位於 `/tmp/tt-sync-desktop-runtime-probe`：在 Docker/Xvfb 內透過 WebKit HTTP inspector 呼叫真實 `window.__TAURI__.core.invoke('tt_sync_pair')` 與 `tt_sync_list_servers`，並在重啟後確認 `paired-servers.json` 保留 server `7f5a1d00-9efb-4d10-a632-1e0a377eea81`；另在 `/tmp/tt-sync-desktop-mtime-probe` 以真實 `tt_sync_pull` 確認 remote file 寫入後本機 `mtime` 與 `modifiedMs` 完全一致。這些 Android 與 desktop 證據都使用 local pinned HTTPS URL，不是 final public smoke endpoint；仍需公開 HTTPS smoke endpoint 一致的手機/桌面配對，以及互斥、弱網路與 UI diff/conflict 顯示證據。
-- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；遠端 smoke 已通過，且大資料 first-sync push 已用 HTTPS tunnel commit 335,544,320 bytes；完整 device/VPS Pull、mtime 與弱網路證據仍需外部環境。
-- 真實裝置端到端首同步、mirror delete、弱網路與 LAN Sync 互斥驗證；Android emulator 已取得基礎 UI、pair persistence 與 runtime push/pull command 證據，Linux desktop 也已取得 pair persistence 與 pull mtime 證據，但公開 endpoint 的手機+桌面 device evidence 仍需再通過 `npm run verify:incremental-evidence`。
+- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；遠端 smoke 已通過，且大資料 first-sync push 已用 HTTPS tunnel commit 335,544,320 bytes；完整 device/VPS 與弱網路證據仍需外部環境。
+- 真實裝置端到端首同步、mirror delete、弱網路與 LAN Sync 互斥驗證；Android emulator 已取得基礎 UI、pair persistence 與 runtime push/pull command 證據，Linux desktop 也已取得 pair persistence、pull mtime 與 pull interruption 證據，但公開 endpoint 的手機+桌面 device evidence 仍需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
 
@@ -301,9 +301,9 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
 - [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
 - [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。
-- [ ] Pull 後本機檔案 mtime 保留。服務端已回傳 `X-TT-Sync-Modified-Ms` 與 `Last-Modified`；本機檔案 mtime 套用仍需依 `docs/TauriTavernTtSyncVerification.md` 在 TauriTavern 後端/裝置驗證。
+- [x] Pull 後本機檔案 mtime 保留。結果：desktop runtime `tt_sync_pull` 寫入 `/evidence/home-http/.local/share/com.tauritavern.client/data/default-user/user/files/desktop-mtime-proof-20260512.txt`，`pullMtimePreserved.ok=true`，且 `expectedModifiedMs == actualModifiedMs == 1710000000123`。
 - [x] Push commit 前斷線不造成遠端 mirror delete。結果：server test `uncommitted push plan does not delete remote files`。
-- [ ] Pull 寫入中斷不破壞本機既有檔案。驗證方式已文件化；仍需真機中斷測試。
+- [x] Pull 寫入中斷不破壞本機既有檔案。結果：desktop runtime `desktop-interruption-20260512` 中斷時 `beforeHash == afterHash`，`tt_sync_pull` 回報 `Connection to remote host was lost.`，`pullInterruptionSafe.ok=true`。
 - [ ] LAN Sync 與雲端同步不能並行。驗證方式已文件化；仍需 TauriTavern runtime 互斥測試。
 - [x] 同步狀態目錄不會被同步。結果：Minimal server 會拒收 LAN Sync、manual/incremental sync 狀態與 iOS policy cache 路徑。
 - [ ] Android 手機弱網路下錯誤可見。驗證方式已文件化；仍需 Android 弱網路測試證據。
