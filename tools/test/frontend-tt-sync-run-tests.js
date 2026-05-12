@@ -29,6 +29,7 @@ const tests = [
     ['TT-Sync settings UI exposes required controls', testRequiredUiIds],
     ['TT-Sync frontend calls required backend commands', testRequiredCommands],
     ['TT-Sync frontend uses upstream command payloads', testUpstreamCommandPayloads],
+    ['TT-Sync conflict UI exposes local and remote choices', testConflictChoiceUi],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
 ];
 
@@ -69,9 +70,18 @@ async function testUpstreamCommandPayloads() {
     assert.ok(source.includes("diff: 'tt_sync:diff'"), 'frontend must subscribe to real diff events');
     assert.ok(source.includes("conflict: 'tt_sync:conflict'"), 'frontend must subscribe to real conflict events');
     assert.ok(source.includes('renderDiffSummary(payload)'), 'frontend must render diff payloads');
-    assert.ok(source.includes('renderConflictList(payload)'), 'frontend must render conflict payloads');
+    assert.ok(source.includes('renderConflictList(state, payload)'), 'frontend must render conflict payloads');
     assert.equal(source.includes('tt_sync_check_diff'), false, 'frontend must not call absent check_diff command');
     assert.equal(source.includes('conflictDecisions'), false, 'frontend must not send unsupported conflict decisions');
+}
+
+async function testConflictChoiceUi() {
+    const source = await readFile(TT_SYNC_MODULE, 'utf8');
+    assert.ok(source.includes('使用本機'), 'frontend must render a local conflict choice');
+    assert.ok(source.includes('使用遠端'), 'frontend must render a remote conflict choice');
+    assert.ok(source.includes('state.conflictChoices'), 'frontend must track conflict decisions locally');
+    assert.ok(source.includes('setConflictDecision(state, conflict, decision)'), 'frontend must update local conflict selection');
+    assert.ok(source.includes('renderConflictList(state, state.lastConflictPayload)'), 'frontend must rerender conflict choices after selection');
 }
 
 function testMissingTtSyncCommandError() {

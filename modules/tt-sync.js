@@ -14,6 +14,14 @@ const TT_SYNC_EVENTS = Object.freeze({
     error: 'tt_sync:error',
     progress: 'tt_sync:progress',
 });
+const CONFLICT_DECISIONS = Object.freeze({
+    local: 'local',
+    remote: 'remote',
+});
+const CONFLICT_DECISION_LABELS = Object.freeze({
+    local: '使用本機',
+    remote: '使用遠端',
+});
 const DEFAULT_SYNC_MODE = 'Incremental';
 const SYNC_MODES = new Set([DEFAULT_SYNC_MODE, 'Mirror']);
 const EMPTY_VALUE = '未回傳';
@@ -29,11 +37,13 @@ export function bindTtSyncPanel(deps) {
 
 function createTtSyncController(deps) {
     const state = {
+        conflictChoices: new Map(),
+        lastConflictPayload: null,
         servers: [],
     };
     return {
         bind: () => bindEvents(deps, state),
-        renderInitialState: () => renderInitialState(),
+        renderInitialState: () => renderInitialState(state),
     };
 }
 
@@ -47,12 +57,13 @@ function bindEvents(deps, state) {
     installTtSyncEventListeners(deps, state);
 }
 
-function renderInitialState() {
+function renderInitialState(state) {
+    resetConflictState(state);
     renderTtStatus('尚未讀取服務端');
     renderTransferSummary(null);
     renderProgress(null);
     renderDiffSummary(null);
-    renderConflictList(null);
+    renderConflictList(state, null);
 }
 
 async function pairServer(deps, state) {
@@ -78,12 +89,13 @@ async function runTransfer(deps, state, direction) {
     }
 
     await deps.runAction(`TT-Sync ${directionLabel(direction)} 完成`, async () => {
+        resetConflictState(state);
         renderProgress(submittedProgress(direction));
         renderDiffSummary(null);
-        renderConflictList(null);
+        renderConflictList(state, null);
         const result = await deps.invokeCommand(TT_COMMANDS[direction], transferArgs());
         if (hasObjectPayload(result)) {
-            renderTransferArtifacts(result);
+            renderTransferArtifacts(state, result);
         }
         await loadServers(deps, state);
     });
@@ -120,8 +132,8 @@ function installTtSyncEventListeners(deps, state) {
     void Promise.all([
         deps.listen(TT_SYNC_EVENTS.progress, event => handleProgressEvent(event?.payload)),
         deps.listen(TT_SYNC_EVENTS.completed, event => handleCompletedEvent(deps, state, event?.payload)),
-        deps.listen(TT_SYNC_EVENTS.diff, event => handleDiffEvent(event?.payload)),
-        deps.listen(TT_SYNC_EVENTS.conflict, event => handleConflictEvent(event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.diff, event => handleDiffEvent(state, event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.conflict, event => handleConflictEvent(state, event?.payload)),
         deps.listen(TT_SYNC_EVENTS.error, event => handleErrorEvent(event?.payload)),
     ]).catch(error => {
         eventListenersInstalled = false;
@@ -135,7 +147,7 @@ function handleProgressEvent(payload) {
 }
 
 function handleCompletedEvent(deps, state, payload) {
-    renderTransferArtifacts(payload);
+    renderTransferArtifacts(state, payload);
     renderProgress(payload);
     renderTtStatus(`TT-Sync ${directionLabel(payload?.direction)} 完成`);
     void loadServers(deps, state).catch(error => {
@@ -146,14 +158,14 @@ function handleCompletedEvent(deps, state, payload) {
     }
 }
 
-function handleDiffEvent(payload) {
+function handleDiffEvent(state, payload) {
     renderDiffSummary(payload);
-    renderConflictList(payload);
+    renderConflictList(state, payload);
     renderTtStatus('TT-Sync 差異摘要已更新');
 }
 
-function handleConflictEvent(payload) {
-    renderConflictList(payload);
+function handleConflictEvent(state, payload) {
+    renderConflictList(state, payload);
     renderTtStatus('TT-Sync 衝突列表已更新');
 }
 
@@ -232,10 +244,10 @@ function renderProgress(progress) {
     }
 }
 
-function renderTransferArtifacts(payload) {
+function renderTransferArtifacts(state, payload) {
     renderTransferSummary(payload);
     renderDiffSummary(payload);
-    renderConflictList(payload);
+    renderConflictList(state, payload);
 }
 
 function renderDiffSummary(payload) {
@@ -251,9 +263,12 @@ function renderDiffSummary(payload) {
     }
 }
 
-function renderConflictList(payload) {
+function renderConflictList(state, payload) {
     const container = document.getElementById('mcs_tts_conflicts');
     container.replaceChildren();
+    if (payload) {
+        state.lastConflictPayload = payload;
+    }
     const conflicts = conflictListFrom(payload);
     if (conflicts.length === 0) {
         const text = hasConflictCount(payload) ? '衝突內容未回傳' : '尚無衝突';
@@ -261,7 +276,7 @@ function renderConflictList(payload) {
         return;
     }
     for (const conflict of conflicts) {
-        container.appendChild(conflictElement(conflict));
+        container.appendChild(conflictElement(state, conflict));
     }
 }
 
@@ -322,16 +337,36 @@ function metricElement(label, value) {
     return root;
 }
 
-function conflictElement(conflict) {
+function conflictElement(state, conflict) {
     const root = document.createElement('div');
     root.className = 'mcs-conflict';
     const title = document.createElement('strong');
     title.textContent = stringValue(conflict?.path);
     const meta = document.createElement('span');
     meta.className = 'mcs-conflict-meta';
-    meta.textContent = conflictMetaText(conflict);
-    root.append(title, meta);
+    const decision = selectedConflictDecision(state, conflict);
+    meta.textContent = conflictMetaText(conflict, decision);
+    root.append(title, meta, conflictActionRow(state, conflict, decision));
     return root;
+}
+
+function conflictActionRow(state, conflict, decision) {
+    const row = document.createElement('div');
+    row.className = 'mcs-conflict-actions';
+    for (const option of Object.values(CONFLICT_DECISIONS)) {
+        row.appendChild(conflictDecisionButton(state, conflict, option, decision));
+    }
+    return row;
+}
+
+function conflictDecisionButton(state, conflict, decision, selectedDecision) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `menu_button menu_button_icon mcs-conflict-choice${selectedDecision === decision ? ' is-selected' : ''}`;
+    button.setAttribute('aria-pressed', String(selectedDecision === decision));
+    button.textContent = CONFLICT_DECISION_LABELS[decision];
+    button.addEventListener('click', () => setConflictDecision(state, conflict, decision));
+    return button;
 }
 
 function diffSummaryFrom(payload) {
@@ -357,11 +392,40 @@ function hasConflictCount(payload) {
     return Number.isFinite(count) && count > 0;
 }
 
-function conflictMetaText(conflict) {
+function conflictMetaText(conflict, decision) {
     return [
         entryText('本機', conflict?.local),
         entryText('遠端', conflict?.remote),
+        decision ? `選擇 ${decisionLabel(decision)}` : '',
     ].filter(Boolean).join(' | ') || EMPTY_VALUE;
+}
+
+function selectedConflictDecision(state, conflict) {
+    const decision = state.conflictChoices.get(conflictKey(conflict))
+        || firstValue(conflict, ['selectedDecision']);
+    return isConflictDecision(decision) ? decision : null;
+}
+
+function setConflictDecision(state, conflict, decision) {
+    state.conflictChoices.set(conflictKey(conflict), decision);
+    renderConflictList(state, state.lastConflictPayload);
+}
+
+function resetConflictState(state) {
+    state.conflictChoices.clear();
+    state.lastConflictPayload = null;
+}
+
+function conflictKey(conflict) {
+    return stringValue(conflict?.path);
+}
+
+function isConflictDecision(value) {
+    return value === CONFLICT_DECISIONS.local || value === CONFLICT_DECISIONS.remote;
+}
+
+function decisionLabel(decision) {
+    return CONFLICT_DECISION_LABELS[decision] || decision;
 }
 
 function entryText(label, entry) {

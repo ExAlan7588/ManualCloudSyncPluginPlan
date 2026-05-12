@@ -122,3 +122,13 @@
     opacity: 0.8;
     overflow-wrap: anywhere;
 }
+
+#manual_cloud_sync_settings .mcs-conflict-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+#manual_cloud_sync_settings .mcs-conflict-choice.is-selected {
+    box-shadow: inset 0 0 0 1px var(--SmartThemeBodyColor);
+}
