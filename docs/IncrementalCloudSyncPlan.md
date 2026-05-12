@@ -77,9 +77,9 @@ TT-Sync v2 已經具備很多理想形態：
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
-- 手機/電腦 app build command evidence 已用 `/tmp/TauriTavern-inspect` 的 Android `aarch64` debug APK 與 Linux desktop release binary 產生並通過 verifier；仍需真機 runtime evidence 證明這些 build 在實際手機/桌面流程中完成配對、Push/Pull、mtime、互斥與錯誤顯示。
+- 手機/電腦 app build command evidence 已用 `/tmp/TauriTavern-inspect` 的 Android `x86_64` universal debug APK 與 Linux desktop release binary 產生並通過 verifier；Android clean APK 也已在 Android 15 emulator 載入 TauriTavern 基礎 UI，證據位於 `/tmp/tt-sync-android-runtime-evidence-run5`。仍需 runtime evidence 證明這些 build 在實際手機/桌面同步流程中完成配對、Push/Pull、mtime、互斥與錯誤顯示。
 - Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；遠端 smoke 已通過，且大資料 first-sync push 已用 HTTPS tunnel commit 335,544,320 bytes；完整 device/VPS Pull、mtime 與弱網路證據仍需外部環境。
-- 真實裝置端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；全部外部證據需再通過 `npm run verify:incremental-evidence`。
+- 真實裝置端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；Android 基礎 UI 載入已取得 emulator 證據，但同步流程外部證據仍需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
 
@@ -242,7 +242,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 0：盤點與決策
 
-- [x] 確認目前手機與桌面 build 是否已包含 `tt_sync_*` commands。結果：已用 `/tmp/TauriTavern-inspect` 產生 Android `aarch64` debug APK，並以 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk --manifest /tmp/tt-sync-command-report-mobile-build.json --json` 驗證；也已用 Linux desktop release binary `/tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern` 執行 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern --manifest /tmp/tt-sync-command-report-desktop-build.json --json`。兩份報告皆為 `tool=verify-tauritavern-tt-sync`、`schemaVersion=1`、`sourceKind=build-artifact`、`missingCommands=[]`，五個必要 `tt_sync_*` commands 皆有 trusted `build-artifact-string` evidence。
+- [x] 確認目前手機與桌面 build 是否已包含 `tt_sync_*` commands。結果：已用 `/tmp/TauriTavern-inspect` 產生 Android `x86_64` universal debug APK，並以 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk --manifest /tmp/tt-sync-command-report-mobile-build.json --json` 驗證；也已用 Linux desktop release binary `/tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern` 執行 `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern --manifest /tmp/tt-sync-command-report-desktop-build.json --json`。兩份報告皆為 `tool=verify-tauritavern-tt-sync`、`schemaVersion=1`、`sourceKind=build-artifact`、`missingCommands=[]`，五個必要 `tt_sync_*` commands 皆有 trusted `build-artifact-string` evidence。Android runtime 補充證據：先前 APK 因未先生成 `src/dist/lib.core.bundle.js` 導致 WebView dynamic import 失敗；執行 `pnpm run web:build` 後重新打包的 clean APK 已在 Android 15 emulator 顯示 `Welcome to TauriTavern!` UI，截圖與 logcat 位於 `/tmp/tt-sync-android-runtime-evidence-run5`。
 - [x] 確認前端是否已有 TT-Sync UI；若有，評估能否直接修 UI/部署 VPS。結果：本 repo 原本沒有 TT-Sync UI，已新增獨立面板。
 - [x] 確認 TT-Sync 服務端程式是否已在 repo、VPS 或其他倉庫。結果：原本未找到既有 server；本 repo 已補 Minimal TT-Sync server artifact。
 - [x] 在 VPS 上確認可部署方式：systemd 或 pm2。結果：提供 systemd template、env 範例、`verify:tt-sync-deploy` 與 live smoke verifier；實際 VPS 啟動仍需在部署環境驗證。
@@ -250,7 +250,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ### Phase 1：最小可用增量同步
 
-- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server，並提供 `npm run smoke:tt-sync-server -- --endpoint <url>` 驗證部署；smoke report 會記錄 fixture files/bytes/paths；尚未取得真實 VPS smoke 報告。
+- [x] 建立或部署 VPS TT-Sync 服務。結果：建立可部署 Minimal TT-Sync server，並提供 `npm run smoke:tt-sync-server -- --endpoint <url>` 驗證部署；smoke report 會記錄 fixture files/bytes/paths；目前已有真實 HTTPS 遠端 smoke report 與 deploy report。
 - [x] 產生配對 URI。結果：`npm run tt-sync:pair` 會依 `TT_SYNC_PAIRING_TOKEN` 產生配對 URI。
 - [ ] 手機與電腦能保存配對服務端。驗證方式已文件化於 `docs/TauriTavernTtSyncVerification.md`；仍需真機 app 後端保存證據。
 - [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
