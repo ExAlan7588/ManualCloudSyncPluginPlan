@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import { smokeTtSyncServer } from '../smoke-tt-sync-server.js';
 import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
 
@@ -11,6 +12,7 @@ const tests = [
     ['server smoke verifier supports bulk fixture', testBulkSmokeFixture],
     ['server smoke verifier requires endpoint or local mode', testRequiresTarget],
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
+    ['server smoke verifier reports raw non-json responses', testRemoteSmokeReportsRawResponse],
     ['deploy verifier accepts repo template placeholders explicitly', testDeployVerifierTemplate],
     ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
 ];
@@ -75,6 +77,24 @@ async function testRequiresRemotePairingToken() {
     }
 }
 
+async function testRemoteSmokeReportsRawResponse() {
+    const server = http.createServer((_request, response) => {
+        response.writeHead(200, { 'Content-Type': 'text/plain' });
+        response.end('not-json');
+    });
+    await listen(server);
+    try {
+        const address = server.address();
+        const endpoint = `http://127.0.0.1:${address.port}`;
+        await assert.rejects(
+            smokeTtSyncServer({ endpoint, pairingToken: 'token-without-status-json' }),
+            /HTTP 200: not-json/,
+        );
+    } finally {
+        await close(server);
+    }
+}
+
 async function testDeployVerifierTemplate() {
     const report = await verifyTtSyncDeploy({ allowPlaceholders: true });
     assert.equal(report.ok, true);
@@ -110,4 +130,12 @@ function restorePairingToken(previousToken) {
         return;
     }
     process.env[PAIRING_TOKEN_ENV] = previousToken;
+}
+
+async function listen(server) {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+}
+
+async function close(server) {
+    await new Promise(resolve => server.close(resolve));
 }

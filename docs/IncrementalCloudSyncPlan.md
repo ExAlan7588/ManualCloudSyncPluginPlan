@@ -310,9 +310,9 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ## 12. 決策紀錄與剩餘依賴
 
 - 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`，不在純前端插件內新增假的增量同步，也不呼叫不存在的 dry-run command。
-- TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。實際 VPS 上線狀態仍需外部 smoke report 證明。
+- TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。deploy report 與遠端 smoke report 已可用真實 HTTPS 來源補齊，剩下的外部缺口只是真實 device evidence。
 - 第一版接受配對式流程；帳號式能力已在 Minimal server 內提供 login、token refresh、device list、history 與 rollback endpoints，真實產品流程仍取決於 TauriTavern app 整合。
-- 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；插件已準備好渲染真實 `tt_sync:conflict` payload，並在卡片上提供本機 / 遠端決策按鈕；更新後的 TauriTavern source tree 也已補上 conflict DTO 與決策 payload surface，剩下的外部缺口只是真實 deploy / smoke / device evidence。
+- 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；插件已準備好渲染真實 `tt_sync:conflict` payload，並在卡片上提供本機 / 遠端決策按鈕；更新後的 TauriTavern source tree 也已補上 conflict DTO 與決策 payload surface，deploy / smoke 證據已可由真實遠端報告取得，剩下的外部缺口只是真實 device evidence。
 - 圖片/附件不在第一階段拆成獨立可選 scope；同步範圍沿用 TT-Sync/LAN Sync scope 規則，並強制排除同步狀態與本機 cache 路徑。
 
 ## 13. 外部驗證入口

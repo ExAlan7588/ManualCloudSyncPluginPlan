@@ -319,17 +319,21 @@ async function postJson(options) {
 }
 
 async function parseJsonResponse(response) {
-    const payload = await response.json().catch(async () => {
-        throw new Error(await responseErrorText(response));
-    });
+    const responseText = await response.text();
+    let payload;
+    try {
+        payload = JSON.parse(responseText);
+    } catch {
+        throw new Error(responseErrorText(response, responseText));
+    }
     if (!response.ok) {
         throw new Error(payload.error || `HTTP ${response.status}`);
     }
     return payload;
 }
 
-async function responseErrorText(response) {
-    return `HTTP ${response.status}: ${await response.text()}`;
+function responseErrorText(response, responseText) {
+    return `HTTP ${response.status}: ${responseText}`;
 }
 
 function requestHeaders(token, contentType = 'application/json') {
