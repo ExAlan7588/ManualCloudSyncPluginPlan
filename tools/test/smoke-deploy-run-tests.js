@@ -6,6 +6,7 @@ import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
 const PAIRING_TOKEN_ENV = 'TT_SYNC_PAIRING_TOKEN';
 const TEST_BULK_FILE_BYTES = 128;
 const TEST_BULK_FILES = 3;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const tests = [
     ['server smoke verifier passes against explicit local server', testLocalSmoke],
@@ -40,7 +41,7 @@ async function testLocalSmoke() {
     assert.equal(report.mode, 'local');
     assert.match(report.endpoint, /^http:\/\/127\.0\.0\.1:/);
     assert.match(report.namespace, /^smoke-/);
-    assert.match(report.serverId, /^minimal-smoke-/);
+    assert.match(report.serverId, UUID_PATTERN);
     assert.match(report.smokePath, /^default-user\/chats\/tt-sync-smoke-/);
     assertCheckNames(report);
 }

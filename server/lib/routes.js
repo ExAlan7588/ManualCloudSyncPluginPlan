@@ -1,6 +1,11 @@
 import { decodePath, safeName } from './encoding.js';
 import { badRequest, HttpError, notFound } from './http-error.js';
 import { buildPullPlan, buildPushPlan } from './planner.js';
+import {
+    isTauriPairingRequest,
+    normalizeTauriPairingBody,
+    tauriPairingResponse,
+} from './tauri-contract.js';
 
 const JSON_TYPE = 'application/json; charset=utf-8';
 const BINARY_TYPE = 'application/octet-stream';
@@ -65,9 +70,14 @@ async function handleStatus(context) {
     return sendJson(context.response, await context.storage.status());
 }
 
-async function handlePair(context) {
-    const body = normalizePairingBody(await readJsonBody(context.request));
-    return sendJson(context.response, await context.storage.completePairing(body));
+async function handlePair(context, url) {
+    const body = await readJsonBody(context.request);
+    if (isTauriPairingRequest(body, url)) {
+        const record = await context.storage.completeTauriPairing(normalizeTauriPairingBody(body, url));
+        return sendJson(context.response, tauriPairingResponse(record));
+    }
+    const normalizedBody = normalizePairingBody(body);
+    return sendJson(context.response, await context.storage.completePairing(normalizedBody));
 }
 
 async function handleAccountLogin(context) {

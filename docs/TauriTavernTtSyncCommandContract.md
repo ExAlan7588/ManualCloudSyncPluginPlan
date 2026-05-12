@@ -133,7 +133,7 @@ Payload:
 
 ```json
 {
-  "pairUri": "tt-sync://pair?..."
+  "pairUri": "tauritavern://tt-sync/pair?v=2&url=...&token=...&exp=...&spki=..."
 }
 ```
 

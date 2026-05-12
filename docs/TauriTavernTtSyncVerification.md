@@ -297,12 +297,12 @@ final evidence gate 會檢查下列 dot-path 欄位：
       "evidence": "both devices still list server after restart",
       "phone": {
         "restartVerifiedAt": "2026-05-12T00:02:00+08:00",
-        "savedServerId": "minimal-default",
+        "savedServerId": "550e8400-e29b-41d4-a716-446655440001",
         "savedServerUrl": "https://sync.example.com"
       },
       "desktop": {
         "restartVerifiedAt": "2026-05-12T00:02:00+08:00",
-        "savedServerId": "minimal-default",
+        "savedServerId": "550e8400-e29b-41d4-a716-446655440001",
         "savedServerUrl": "https://sync.example.com"
       }
     },

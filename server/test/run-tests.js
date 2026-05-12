@@ -13,6 +13,8 @@ const FILE_PATH = 'default-user/chats/example.jsonl';
 const IMAGE_PATH = 'default-user/files/avatar.png';
 const BASE_MTIME = 1778500000000;
 const BULK_FILE_COUNT = 128;
+const TAURI_DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const tests = [
     ['pair, push, pull, and empty diff', testPushPullEmptyDiff],
@@ -24,6 +26,7 @@ const tests = [
     ['excluded sync state paths are rejected', testExcludedStatePath],
     ['invalid manifest entries are rejected', testInvalidManifestEntries],
     ['invalid pairing URIs return bad request', testInvalidPairingUris],
+    ['TauriTavern pair contract returns v2 response', testTauriPairContract],
     ['protected endpoints reject missing auth', testProtectedEndpointsRejectMissingAuth],
     ['account device history and rollback endpoints work', testAccountDeviceHistoryRollback],
 ];
@@ -240,6 +243,27 @@ async function testInvalidPairingUris() {
             message: /Pairing URI must use tt-sync:\/\//,
             route: '/v2/pair/complete',
             status: 400,
+        });
+    });
+}
+
+async function testTauriPairContract() {
+    await withServer(async context => {
+        const paired = await postJson({
+            context,
+            route: `/v2/pair/complete?token=${TEST_TOKEN}`,
+            body: {
+                device_id: TAURI_DEVICE_ID,
+                device_name: 'android-emulator',
+                device_pubkey: 'abc_DEF123',
+            },
+        });
+        assert.match(paired.server_device_id, UUID_PATTERN);
+        assert.equal(paired.server_device_name, 'Minimal TT-Sync');
+        assert.deepEqual(paired.granted_permissions, {
+            mirror_delete: true,
+            read: true,
+            write: true,
         });
     });
 }

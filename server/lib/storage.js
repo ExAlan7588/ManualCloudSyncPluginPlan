@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { encodePath, safeName } from './encoding.js';
 import { forbidden, notFound, serverError, unauthorized } from './http-error.js';
 import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
@@ -32,6 +32,19 @@ export class TtSyncStorage {
         const device = addDevice(record, options.deviceName);
         await this.writeNamespace(namespace, record);
         return pairingResponse(record, device, options.endpoint);
+    }
+
+    async completeTauriPairing(options) {
+        assertPairingToken(options.token, process.env.TT_SYNC_PAIRING_TOKEN);
+        const namespace = safeName(options.namespace || 'default', 'namespace');
+        const record = await this.readOrCreateNamespace(namespace);
+        upsertDevice(record, {
+            deviceId: options.deviceId,
+            deviceName: options.deviceName,
+            publicKey: options.publicKey,
+        });
+        await this.writeNamespace(namespace, record);
+        return record;
     }
 
     async requireAuth(namespace, authHeader) {
@@ -209,10 +222,19 @@ export class TtSyncStorage {
         });
     }
 
+    async readOrCreateNamespace(namespace) {
+        return this.readNamespace(namespace).catch(error => {
+            if (error.status === 404) {
+                return this.createNamespace(namespace);
+            }
+            throw error;
+        });
+    }
+
     async createNamespace(namespace) {
         return {
             namespace,
-            serverId: `minimal-${namespace}`,
+            serverId: randomUUID(),
             authToken: randomToken(),
             devices: [],
             rollbackPoints: [],
@@ -372,10 +394,25 @@ function assertConflictDecisions(plan, decisions) {
 
 function addDevice(record, deviceName) {
     const device = {
-        deviceId: randomToken(12),
+        deviceId: randomUUID(),
         deviceName: String(deviceName || '').trim(),
         pairedAt: new Date().toISOString(),
     };
+    record.devices.push(device);
+    return device;
+}
+
+function upsertDevice(record, input) {
+    const existing = record.devices.find(device => device.deviceId === input.deviceId);
+    if (existing) {
+        Object.assign(existing, {
+            deviceName: input.deviceName,
+            publicKey: input.publicKey,
+            pairedAt: existing.pairedAt || new Date().toISOString(),
+        });
+        return existing;
+    }
+    const device = { ...input, pairedAt: new Date().toISOString() };
     record.devices.push(device);
     return device;
 }

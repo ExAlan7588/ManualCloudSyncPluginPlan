@@ -76,13 +76,19 @@ Generate a pairing URI:
 npm run tt-sync:pair
 ```
 
-The command prints a URI in this shape:
+The command prints a URI for the Minimal server smoke client in this shape:
 
 ```text
 tt-sync://pair?endpoint=http%3A%2F%2F127.0.0.1%3A8787&namespace=default&token=...
 ```
 
-Clients complete pairing by calling `POST /v2/pair/complete` with either the parsed fields or the raw `pairingUri`.
+The TauriTavern backend uses its v2 pairing URI instead:
+
+```text
+tauritavern://tt-sync/pair?v=2&url=https%3A%2F%2Fsync.example.dev&token=...&exp=1778560232519&spki=...
+```
+
+For that flow, TauriTavern calls `POST /v2/pair/complete?token=<pairing-token>` with `device_id`, `device_name`, and `device_pubkey`. The server stores the device public key and returns `server_device_id`, `server_device_name`, and `granted_permissions`. New server ids are UUIDs so they satisfy TauriTavern's `DeviceId` contract.
 
 ## Authentication
 
@@ -134,6 +140,26 @@ or:
   "namespace": "default",
   "token": "pairing-token",
   "deviceName": "phone"
+}
+```
+
+TauriTavern v2 body:
+
+```json
+{
+  "device_id": "550e8400-e29b-41d4-a716-446655440000",
+  "device_name": "phone",
+  "device_pubkey": "base64url-public-key"
+}
+```
+
+Response:
+
+```json
+{
+  "server_device_id": "550e8400-e29b-41d4-a716-446655440001",
+  "server_device_name": "Minimal TT-Sync",
+  "granted_permissions": { "read": true, "write": true, "mirror_delete": true }
 }
 ```
 
