@@ -77,9 +77,9 @@ TT-Sync v2 已經具備很多理想形態：
 
 仍屬外部交付，不能在此 repo 內驗證完成：
 
-- 手機/電腦 app build command evidence 已用 `/tmp/TauriTavern-inspect` 的 Android `x86_64` universal debug APK 與 Linux desktop release binary 產生並通過 verifier；Android clean APK 也已在 Android 15 emulator 載入 TauriTavern 基礎 UI，證據位於 `/tmp/tt-sync-android-runtime-evidence-run5`。新增 Android runtime command 證據位於 `/tmp/tt-sync-android-command-probe`：透過 WebView Chrome DevTools Protocol 呼叫真實 `window.__TAURI__.core.invoke('tt_sync_pair')` / `tt_sync_list_servers`，並在 app 重啟後確認 `paired-servers.json` 保存 server `f18da39c-9044-43bf-8eef-6babb2cc01ef`。這只證明 Android emulator 配對持久化；仍需 desktop runtime、公開 HTTPS smoke endpoint 一致的手機/桌面配對，以及 Push/Pull、mtime、互斥與錯誤顯示證據。
+- 手機/電腦 app build command evidence 已用 `/tmp/TauriTavern-inspect` 的 Android `x86_64` universal debug APK 與 Linux desktop release binary 產生並通過 verifier；Android clean APK 也已在 Android 15 emulator 載入 TauriTavern 基礎 UI，證據位於 `/tmp/tt-sync-android-runtime-evidence-run5`。Android runtime command 證據位於 `/tmp/tt-sync-android-command-probe` 與 `/tmp/tt-sync-android-sync-probe`：透過 WebView Chrome DevTools Protocol 呼叫真實 `window.__TAURI__.core.invoke('tt_sync_pair')` / `tt_sync_list_servers`，並在 app 重啟後確認 `paired-servers.json` 保存 server `f18da39c-9044-43bf-8eef-6babb2cc01ef`；更新後也呼叫真實 `tt_sync_push` / `tt_sync_pull`，捕捉 `tt_sync:progress` 與 `tt_sync:completed`，其中 push 完成 164 檔 / 7,858,061 bytes。這些 Android 證據使用 emulator-local pinned HTTPS URL `https://10.0.2.2:9443`，不是 final public smoke endpoint；仍需 desktop runtime、公開 HTTPS smoke endpoint 一致的手機/桌面配對，以及 mtime、互斥、弱網路與 UI diff/conflict 顯示證據。
 - Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；遠端 smoke 已通過，且大資料 first-sync push 已用 HTTPS tunnel commit 335,544,320 bytes；完整 device/VPS Pull、mtime 與弱網路證據仍需外部環境。
-- 真實裝置端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；Android 基礎 UI 載入已取得 emulator 證據，但同步流程外部證據仍需再通過 `npm run verify:incremental-evidence`。
+- 真實裝置端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；Android emulator 已取得基礎 UI、pair persistence 與 runtime push/pull command 證據，但公開 endpoint 的手機+桌面 device evidence 仍需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
 
@@ -255,7 +255,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 - [ ] 手機與電腦能保存配對服務端。Android emulator 已有部分證據：`/tmp/tt-sync-android-command-probe/android-tt-sync-pair-result.json` 顯示 `tt_sync_pair` 成功、`/tmp/tt-sync-android-command-probe/android-tt-sync-list-after-restart.json` 顯示 app 重啟後仍列出 server、`/tmp/tt-sync-android-command-probe/android-paired-servers-file.json` 顯示後端 storage 實際寫入。此證據使用 emulator-local pinned HTTPS URL `https://10.0.2.2:9443`，尚未滿足 final gate 需要的手機與桌面都保存同一個公開 smoke server；desktop runtime 保存證據仍缺。
 - [x] Push 只傳變更檔案。結果：server push-plan 測試覆蓋未變更附件不重傳。
 - [x] Pull 只抓變更檔案。結果：server pull-plan 測試覆蓋空 diff 不下載。
-- [x] 進度事件能顯示 files/bytes。結果：Minimal server 提供 `/v2/plans/{plan_id}/events` SSE progress；前端已有 files/bytes 顯示欄位，真機 bridge 仍需裝置驗證。
+- [x] 進度事件能顯示 files/bytes。結果：Minimal server 提供 `/v2/plans/{plan_id}/events` SSE progress；Android emulator WebView CDP runtime 證據 `/tmp/tt-sync-android-sync-probe/probe-summary.json` 已捕捉 `tt_sync:progress` / `tt_sync:completed`，push 完成 164 檔 / 7,858,061 bytes。公開 endpoint 的 UI 顯示截圖仍屬 final device evidence 缺口。
 - [x] 同步失敗時保留可讀錯誤。結果：server 回傳 JSON error，前端顯示 normalized error。
 
 ### Phase 2：差異預覽
@@ -297,6 +297,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 ## 11. 驗證清單
 
 - [x] 首次同步大資料目錄可完成。結果：server test `bulk first sync completes` 覆蓋 128-file first sync fixture；HTTPS tunnel 大資料 first-sync push plan `fe777e99-aeb9-418f-819f-81fc9056ef3c` 已 commit 128 檔 / 335,544,320 bytes / 637,324ms，後段 Pull 驗證遭 tunnel 503 中斷，因此完整 device/VPS Pull 證據仍需外部環境。
+- [x] Android emulator runtime Push/Pull command path 可執行。結果：`/tmp/tt-sync-android-sync-probe/android-tt-sync-push-pull-result.json` 顯示 WebView 內真實 `tt_sync_push` fulfilled 並 emit 164 檔 progress/completed，`tt_sync_pull` fulfilled 並 emit empty-diff completed。第一次 probe 的 `/tmp/tt-sync-android-sync-probe/android-tt-sync-push-pull-result-before-concurrency-fix.json` 暴露 server plan concurrent upload race；已以 per-plan write lock、UUID temp path 與 `server/test/concurrent-upload-run-tests.js` 覆蓋。
 - [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
 - [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
 - [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。
@@ -311,6 +312,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 - 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`，不在純前端插件內新增假的增量同步，也不呼叫不存在的 dry-run command。
 - TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。deploy report 與遠端 smoke report 已可用真實 HTTPS 來源補齊，剩下的外部缺口只是真實 device evidence。
+- Minimal server 已相容 TauriTavern v2 pair/session/plan/commit schema：支援 Tauri pair body、Ed25519 signed session open、snake_case manifest plan input、Tauri plan response 與 commit `ok=true`。Android runtime push 暴露的並行 file upload plan 寫入 race 已修正，不以 mock/fallback 隱藏。
 - 第一版接受配對式流程；帳號式能力已在 Minimal server 內提供 login、token refresh、device list、history 與 rollback endpoints，真實產品流程仍取決於 TauriTavern app 整合。
 - 衝突第一版採保守策略：Minimal server 會在 unresolved conflict 時阻止破壞性 commit；插件已準備好渲染真實 `tt_sync:conflict` payload，並在卡片上提供本機 / 遠端決策按鈕；更新後的 TauriTavern source tree 也已補上 conflict DTO 與決策 payload surface，deploy / smoke 證據已可由真實遠端報告取得，剩下的外部缺口只是真實 device evidence。
 - 圖片/附件不在第一階段拆成獨立可選 scope；同步範圍沿用 TT-Sync/LAN Sync scope 規則，並強制排除同步狀態與本機 cache 路徑。

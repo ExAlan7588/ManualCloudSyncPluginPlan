@@ -225,12 +225,13 @@ Body:
 {
   "namespace": "default",
   "deviceId": "phone",
+  "mode": "Incremental",
   "localManifest": [{ "path": "file.txt", "sizeBytes": 5, "modifiedMs": 1 }],
   "baseManifest": []
 }
 ```
 
-Returns files to upload, remote files to delete after commit, and conflicts. A conflict is reported when `baseManifest` is provided and the same path differs from both base and remote.
+Returns files to upload, Mirror-mode remote files to delete after commit, and conflicts. A conflict is reported when `baseManifest` is provided and the same path differs from both base and remote. `Incremental` mode does not produce remote deletes.
 
 ### `POST /v2/sync/pull-plan`
 
@@ -240,11 +241,12 @@ Body:
 {
   "namespace": "default",
   "deviceId": "phone",
+  "mode": "Incremental",
   "localManifest": []
 }
 ```
 
-Returns files to download and local files that the client should delete in mirror mode.
+Returns files to download and local files that the client should delete in `Mirror` mode. `Incremental` mode does not produce local deletes.
 
 ### `GET /v2/plans/{plan_id}/files/{path_b64}`
 
@@ -288,7 +290,7 @@ Use `?once=1` to receive one progress event and close the connection, which is u
 
 ### `POST /v2/plans/{plan_id}/commit`
 
-Commits a push plan by atomically moving staged uploads into namespace storage and only then applying remote deletes. Pull-plan commit marks the plan committed without modifying server files.
+Commits a push plan by atomically moving staged uploads into namespace storage and only then applying remote deletes present in a `Mirror` plan. Pull-plan commit marks the plan committed without modifying server files.
 
 ## Storage Layout
 

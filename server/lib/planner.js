@@ -8,8 +8,9 @@ export function buildPushPlan(input) {
     const localMap = manifestMap(local);
     const remoteMap = manifestMap(remote);
     const baseMap = base ? manifestMap(base) : null;
-    const changes = collectPushChanges({ baseMap, localMap, remoteMap });
-    return planEnvelope({ ...input, kind: 'push', local, remote, ...changes });
+    const mode = input.mode || 'Incremental';
+    const changes = collectPushChanges({ baseMap, includeDeletes: mode === 'Mirror', localMap, remoteMap });
+    return planEnvelope({ ...input, kind: 'push', local, mode, remote, ...changes });
 }
 
 export function buildPullPlan(input) {
@@ -19,14 +20,16 @@ export function buildPullPlan(input) {
     const localMap = manifestMap(local);
     const remoteMap = manifestMap(remote);
     const baseMap = base ? manifestMap(base) : null;
-    const changes = collectPullChanges({ baseMap, localMap, remoteMap });
-    return planEnvelope({ ...input, kind: 'pull', local, remote, ...changes });
+    const mode = input.mode || 'Incremental';
+    const changes = collectPullChanges({ baseMap, includeDeletes: mode === 'Mirror', localMap, remoteMap });
+    return planEnvelope({ ...input, kind: 'pull', local, mode, remote, ...changes });
 }
 
 function planEnvelope(input) {
     return {
         id: randomUUID(),
         kind: input.kind,
+        mode: input.mode || 'Incremental',
         namespace: input.namespace,
         deviceId: input.deviceId,
         createdAt: new Date().toISOString(),
@@ -53,8 +56,10 @@ function collectPushChanges(options) {
             collectPushUpload({ base, conflicts, local, remote, uploads });
         }
     }
-    for (const [path, remote] of options.remoteMap.entries()) {
-        collectPushDelete({ base: options.baseMap?.get(path), conflicts, local: options.localMap.get(path), path, remote, remoteDeletes });
+    if (options.includeDeletes) {
+        for (const [path, remote] of options.remoteMap.entries()) {
+            collectPushDelete({ base: options.baseMap?.get(path), conflicts, local: options.localMap.get(path), path, remote, remoteDeletes });
+        }
     }
     return { conflicts, remoteDeletes, uploads };
 }
@@ -90,8 +95,10 @@ function collectPullChanges(options) {
             collectPullDownload({ base, conflicts, downloads, local, remote });
         }
     }
-    for (const [path, local] of options.localMap.entries()) {
-        collectPullDelete({ base: options.baseMap?.get(path), conflicts, local, localDeletes, path, remote: options.remoteMap.get(path) });
+    if (options.includeDeletes) {
+        for (const [path, local] of options.localMap.entries()) {
+            collectPullDelete({ base: options.baseMap?.get(path), conflicts, local, localDeletes, path, remote: options.remoteMap.get(path) });
+        }
     }
     return { conflicts, downloads, localDeletes };
 }

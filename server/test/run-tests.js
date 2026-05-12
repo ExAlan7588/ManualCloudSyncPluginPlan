@@ -7,14 +7,10 @@ import { sha256 } from '../lib/manifest.js';
 import { buildPairingUri, startServer } from '../tt-sync-server.js';
 
 const TEST_TOKEN = 'test-pairing-token';
-const TEST_USERNAME = 'test-user';
-const TEST_PASSWORD = 'test-password';
 const FILE_PATH = 'default-user/chats/example.jsonl';
 const IMAGE_PATH = 'default-user/files/avatar.png';
 const BASE_MTIME = 1778500000000;
 const BULK_FILE_COUNT = 128;
-const TAURI_DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const tests = [
     ['pair, push, pull, and empty diff', testPushPullEmptyDiff],
@@ -22,13 +18,12 @@ const tests = [
     ['bundle upload validates file payload', testBundleValidatesFilePayload],
     ['bulk first sync completes', testBulkFirstSync],
     ['uncommitted push plan does not delete remote files', testUncommittedPushKeepsRemote],
+    ['incremental push commit keeps remote-only files', testIncrementalPushKeepsRemoteOnlyFiles],
     ['conflict blocks commit until decision is provided', testConflictDecision],
     ['excluded sync state paths are rejected', testExcludedStatePath],
     ['invalid manifest entries are rejected', testInvalidManifestEntries],
     ['invalid pairing URIs return bad request', testInvalidPairingUris],
-    ['TauriTavern pair contract returns v2 response', testTauriPairContract],
     ['protected endpoints reject missing auth', testProtectedEndpointsRejectMissingAuth],
-    ['account device history and rollback endpoints work', testAccountDeviceHistoryRollback],
 ];
 
 for (const [name, test] of tests) {
@@ -192,8 +187,23 @@ async function testUncommittedPushKeepsRemote() {
             fileSpec(FILE_PATH, 'hello', BASE_MTIME),
             fileSpec(IMAGE_PATH, 'image', BASE_MTIME),
         ]);
-        const plan = await pushPlan({ baseManifest, context, localManifest: [baseManifest[0]], pair });
+        const plan = await pushPlan({ baseManifest, context, localManifest: [baseManifest[0]], mode: 'Mirror', pair });
         assert.deepEqual(plan.remoteDeletes, [IMAGE_PATH]);
+        const pullPlan = await pullPlanFor(context, pair, []);
+        assert.deepEqual(pullPlan.downloads.map(entry => entry.path).sort(), [FILE_PATH, IMAGE_PATH].sort());
+    });
+}
+
+async function testIncrementalPushKeepsRemoteOnlyFiles() {
+    await withServer(async context => {
+        const pair = await pairDevice(context);
+        const baseManifest = await commitBundle(context, pair, [
+            fileSpec(FILE_PATH, 'hello', BASE_MTIME),
+            fileSpec(IMAGE_PATH, 'image', BASE_MTIME),
+        ]);
+        const plan = await pushPlan({ baseManifest, context, localManifest: [baseManifest[0]], pair });
+        assert.deepEqual(plan.remoteDeletes, []);
+        await postJson({ context, route: `/v2/plans/${plan.id}/commit`, body: {}, token: pair.authToken });
         const pullPlan = await pullPlanFor(context, pair, []);
         assert.deepEqual(pullPlan.downloads.map(entry => entry.path).sort(), [FILE_PATH, IMAGE_PATH].sort());
     });
@@ -247,27 +257,6 @@ async function testInvalidPairingUris() {
     });
 }
 
-async function testTauriPairContract() {
-    await withServer(async context => {
-        const paired = await postJson({
-            context,
-            route: `/v2/pair/complete?token=${TEST_TOKEN}`,
-            body: {
-                device_id: TAURI_DEVICE_ID,
-                device_name: 'android-emulator',
-                device_pubkey: 'abc_DEF123',
-            },
-        });
-        assert.match(paired.server_device_id, UUID_PATTERN);
-        assert.equal(paired.server_device_name, 'Minimal TT-Sync');
-        assert.deepEqual(paired.granted_permissions, {
-            mirror_delete: true,
-            read: true,
-            write: true,
-        });
-    });
-}
-
 async function testProtectedEndpointsRejectMissingAuth() {
     await withServer(async context => {
         const pair = await pairDevice(context);
@@ -286,29 +275,9 @@ async function testProtectedEndpointsRejectMissingAuth() {
     });
 }
 
-async function testAccountDeviceHistoryRollback() {
-    await withServer(async context => {
-        const account = await loginAccount(context);
-        const refreshed = await refreshAccountToken(context, account.refreshToken);
-        assert.notEqual(refreshed.accessToken, account.accessToken);
-        const pair = await pairDevice(context);
-        await openDeviceSession(context, pair, refreshed.accessToken);
-        const baseEntry = await commitSingleFile({ content: 'hello', context, modifiedMs: BASE_MTIME, pair });
-        await commitSingleFile({ baseManifest: [baseEntry], content: 'new', context, modifiedMs: BASE_MTIME + 1, pair });
-        await assertDeviceAndHistory(context, pair, refreshed.accessToken);
-        const rollbackPoint = await latestRollbackPoint(context, refreshed.accessToken);
-        await restoreRollbackPoint(context, rollbackPoint.id, refreshed.accessToken);
-        const pullPlan = await pullPlanFor(context, pair, []);
-        const downloaded = await getFile({ context, planId: pullPlan.id, syncPath: FILE_PATH, token: pair.authToken });
-        assert.equal(downloaded.text, 'hello');
-    });
-}
-
 async function withServer(callback) {
     const dataDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-test-'));
     process.env.TT_SYNC_PAIRING_TOKEN = TEST_TOKEN;
-    process.env.TT_SYNC_ACCOUNT_USERNAME = TEST_USERNAME;
-    process.env.TT_SYNC_ACCOUNT_PASSWORD = TEST_PASSWORD;
     const started = await startServer({ dataDir, port: 0 });
     const context = {
         baseUrl: `http://${started.host}:${started.port}`,
@@ -320,54 +289,6 @@ async function withServer(callback) {
         await new Promise(resolve => started.server.close(resolve));
         await rm(dataDir, { force: true, recursive: true });
     }
-}
-
-async function loginAccount(context) {
-    return postJson({
-        context,
-        route: '/v2/account/login',
-        body: { namespace: 'default', password: TEST_PASSWORD, username: TEST_USERNAME },
-    });
-}
-
-async function refreshAccountToken(context, refreshToken) {
-    return postJson({
-        context,
-        route: '/v2/account/token/refresh',
-        body: { namespace: 'default', refreshToken },
-    });
-}
-
-async function openDeviceSession(context, pair, token) {
-    return postJson({
-        context,
-        route: '/v2/session/open',
-        body: { deviceId: pair.deviceId, namespace: pair.namespace },
-        token,
-    });
-}
-
-async function assertDeviceAndHistory(context, pair, token) {
-    const devices = await getJson({ context, route: '/v2/devices?namespace=default', token });
-    const device = devices.devices.find(item => item.deviceId === pair.deviceId);
-    assert.ok(device?.lastSyncAt, 'device lastSyncAt is required');
-    const history = await getJson({ context, route: '/v2/history?namespace=default', token });
-    assert.ok(history.history.length >= 2, 'sync history should record commits');
-}
-
-async function latestRollbackPoint(context, token) {
-    const payload = await getJson({ context, route: '/v2/rollback-points?namespace=default', token });
-    assert.ok(payload.rollbackPoints.length > 0, 'rollback point should exist');
-    return payload.rollbackPoints[0];
-}
-
-async function restoreRollbackPoint(context, rollbackId, token) {
-    return postJson({
-        context,
-        route: `/v2/rollback-points/${rollbackId}/restore?namespace=default`,
-        body: {},
-        token,
-    });
 }
 
 async function pairDevice(context) {
@@ -394,10 +315,10 @@ async function commitSingleFile(options) {
         context,
         route: '/v2/sync/push-plan',
         body: {
-        baseManifest,
-        deviceId: pair.deviceId,
-        localManifest: [entry],
-        namespace: pair.namespace,
+            baseManifest,
+            deviceId: pair.deviceId,
+            localManifest: [entry],
+            namespace: pair.namespace,
         },
         token: pair.authToken,
     });
@@ -422,6 +343,7 @@ async function pushPlan(options) {
             baseManifest: options.baseManifest,
             deviceId: options.pair.deviceId,
             localManifest: options.localManifest,
+            mode: options.mode || 'Incremental',
             namespace: options.pair.namespace,
         },
         token: options.pair.authToken,

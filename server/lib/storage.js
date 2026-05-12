@@ -13,6 +13,7 @@ const MAX_ROLLBACK_POINTS = 20;
 export class TtSyncStorage {
     constructor(options) {
         this.rootDir = path.resolve(options.rootDir);
+        this.planLocks = new Map();
     }
 
     async status() {
@@ -59,6 +60,16 @@ export class TtSyncStorage {
         return record;
     }
 
+    async requireAuthSession(namespace, authHeader) {
+        const record = await this.requireAuth(namespace, authHeader);
+        const token = String(authHeader || '').replace(/^Bearer\s+/i, '').trim();
+        const session = activeAccessSession(record, token);
+        if (!session?.deviceId) {
+            throw forbidden('A device session token is required');
+        }
+        return { record, session };
+    }
+
     async loginAccount(options) {
         assertAccountLogin(options);
         const namespace = safeName(options.namespace || 'default', 'namespace');
@@ -89,11 +100,13 @@ export class TtSyncStorage {
     async openSession(namespace, deviceId) {
         const record = await this.readNamespace(namespace);
         touchDevice(record, String(deviceId || '').trim(), { lastSeenAt: new Date().toISOString() });
+        const session = addSession(record, String(deviceId || '').trim());
         await this.writeNamespace(namespace, record);
         return {
             namespace,
             deviceId: String(deviceId || '').trim(),
             openedAt: new Date().toISOString(),
+            session,
             serverId: record.serverId,
         };
     }
@@ -125,11 +138,17 @@ export class TtSyncStorage {
     }
 
     async stageFile(plan, entry, buffer) {
-        validateStagedBuffer(entry, buffer);
-        const stagedPath = this.stagedFilePath(plan.id, entry.path);
-        await writeFileAtomic(stagedPath, buffer);
-        plan.staged[entry.path] = { sizeBytes: buffer.length, sha256: sha256(buffer) };
-        await this.writePlan(plan);
+        return this.withPlanLock(plan.id, async () => {
+            const latest = await this.readPlan(plan.id);
+            const latestEntry = uploadEntry(latest, entry.path);
+            validateStagedBuffer(latestEntry, buffer);
+            await writeFileAtomic(this.stagedFilePath(latest.id, latestEntry.path), buffer);
+            const staged = { ...(latest.staged || {}) };
+            staged[latestEntry.path] = { sizeBytes: buffer.length, sha256: sha256(buffer) };
+            const updated = { ...latest, staged };
+            await this.writePlan(updated);
+            return updated;
+        });
     }
 
     async readRemoteFile(namespace, entry) {
@@ -211,6 +230,26 @@ export class TtSyncStorage {
 
     rollbackPointPath(namespace, rollbackId) {
         return path.join(this.namespaceDir(namespace), 'rollback', `${safeName(rollbackId, 'rollback id')}.json`);
+    }
+
+    async withPlanLock(planId, operation) {
+        const key = safeName(planId, 'plan id');
+        const previous = this.planLocks.get(key) || Promise.resolve();
+        let release;
+        const next = new Promise(resolve => {
+            release = resolve;
+        });
+        const chained = previous.catch(() => {}).then(() => next);
+        this.planLocks.set(key, chained);
+        await previous.catch(() => {});
+        try {
+            return await operation();
+        } finally {
+            release();
+            if (this.planLocks.get(key) === chained) {
+                this.planLocks.delete(key);
+            }
+        }
     }
 
     async readNamespace(namespace) {
@@ -361,7 +400,7 @@ async function writeJsonAtomic(filePath, value) {
 
 async function writeFileAtomic(filePath, value) {
     await mkdir(path.dirname(filePath), { recursive: true });
-    const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+    const tmpPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
     await writeFile(tmpPath, value);
     await rename(tmpPath, filePath);
 }
@@ -373,6 +412,14 @@ function validateStagedBuffer(entry, buffer) {
     if (entry.sha256 && sha256(buffer) !== entry.sha256) {
         throw forbidden(`Uploaded sha256 does not match manifest for ${entry.path}`);
     }
+}
+
+function uploadEntry(plan, syncPath) {
+    const entry = plan.uploads.find(item => item.path === syncPath);
+    if (!entry) {
+        throw notFound(`Path is not part of this plan: ${syncPath}`);
+    }
+    return entry;
 }
 
 function assertPairingToken(actual, expected) {
@@ -429,10 +476,11 @@ function touchDevice(record, deviceId, patch) {
     record.devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
 }
 
-function addSession(record) {
+function addSession(record, deviceId = '') {
     const now = Date.now();
     const session = {
         accessToken: randomToken(),
+        deviceId,
         expiresAt: new Date(now + ACCESS_TOKEN_TTL_MS).toISOString(),
         refreshExpiresAt: new Date(now + REFRESH_TOKEN_TTL_MS).toISOString(),
         refreshToken: randomToken(),
@@ -442,8 +490,12 @@ function addSession(record) {
 }
 
 function activeAccessToken(record, token) {
+    return Boolean(activeAccessSession(record, token));
+}
+
+function activeAccessSession(record, token) {
     const now = Date.now();
-    return (record.sessions || []).some(session => {
+    return (record.sessions || []).find(session => {
         return Date.parse(session.expiresAt) > now && constantTimeEqual(token, session.accessToken);
     });
 }

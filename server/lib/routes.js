@@ -2,9 +2,17 @@ import { decodePath, safeName } from './encoding.js';
 import { badRequest, HttpError, notFound } from './http-error.js';
 import { buildPullPlan, buildPushPlan } from './planner.js';
 import {
+    isTauriPlanRequest,
     isTauriPairingRequest,
+    isTauriSessionRequest,
+    normalizeTauriPlanInput,
     normalizeTauriPairingBody,
+    normalizeTauriSessionBody,
+    tauriNamespace,
+    tauriPlanResponse,
     tauriPairingResponse,
+    tauriSessionResponse,
+    verifyTauriSessionRequest,
 } from './tauri-contract.js';
 
 const JSON_TYPE = 'application/json; charset=utf-8';
@@ -92,7 +100,20 @@ async function handleTokenRefresh(context) {
 }
 
 async function handleSession(context) {
-    const body = await readJsonBody(context.request);
+    const { body, buffer } = await readJsonRequest(context.request);
+    if (isTauriSessionRequest(context.request)) {
+        const sessionBody = normalizeTauriSessionBody(body);
+        const namespace = tauriNamespace();
+        const record = await context.storage.readNamespace(namespace);
+        const device = pairedDevice(record, sessionBody.deviceId);
+        verifyTauriSessionRequest({
+            body: sessionBody,
+            bodyBuffer: buffer,
+            device,
+            request: context.request,
+        });
+        return sendJson(context.response, tauriSessionResponse(await context.storage.openSession(namespace, sessionBody.deviceId)));
+    }
     await authenticate(context, body.namespace);
     return sendJson(context.response, await context.storage.openSession(body.namespace, body.deviceId));
 }
@@ -120,11 +141,22 @@ async function handleRollbackRestore(context, url) {
 
 async function handlePlan(context, kind) {
     const body = await readJsonBody(context.request);
+    if (isTauriPlanRequest(body, kind)) {
+        const namespace = tauriNamespace();
+        const { session } = await context.storage.requireAuthSession(namespace, context.request.headers.authorization);
+        const remoteManifest = await context.storage.readManifest(namespace);
+        const localInput = normalizeTauriPlanInput({
+            body,
+            deviceId: session.deviceId,
+            manifestKey: kind === 'push' ? 'source_manifest' : 'target_manifest',
+        });
+        const plan = buildPlan({ ...localInput, kind, remoteManifest });
+        await context.storage.savePlan(plan);
+        return sendJson(context.response, tauriPlanResponse(plan));
+    }
     await authenticate(context, body.namespace);
     const remoteManifest = await context.storage.readManifest(body.namespace);
-    const plan = kind === 'push'
-        ? buildPushPlan({ ...body, remoteManifest })
-        : buildPullPlan({ ...body, remoteManifest });
+    const plan = buildPlan({ ...body, kind, remoteManifest });
     await context.storage.savePlan(plan);
     return sendJson(context.response, planSummary(plan));
 }
@@ -144,8 +176,8 @@ async function handleBundle(context, pathname) {
     if (context.request.method === 'GET') {
         return sendJson(context.response, await buildDownloadBundle(context, plan));
     }
-    await stageUploadBundle(context, plan);
-    return sendJson(context.response, { ok: true, staged: Object.keys(plan.staged).length });
+    const stagedPlan = await stageUploadBundle(context, plan);
+    return sendJson(context.response, { ok: true, staged: Object.keys(stagedPlan.staged).length });
 }
 
 async function handleCommit(context, pathname) {
@@ -199,10 +231,12 @@ async function stageUploadBundle(context, plan) {
     if (!Array.isArray(body.files)) {
         throw badRequest('Bundle files must be an array');
     }
+    let stagedPlan = plan;
     for (const file of body.files) {
-        const entry = findPlanEntry(plan.uploads, bundleFilePath(file));
-        await context.storage.stageFile(plan, entry, decodeBundleContent(file));
+        const entry = findPlanEntry(stagedPlan.uploads, bundleFilePath(file));
+        stagedPlan = await context.storage.stageFile(stagedPlan, entry, decodeBundleContent(file));
     }
+    return stagedPlan;
 }
 
 async function loadAuthedPlan(context, planId) {
@@ -278,6 +312,7 @@ function planSummary(plan) {
     return {
         id: plan.id,
         kind: plan.kind,
+        ok: Boolean(plan.committedAt),
         namespace: plan.namespace,
         uploads: plan.uploads,
         downloads: plan.downloads,
@@ -295,6 +330,20 @@ function planSummary(plan) {
             uploadFiles: plan.uploads.filter(entry => !entry.conflict).length,
         },
     };
+}
+
+function buildPlan(input) {
+    return input.kind === 'push'
+        ? buildPushPlan(input)
+        : buildPullPlan(input);
+}
+
+function pairedDevice(record, deviceId) {
+    const device = (record.devices || []).find(item => item.deviceId === deviceId);
+    if (!device?.publicKey) {
+        throw badRequest(`Paired Tauri device not found: ${deviceId}`);
+    }
+    return device;
 }
 
 function progressSummary(plan) {
@@ -384,12 +433,17 @@ function streamProgressEvents(context, planId) {
 }
 
 async function readJsonBody(request, fallback) {
+    const { body } = await readJsonRequest(request, fallback);
+    return body;
+}
+
+async function readJsonRequest(request, fallback) {
     const buffer = await readRawBody(request);
     if (buffer.length === 0 && fallback !== undefined) {
-        return fallback;
+        return { body: fallback, buffer };
     }
     try {
-        return JSON.parse(buffer.toString('utf8'));
+        return { body: JSON.parse(buffer.toString('utf8')), buffer };
     } catch {
         throw badRequest('Request body must be valid JSON');
     }
