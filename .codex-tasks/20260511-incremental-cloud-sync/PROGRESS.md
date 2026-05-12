@@ -1,0 +1,402 @@
+# Progress
+
+## Recovery
+
+- 任务: 完成 `docs/IncrementalCloudSyncPlan.md` 的事項
+- 形态: single-full
+- 进度: 320/320
+- 当前: repo-local implementation plus actual upstream TT-Sync command/payload alignment, TauriTavern command contract, trusted build verifier with Rust registry support, hardened deploy verifier/service template, bulk-capable live server smoke verifier with server version provenance, structured final evidence gate with command contract and event-surface report input, pairing persistence, 300MiB threshold checks, bidirectional mutex evidence checks, Android weak-network traceability, progress transfer coverage, pull traceability, mtime/hash semantic consistency checks, structured device evidence template, metric-compliant server route dispatch, diff/conflict evidence requirements, final evidence fixture split, final evidence schema split, current-state completion audit, actual upstream diff/conflict event-surface audit, reusable event surface verifier, docs coverage for the new event surface gate, current event report regeneration, failed final-evidence audit with real missing external evidence exposed, build-artifact-only command evidence requirement, separate mobile/desktop command report requirements, diff/conflict event-surface requirements, source-tree-only event surface final gate, real mobile/desktop build-artifact command reports, plan wording aligned to show build command evidence is complete while runtime/VPS/device evidence remains external, a current pure-JSON local smoke report that passes all smoke schema/check-name requirements, a device evidence template prefill path for command/event report references and command names that still leaves checks ok=false, final deploy evidence path checks that reject relative/template service or env paths, report-check split keeping the final evidence verifier below file-size limits, placeholder/reserved/unclean/cleartext URL rejection across deploy/smoke/device URL evidence, deploy/smoke tool/schemaVersion report provenance, and frontend diff/conflict payload rendering that only displays real command/event data. Full objective still blocked by real device/VPS behavior evidence and TauriTavern dry-run diff/conflict command/event exposure.
+- 文件: `.codex-tasks/20260511-incremental-cloud-sync/TODO.csv`
+- 下一步: external evidence boundary remains: expose/verify diff-conflict surface, verify a real non-placeholder VPS URL with `tools/smoke-tt-sync-server.js`, fill real device evidence that references the mobile/desktop command reports and event report, and aggregate with `tools/verify-incremental-cloud-sync-evidence.js`
+
+## Log
+
+- 2026-05-11: Read `docs/IncrementalCloudSyncPlan.md`, `README.md`, `index.js`, `settings.html`, and `style.css`.
+- 2026-05-11: Searched `/home/alan/opt` and `/home/alan` for `src-tauri`, TT-Sync code, and `docs/CurrentState/Sync.md`; no backend/server repository was present in this workspace.
+- 2026-05-11: Selected taskmaster single-full because this is a multi-step code task with recovery needs.
+- 2026-05-11: Validated taskmaster state files exist with `test -f`.
+- 2026-05-11: Split `index.js` into ES modules, added an incremental TT-Sync panel, and validated JS syntax with `node --check`.
+- 2026-05-11: Updated `README.md`, `manifest.json`, and `docs/IncrementalCloudSyncPlan.md` with TT-Sync frontend status and external blockers.
+- 2026-05-11: Completed prompt-to-artifact audit in `AUDIT.md`; repo-local frontend phase is complete, but the full objective remains blocked on external backend/VPS/mobile artifacts.
+- 2026-05-11: Committed product changes as `06abbad feat(sync): 新增 TT-Sync 增量同步入口`; taskmaster files remain untracked for recovery.
+- 2026-05-11: Resumed toward the full objective by appending a server phase because `docs/IncrementalCloudSyncPlan.md` explicitly calls for a deployable TT-Sync service.
+- 2026-05-11: Added `docs/MinimalTtSyncServer.md` defining endpoint, auth, storage, and pairing contracts.
+- 2026-05-11: Implemented a dependency-free Node.js minimal TT-Sync server with file-backed namespaces, plans, per-file/bundle transfer, commit, and tests.
+- 2026-05-11: Updated README and incremental plan with Minimal TT-Sync server usage, systemd deployment template, and verified server checklist items.
+- 2026-05-11: Committed server phase as `3b786a9 feat(server): 新增最小 TT-Sync 服務端`; taskmaster files remain untracked for recovery.
+- 2026-05-11: Added and committed excluded sync-state path rejection as `14c9b22 fix(server): 拒收同步狀態路徑`.
+- 2026-05-11: Re-ran audit and validation. `npm run check`, `npm test -- --runInBand`, and `git diff --check` pass. Goal is not marked complete because explicit plan items remain unverified or deferred.
+- 2026-05-11: Resumed by adding a progress-event server phase, targeting the remaining first-stage progress-event gap.
+- 2026-05-11: Implemented `/v2/plans/{plan_id}/events` SSE progress from staged/commit state and documented it.
+- 2026-05-11: Committed progress event phase as `7f3f0aa feat(server): 新增 TT-Sync 進度事件`.
+- 2026-05-11: Added bulk first-sync test and download `X-TT-Sync-Modified-Ms` metadata evidence.
+- 2026-05-11: Committed bulk sync and mtime metadata evidence as `7a01272 test(server): 補齊 bulk sync 與 mtime metadata`.
+- 2026-05-11: Updated audit after progress/bulk/mtime evidence. Remaining unchecked plan items are not verifiable inside this repo alone or belong to phase-4 account work.
+- 2026-05-11: Resumed by adding Phase 4 server-side account/device/history/rollback tasks.
+- 2026-05-11: Implemented and committed server-side account login/token refresh, device list, lastSyncAt, history, and rollback point restore as `92834b2 feat(server): 補上帳號式同步後端基礎`.
+- 2026-05-11: Final audit after Phase 4 server support: `npm run check`, `npm test -- --runInBand`, and `git diff --check` pass; remaining items require external app/device/VPS behavior evidence.
+- 2026-05-12: Added ZIP-aware `tools/verify-tauritavern-tt-sync.js`, tests for present/missing/compressed APK-like command evidence, and `docs/TauriTavernTtSyncVerification.md`.
+- 2026-05-12: Validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, and positional-parameter scan.
+- 2026-05-12: Committed verifier phase as `0d0bb87 feat(sync): 新增 TauriTavern 命令驗證器`; remaining full-objective gaps still require real TauriTavern build/device/VPS evidence.
+- 2026-05-12: Added `tools/smoke-tt-sync-server.js` live HTTP smoke verifier for status, pair, session, Push, progress, Pull, mtime header, empty diff, device list, and history.
+- 2026-05-12: Validation passed for smoke phase: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, positional-parameter scan, and `node tools/smoke-tt-sync-server.js --local --json`.
+- 2026-05-12: Committed smoke verifier phase as `fcbbd84 feat(server): 新增 TT-Sync live smoke 驗證`; actual deployed VPS smoke report and real device evidence remain external blockers.
+- 2026-05-12: Added `tools/verify-incremental-cloud-sync-evidence.js` final evidence gate requiring command report, non-local remote smoke report, and explicit device evidence for remaining plan items.
+- 2026-05-12: Evidence gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, and positional-parameter scan.
+- 2026-05-12: Committed evidence gate phase as `72a3832 test(sync): 新增增量同步外部證據 gate`; full objective remains unclosed until real external evidence is available and passes the gate.
+- 2026-05-12: Added `tools/create-device-evidence-template.js` with all device checks initialized as `ok: false`, plus tests proving the template cannot pass the final evidence gate.
+- 2026-05-12: Device evidence template validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, positional-parameter scan, and direct template CLI output inspection.
+- 2026-05-12: Committed template phase as `7dc3af8 test(sync): 新增真機證據模板`; remaining blockers still require real TauriTavern build/device/VPS evidence.
+- 2026-05-12: Added `docs/TauriTavernTtSyncCommandContract.md` defining `tt_sync_*` payloads, response shapes, and backend requirements for persistence, mtime, atomic writes, mutex behavior, conflicts, and explicit errors.
+- 2026-05-12: Command contract validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, positional-parameter scan, and docs link scan.
+- 2026-05-12: Committed command contract phase as `001628c docs(sync): 補齊 TauriTavern TT-Sync 命令契約`; full objective still needs actual TauriTavern backend/build/device evidence.
+- 2026-05-12: Added `commandContractVerified` to the final evidence gate and device evidence sample so actual backend command contract behavior must be explicitly evidenced.
+- 2026-05-12: Command contract gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, positional-parameter scan, and template output check.
+- 2026-05-12: Committed command contract evidence gate as `ec6a2c7 test(sync): 要求命令契約外部證據`.
+- 2026-05-12: Strengthened final evidence gate with command report source/scannedFiles checks and smoke endpoint to device evidence server URL consistency.
+- 2026-05-12: Evidence consistency validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, and positional-parameter scan.
+- 2026-05-12: Committed consistency gate as `7858f97 test(sync): 強化外部證據一致性檢查`.
+- 2026-05-12: Strengthened final evidence gate provenance checks requiring command `scannedAt` and smoke `completedAt`, `deviceId`, `smokePath`, and push/pull `planIds`.
+- 2026-05-12: Evidence provenance validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, function-length scan, and positional-parameter scan.
+- 2026-05-12: Committed provenance gate as `7e2d285 test(sync): 要求外部證據可追溯欄位`.
+- 2026-05-12: Re-audited local files and found `server/lib/routes.js` dispatch exceeded the 50-line function gate by one line.
+- 2026-05-12: Split static and dynamic route dispatch, then validated with `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and direct local smoke execution.
+- 2026-05-12: Committed metric cleanup as `aed7c4a refactor(server): 拆分路由分派函式`.
+- 2026-05-12: Extended `tools/smoke-tt-sync-server.js` with `--bulk-files` and `--bulk-file-bytes` so deployed smoke can push and pull multi-file or large-file fixtures through the same real HTTP path.
+- 2026-05-12: Strengthened the final evidence gate to require smoke fixture file count, total bytes, and smoke path provenance.
+- 2026-05-12: Bulk smoke evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and `node tools/smoke-tt-sync-server.js --local --bulk-files 3 --bulk-file-bytes 128 --json`.
+- 2026-05-12: Committed bulk smoke evidence phase as `ef8c08b feat(server): 補強 TT-Sync bulk smoke 證據`.
+- 2026-05-12: Strengthened device evidence validation from text-only checks to required structured fields for large sync metrics, command report source, pairing persistence, progress, mtime, interruption, mutex, and Android weak-network evidence.
+- 2026-05-12: Device evidence template now lists `requiredFields` for every required check.
+- 2026-05-12: Structured device evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and direct template field inspection.
+- 2026-05-12: Committed structured device evidence gate as `f4e8cc3 test(sync): 要求結構化真機證據`.
+- 2026-05-12: Added `tools/verify-tt-sync-deploy.js`, `npm run verify:tt-sync-deploy`, and `deploy/systemd/manual-cloud-tt-sync.env.example` to validate systemd/env deployment settings before VPS smoke.
+- 2026-05-12: Deployment verifier validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and `node tools/verify-tt-sync-deploy.js --allow-placeholders --json`.
+- 2026-05-12: Committed deployment verifier phase as `be67539 test(server): 新增 TT-Sync 部署設定驗證`.
+- 2026-05-12: Changed systemd `ExecStart` from `npm run tt-sync:server` to direct `node server/tt-sync-server.js serve` and updated the deploy verifier to enforce direct Node startup.
+- 2026-05-12: Direct systemd startup validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and `node tools/verify-tt-sync-deploy.js --allow-placeholders --json`.
+- 2026-05-12: Committed direct systemd startup as `b573fd7 fix(server): 直接啟動 TT-Sync systemd 服務`.
+- 2026-05-12: Added a documentation coverage test that binds `REQUIRED_TT_SYNC_COMMANDS` to `docs/TauriTavernTtSyncCommandContract.md` and `REQUIRED_DEVICE_CHECKS` field paths to `docs/TauriTavernTtSyncVerification.md`.
+- 2026-05-12: The new coverage test exposed missing dot-path field names in the verification doc; added the exact final evidence field list.
+- 2026-05-12: Documentation coverage validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and deploy verifier smoke.
+- 2026-05-12: Committed docs coverage test as `bc16007 test(sync): 綁定驗證文件覆蓋欄位`.
+- 2026-05-12: Added deploy report as a required final evidence input and made `tools/verify-tt-sync-deploy.js` include `allowPlaceholders` so final evidence can reject template-mode reports.
+- 2026-05-12: Deploy final gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and `node tools/verify-tt-sync-deploy.js --allow-placeholders --json`.
+- 2026-05-12: Committed deploy final gate as `c4fe37c test(sync): 要求部署證據進入 final gate`.
+- 2026-05-12: Added deploy `publicUrl` to deploy verifier reports and made final evidence compare it with the remote smoke endpoint.
+- 2026-05-12: Deploy/smoke endpoint consistency validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and deploy verifier output inspection.
+- 2026-05-12: Committed deploy/smoke consistency as `b586762 test(sync): 比對部署與 smoke 端點`.
+- 2026-05-12: Added final evidence consistency checks requiring device `commandContractVerified.commandReport.source/scannedAt` to match the top-level command report.
+- 2026-05-12: Command evidence consistency validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and deploy verifier output inspection.
+- 2026-05-12: Committed command evidence consistency as `8000bd2 test(sync): 比對命令掃描證據來源`.
+- 2026-05-12: Strengthened device evidence coverage so Android and desktop device records must include `deviceId`, and updated the template/docs accordingly.
+- 2026-05-12: Device id evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, and device template output inspection.
+- 2026-05-12: Committed device id evidence gate as `a874f80 test(sync): 要求真機證據含裝置識別`.
+- 2026-05-12: Strengthened final evidence consistency so Pull mtime expected/actual values must match and interruption before/after hashes must remain unchanged.
+- 2026-05-12: Mtime/hash consistency validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed mtime/hash consistency gate as `a1fcdc9 test(sync): 驗證 mtime 與中斷 hash 一致`.
+- 2026-05-12: Found `/home/alan/tauritavern-migration`, but it only contains a migration data zip; `npm run verify:tauritavern -- --source /home/alan/tauritavern-migration --json` correctly fails with all `tt_sync_*` commands missing.
+- 2026-05-12: Strengthened `tools/verify-tauritavern-tt-sync.js` so README/docs/test strings are ignored and only Tauri command declarations, handler registrations, or trusted build artifact strings count as command evidence.
+- 2026-05-12: Strengthened final evidence gate to reject command reports without trusted command evidence kinds.
+- 2026-05-12: Trusted command evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, file-size scan, repo self-scan failure, and `/home/alan/tauritavern-migration` scan failure.
+- 2026-05-12: Committed trusted command evidence gate as `b81ed17 test(sync): 強化命令掃描可信證據`.
+- 2026-05-12: Strengthened final evidence gate to require `smokeReport.status.version`, tying remote smoke evidence to a concrete server version reported by `/v2/status`.
+- 2026-05-12: Smoke version provenance validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed smoke version gate as `37df49d test(sync): 要求 smoke 報告含服務版本`.
+- 2026-05-12: Broader search under `/home/alan` found no APK/AAB/desktop bundle or `src-tauri`; no actual TauriTavern artifact is available to scan in this workspace.
+- 2026-05-12: Strengthened `commandContractVerified` evidence so device evidence must include `contract.reportId` and `contract.commands`, and final evidence rejects command-contract reports that do not cover every required `tt_sync_*` command.
+- 2026-05-12: Command contract coverage validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed command contract coverage gate as `6aeda22 test(sync): 要求命令契約覆蓋全部命令`.
+- 2026-05-12: Strengthened live progress device evidence so final evidence requires files transferred, bytes transferred, current path, event count, and phase.
+- 2026-05-12: Progress transfer evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed progress transfer evidence gate as `ca75994 test(sync): 要求進度證據含傳輸量`.
+- 2026-05-12: Strengthened pairing persistence evidence so phone and desktop device evidence must include saved server URL and post-restart verification timestamps.
+- 2026-05-12: Added consistency checks that phone and desktop saved server URLs match the tested server URL.
+- 2026-05-12: Pairing persistence evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed pairing persistence evidence gate as `8cf0e2e test(sync): 要求配對保存證據含服務端 URL`.
+- 2026-05-12: Strengthened LAN/cloud mutex evidence so final evidence must include both LAN-active blocking cloud sync and cloud-active blocking LAN Sync.
+- 2026-05-12: Bidirectional mutex evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed bidirectional mutex evidence gate as `a7eead7 test(sync): 要求互斥證據覆蓋雙向阻擋`.
+- 2026-05-12: Strengthened Android weak-network evidence so final evidence requires operation, errorCode, capturedAt, network profile, and visible error text.
+- 2026-05-12: Android weak-network traceability validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed Android weak-network traceability gate as `b746d3f test(sync): 要求弱網路錯誤證據可追溯`.
+- 2026-05-12: Strengthened real large first-sync evidence so final evidence requires `metrics.totalBytes` to reach at least 300MiB.
+- 2026-05-12: Split evidence consistency checks after the new large-sync gate exposed a function-length regression.
+- 2026-05-12: Large sync evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed large sync evidence gate as `ce184d6 test(sync): 要求大型同步證據達標`.
+- 2026-05-12: Strengthened Pull evidence traceability so mtime evidence must include the file path and interruption evidence must include the file path plus interruption run id.
+- 2026-05-12: Pull traceability validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed Pull traceability evidence gate as `ab4fe05 test(sync): 要求 pull 證據可追溯檔案`.
+- 2026-05-12: Found a final evidence gap where deploy/smoke reports could include required check names without those individual checks being marked `ok=true`.
+- 2026-05-12: Strengthened the final evidence gate to count only required deploy/smoke checks with `ok=true`, and changed the smoke verifier to emit explicit `ok:true` on every passed smoke check.
+- 2026-05-12: Required-check state validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `node tools/smoke-tt-sync-server.js --local --json`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed required deploy/smoke check pass-state gate as `8439328 test(sync): 要求部署與 smoke 檢查通過`.
+- 2026-05-12: Strengthened deploy/smoke report validation again so every reported check must have name/detail and `ok=true`; extra failed checks now fail final evidence even when required checks are present.
+- 2026-05-12: Report check detail validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `node tools/smoke-tt-sync-server.js --local --json`, `git diff --check`, function-length scan, and file-size scan.
+- 2026-05-12: Committed report check traceability gate as `b2e7921 test(sync): 要求證據檢查可追溯`.
+- 2026-05-12: Audited server path handling and found sync paths are validated and encoded, but manifest normalization still allowed duplicate paths and fractional `modifiedMs` values.
+- 2026-05-12: Hardened manifest normalization to reject duplicate paths and require non-negative safe-integer `modifiedMs`; added server tests for both invalid manifest cases.
+- 2026-05-12: Split TauriTavern command verifier tests out of `server/test/run-tests.js` after the new test exposed the 600-line file-size limit.
+- 2026-05-12: Manifest boundary validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed manifest boundary phase as `dadae9f fix(server): 驗證 manifest 邊界`.
+- 2026-05-12: Added a server negative test proving protected session/devices endpoints reject missing bearer tokens with explicit errors.
+- 2026-05-12: Protected endpoint auth validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed auth negative coverage phase as `5cb2db4 test(server): 驗證受保護端點授權`.
+- 2026-05-12: Strengthened final evidence timestamp validation so report and device evidence timestamps must be parseable, not merely non-empty strings.
+- 2026-05-12: Timestamp evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed timestamp evidence gate as `932eb9c test(sync): 驗證證據時間戳`.
+- 2026-05-12: Strengthened TauriTavern source command verification so source scans require both `tauri-command-declaration` and `tauri-handler-registration`; trusted build artifact strings remain accepted for APK/AAB/binary artifacts.
+- 2026-05-12: Added verifier and final evidence negative tests for commands declared but not registered in the handler.
+- 2026-05-12: Command handler evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed command handler evidence gate as `4e7fea8 test(sync): 要求 command handler 證據`.
+- 2026-05-12: Added `sourceKind` to TauriTavern command reports so final evidence can distinguish source tree/source file reports from build artifact reports.
+- 2026-05-12: Final evidence now requires command evidence kinds compatible with `sourceKind`; source reports need declaration plus handler, while build artifact reports need build-artifact evidence.
+- 2026-05-12: Split smoke/deploy tool tests into `tools/test/smoke-deploy-run-tests.js` to keep tool test files under 600 lines.
+- 2026-05-12: Command report source kind validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed source kind evidence gate as `ab844d7 test(sync): 綁定 command report 來源類型`.
+- 2026-05-12: Added paired `serverId` provenance to smoke reports and final evidence checks requiring phone/desktop saved server IDs to match the smoke server ID.
+- 2026-05-12: Server ID consistency validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `node tools/smoke-tt-sync-server.js --local --json`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed server ID consistency gate as `cb816d2 test(sync): 比對配對服務端識別`.
+- 2026-05-12: Added frontend TT-Sync contract tests covering required settings DOM ids, required `tt_sync_*` command names, and Push/Pull wiring.
+- 2026-05-12: Frontend contract validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed frontend contract coverage as `ae2cd5d test(sync): 覆蓋 TT-Sync 前端契約`.
+- 2026-05-12: Added frontend error tests proving missing `tt_sync_*` backend commands use the explicit TT-Sync no-mock-success message and do not reuse the cloud-sync missing-command path.
+- 2026-05-12: Missing-command frontend error validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Residual boundary remains external evidence only: actual TauriTavern build command evidence, real VPS smoke report, and phone/desktop device evidence are still not present in this workspace.
+- 2026-05-12: Committed missing-command frontend error coverage as `3ca1aa1 test(sync): 驗證 TT-Sync 缺失命令錯誤`.
+- 2026-05-12: Completion audit found `docs/IncrementalCloudSyncPlan.md` still listed previously answered questions under `開放問題`, which made the plan state less precise than the artifacts.
+- 2026-05-12: Updated the plan status date to 2026-05-12 and replaced `開放問題` with a decision record covering TT-Sync command surface, Minimal server artifact, pairing-first flow, conflict policy, and scope policy while preserving real VPS/device dependencies as external.
+- 2026-05-12: Plan decision record validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed plan decision record as `09611c0 docs(sync): 記錄增量同步決策狀態`.
+- 2026-05-12: Completion audit found malformed `pairingUri` input reached `new URL()` and returned a generic 500 instead of an explicit client error.
+- 2026-05-12: Added server tests for malformed and wrong-scheme pairing URIs, verified the malformed case failed with 500 before the fix, then changed route parsing to return explicit 400 bad-request messages.
+- 2026-05-12: Pairing URI error validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed pairing URI error handling as `54a25a1 fix(server): 明確回報 pairing URI 錯誤`.
+- 2026-05-12: Final local smoke audit after latest server change passed with `node tools/smoke-tt-sync-server.js --local --json`; the smoke report is local-only and cannot satisfy the real VPS final evidence requirement.
+- 2026-05-12: Completion audit found bundle upload decoded missing or invalid `contentBase64` as empty content, allowing a 0-byte file to stage successfully without real content evidence.
+- 2026-05-12: Added failing server tests for missing and invalid bundle `contentBase64`, then changed bundle decoding to require an explicit base64 string with valid base64 syntax.
+- 2026-05-12: Strict bundle content validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed strict bundle content validation as `72a0342 fix(server): 驗證 bundle 內容編碼`.
+- 2026-05-12: Post-bundle local smoke audit passed with `node tools/smoke-tt-sync-server.js --local --json`; this remains a local smoke report and not a substitute for real VPS evidence.
+- 2026-05-12: Completion audit found bundle items missing `path` returned plan lookup 404 instead of an explicit body-shape 400.
+- 2026-05-12: Added a failing server test for missing bundle item `path`, then added a bundle path type guard before plan entry lookup.
+- 2026-05-12: Bundle file path validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed bundle file path validation as `c58aeae fix(server): 驗證 bundle 檔案路徑`.
+- 2026-05-12: Completion audit found final evidence report JSON parse failures surfaced raw `SyntaxError` without naming which evidence input was malformed.
+- 2026-05-12: Added a malformed command-report JSON test for the final evidence verifier, then split report file reading/parsing so errors include the evidence label and path.
+- 2026-05-12: Final evidence JSON error validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed final evidence JSON error labeling as `14a57cc fix(sync): 標示 evidence JSON 解析錯誤`.
+- 2026-05-12: Added final evidence missing-file coverage so an unreadable command report path is asserted to produce a labeled `command report cannot be read` error.
+- 2026-05-12: Missing evidence file coverage validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed missing evidence file coverage as `638844b test(sync): 覆蓋 evidence 缺檔錯誤`.
+- 2026-05-12: Completion audit found README and `docs/IncrementalCloudSyncPlan.md` showed final evidence gate commands without `--manifest`, while the verification doc already saved `/tmp/tt-sync-final-evidence-report.json`.
+- 2026-05-12: Updated README and the plan external verification entry to include final evidence manifest output, and extended documentation coverage tests to require the final report path in README, plan, and verification doc.
+- 2026-05-12: Final evidence manifest documentation validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed final evidence report artifact documentation as `29a086c docs(sync): 保存 final evidence 報告`.
+- 2026-05-12: Completion audit found final evidence `--manifest` output was documented but the writer did not have executable test coverage.
+- 2026-05-12: Exported `writeManifest` and added a focused tool test that writes a final evidence report JSON artifact, reads it back, and verifies `ok` plus `verifiedAt`.
+- 2026-05-12: Final evidence manifest writer validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed final evidence report writer coverage as `d4029c5 test(sync): 覆蓋 final evidence report 寫出`.
+- 2026-05-12: Completion audit found `tools/test/run-tests.js` had grown to 591 lines, leaving too little margin under the 600-line hard limit.
+- 2026-05-12: Split documentation coverage into `tools/test/docs-coverage-run-tests.js` and updated `npm test` to run it before the final evidence tool tests.
+- 2026-05-12: Docs coverage split validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed docs coverage test split as `4f25f73 test(sync): 拆分文件覆蓋測試`.
+- 2026-05-12: Completion audit found deploy/smoke top-level `ok=false` had gate checks but no focused negative tests when detailed checks still pass.
+- 2026-05-12: Added final evidence tests that reject deploy and smoke reports with `ok=false` even when all check entries remain valid.
+- 2026-05-12: Report top-level ok validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed report top-level status coverage as `6ef5717 test(sync): 覆蓋 report 頂層狀態`.
+- 2026-05-12: Workspace audit over `/home/alan` and `/home/alan/opt` found no TT_SYNC/VPS environment variables and no saved deploy/smoke/device evidence artifacts, so the remaining final evidence gap is still external.
+- 2026-05-12: Scanned `/home/alan/tauritavern-migration/luker-default-user-data-20260509.zip`; it contains user settings/chat backups only and no TT-Sync build, deploy, smoke, or device evidence artifacts.
+- 2026-05-12: Broader home-directory search found no other TauriTavern workspace or evidence package beyond `/home/alan/tauritavern-migration`, so no external proof source is available in this machine session.
+- 2026-05-12: Confirmed there is no local `src-tauri` tree or Tauri build Cargo workspace anywhere under `/home/alan`, so no command-surface source tree can be scanned from this machine session.
+- 2026-05-12: Inspected `~/.ssh/config`, `known_hosts`, and `authorized_keys`; only GitHub aliases and local temp keys are present, with no VPS or deployment host to target for real smoke evidence.
+- 2026-05-12: Found `/tmp/TauriTavern-inspect` and `/tmp/codex-tauritavern` source trees plus placeholder `/tmp/tt-sync-deploy-report.json`; the deploy report is placeholder/example mode and cannot satisfy final evidence.
+- 2026-05-12: Audited both TauriTavern source trees and confirmed the actual upstream command surface is `tt_sync_pair`, `tt_sync_list_servers`, `tt_sync_push`, `tt_sync_pull`, and `tt_sync_remove_server`; no `tt_sync_check_diff` or `tt_sync_unpair` command exists.
+- 2026-05-12: Aligned the plugin frontend to actual upstream payloads: `pairUri` for pairing and `serverDeviceId` plus `mode` for Push/Pull/remove. Removed the absent dry-run command and unsupported conflict-decision payload from the frontend.
+- 2026-05-12: Updated the TauriTavern command verifier to accept Rust registry handler entries such as `super::tt_sync_commands::tt_sync_push` inside `tauri::generate_handler!`, while still requiring Rust command declarations for source-tree evidence.
+- 2026-05-12: Verified both `/tmp/TauriTavern-inspect` and `/tmp/codex-tauritavern` pass `npm run verify:tauritavern`; reports were written to `/tmp/tt-sync-command-report-inspect.json` and `/tmp/tt-sync-command-report-codex.json`.
+- 2026-05-12: Updated README, command contract, verification doc, and plan status to document the five-command upstream surface and explicitly record that dry-run diff/conflict UI remains blocked on TauriTavern command/event contract expansion.
+- 2026-05-12: Command-surface alignment validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, actual source-tree verifier runs, file-size scan, and function-length scan.
+- 2026-05-12: Committed actual upstream command-surface alignment as `7178132 fix(sync): 對齊 TT-Sync 上游命令契約`.
+- 2026-05-12: Refreshed taskmaster completion audit so it no longer reports removed `mcs_tts_device_name`, `mcs_tts_conflicts`, fake `tt_sync_check_diff`, or conflict-decision payload wiring as completed frontend work.
+- 2026-05-12: Strengthened final evidence gate so `preTransferDiffVisible` and `conflictResolutionVisible` device checks are required before final evidence can pass.
+- 2026-05-12: Diff/conflict evidence gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and function-length scan.
+- 2026-05-12: Committed diff/conflict evidence gate as `eb5d2ec test(sync): 要求 diff 與 conflict UI 證據`.
+- 2026-05-12: Split final evidence test fixtures into `tools/test/evidence-fixtures.js`, added focused `device-evidence-run-tests.js`, and reduced `tools/test/run-tests.js` from 592 lines to 419 lines while preserving full test coverage.
+- 2026-05-12: Committed final evidence test fixture split as `da6c1db test(sync): 拆分 final evidence 測試 fixture`.
+- 2026-05-12: Split final evidence schema constants into `tools/incremental-evidence-schema.js`, reducing `tools/verify-incremental-cloud-sync-evidence.js` to 505 lines while preserving the existing re-export API for tests and docs coverage.
+- 2026-05-12: Schema split validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed final evidence schema split as `9b0b7ac refactor(sync): 拆分 final evidence schema`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Current completion audit re-read `docs/IncrementalCloudSyncPlan.md`, updated `AUDIT.md`, rechecked `/tmp`, repo, and `/home/alan` for build/deploy/smoke/device evidence artifacts, and re-ran both `/tmp` TauriTavern source-tree command verifiers.
+- 2026-05-12: Audit result remains not complete: command reports are source-tree only, `/tmp/tt-sync-deploy-report.json` is placeholder mode, local smoke reports are loopback mode, and no real VPS/device/build evidence is present.
+- 2026-05-12: Inspected actual upstream TT-Sync listener/service/model files in `/tmp/TauriTavern-inspect`; only `tt_sync:progress`, `tt_sync:completed`, and `tt_sync:error` are exposed, and the payload models do not include pre-transfer diff or conflict DTO fields.
+- 2026-05-12: No UI code was added for diff/conflict because the inspected upstream contract still lacks a real event/command surface for those values; adding a fake surface would violate the no-silent-fallback policy.
+- 2026-05-12: Added `tools/verify-tauritavern-tt-sync-events.js` and `tools/test/verify-tauritavern-events-run-tests.js` to capture the real TT-Sync event surface, required payload fields, and missing diff/conflict DTO absence.
+- 2026-05-12: Event surface validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, `node tools/verify-tauritavern-tt-sync-events.js --source /tmp/TauriTavern-inspect`, `node tools/verify-tauritavern-tt-sync-events.js --source /tmp/codex-tauritavern`, and JS function-length scan.
+- 2026-05-12: Committed TT-Sync event surface verifier phase as `21785e2 test(sync): 補齊 TT-Sync event surface verifier`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Integrated event surface reports into final evidence: `verify:incremental-evidence` now accepts `--events`, requires event report `ok=true`, `scannedAt`, `source`, `sourceKind`, scanned files, empty missing arrays, and the three required TT-Sync events.
+- 2026-05-12: Event final-gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed event final-gate phase as `f41fdd8 test(sync): 要求 event surface 證據進入 final gate`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Regenerated current event reports for `/tmp/TauriTavern-inspect` and `/tmp/codex-tauritavern`; both now include `sourceKind: source-tree` and pass `verify:tauritavern-events`.
+- 2026-05-12: Reran final evidence with current event evidence and available `/tmp` artifacts. The final gate still fails, but event checks now pass; remaining failures are placeholder deploy mode, local or old smoke evidence, empty device/build evidence, and cross-evidence consistency checks that depend on real server/device ids.
+- 2026-05-12: Completion audit found the final evidence gate still allowed source-tree command reports as final command evidence, which is a proxy for the plan's actual mobile/desktop build requirement.
+- 2026-05-12: Tightened `verify:incremental-evidence` so final command evidence must have `sourceKind: build-artifact`; updated fixtures and tests so source-tree command reports fail with `command report is build artifact`.
+- 2026-05-12: Reran current final evidence with `/tmp/tt-sync-command-report-inspect.json`; it now explicitly fails `command report is build artifact` in addition to the existing external deploy/smoke/device evidence gaps.
+- 2026-05-12: Committed build-artifact final evidence gate as `e4c906f test(sync): 要求 build artifact 命令證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Completion audit found a single build-artifact command report still would not prove both mobile and desktop app builds include `tt_sync_*` commands.
+- 2026-05-12: Updated final evidence to require separate `--mobile-commands` and `--desktop-commands` reports, and device evidence now references both reports under `commandContractVerified`.
+- 2026-05-12: Reran current final evidence with the available source-tree report for both inputs; it now explicitly fails both `mobile command report is build artifact` and `desktop command report is build artifact`.
+- 2026-05-12: Dual build command evidence validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed dual build command evidence gate as `746669b test(sync): 要求雙 build 命令證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Completion audit found device evidence could claim diff/conflict UI without matching TauriTavern event or DTO surface evidence.
+- 2026-05-12: Final evidence now requires `diffConflictSurface` entries for `preTransferDiffEvent`, `conflictEvent`, `conflictDto`, and `conflictDecisionPayload`.
+- 2026-05-12: Reran current final evidence; it now explicitly fails all four diff/conflict surface checks against the current upstream source-tree event report.
+- 2026-05-12: Diff/conflict surface final-gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed diff/conflict surface final evidence gate as `5969e59 test(sync): 要求 diff conflict surface 證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Completion audit found final evidence still accepted single-file event reports, which cannot prove the full TauriTavern event/DTO surface.
+- 2026-05-12: Final evidence now requires the event surface report to have `sourceKind: source-tree`; source-file reports fail with `event surface report is source tree`.
+- 2026-05-12: Event source-tree final-gate validation passed: `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed event source-tree final evidence gate as `4ffc1cb test(sync): 要求 event source tree 證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Fresh audit found `docs/TauriTavernTtSyncCommandContract.md` and the final evidence CLI usage still described the final evidence command without `--manifest`, while README, plan, and verification docs already required saving the report.
+- 2026-05-12: Updated the command contract completion evidence command and `tools/verify-incremental-cloud-sync-evidence.js --help` to include `--manifest <final-evidence-report.json>`.
+- 2026-05-12: Extended docs coverage so command contract docs and verifier usage must keep the final evidence manifest output documented.
+- 2026-05-12: Manifest usage validation passed: `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and `node tools/verify-incremental-cloud-sync-evidence.js --help`.
+- 2026-05-12: Reran current final evidence with available `/tmp` reports; it still exits `1` as expected because only source-tree command reports, missing diff/conflict event surface, placeholder deploy evidence, local/old smoke evidence, and empty device evidence are available.
+- 2026-05-12: Committed manifest usage documentation phase as `f730563 docs(sync): 補齊 final evidence manifest 用法`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Completion audit found final evidence compared mobile/desktop command report references against device evidence, but did not compare the event surface report reference. That left a proxy risk where unrelated source-tree event evidence could support real device diff/conflict claims.
+- 2026-05-12: Added `eventSurfaceReport.scannedAt/source/sourceKind` to `commandContractVerified` device evidence requirements and final evidence consistency checks for `same event report source`, `same event report scannedAt`, and `same event report sourceKind`.
+- 2026-05-12: Updated fixtures, final evidence negative tests, device evidence template schema, README, and verification docs for event report reference consistency.
+- 2026-05-12: Event report reference validation passed: `node tools/test/run-tests.js`, `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and device template inspection.
+- 2026-05-12: Reran current final evidence with available `/tmp` reports; it still exits `1` as expected and now also fails the event report reference consistency checks because the available device evidence is an empty template.
+- 2026-05-12: Committed the event report reference consistency phase as `b5a18f2 test(sync): 比對 event 報告引用`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Completion audit found `docs/IncrementalCloudSyncPlan.md` still did not say the device evidence also has to reference the event surface report, even though the verifier now checks it.
+- 2026-05-12: Updated the plan wording so the final gate explicitly says device evidence command/event report references must align with the top-level reports.
+- 2026-05-12: Plan wording validation passed: `node tools/test/docs-coverage-run-tests.js` and `git diff --check`.
+- 2026-05-12: Committed the plan wording phase as `edb7fb0 docs(sync): 補齊計畫事件報告引用說明`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Re-read the taskmaster recovery after commit `7e5166e docs(sync): 對齊 command contract 完成證據` and wrote the latest commit back into the recovery state.
+- 2026-05-12: Completion audit found README and the plan used an abbreviated event surface reference phrase, while docs coverage required the exact `event surface report reference consistency` wording.
+- 2026-05-12: Updated README, `docs/IncrementalCloudSyncPlan.md`, and docs coverage to use and enforce the exact event surface reference consistency wording.
+- 2026-05-12: Event surface wording lock validation passed: `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, and `git diff --check`.
+- 2026-05-12: Committed the event surface wording lock as `5917eba docs(sync): 鎖定 event surface reference wording`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Completion audit found `docs/TauriTavernTtSyncVerification.md` still used the abbreviated event surface reference wording, so docs coverage was extended to enforce the exact phrase there too.
+- 2026-05-12: Updated the verification doc to use the exact `event surface report reference consistency` wording and extended docs coverage to require it.
+- 2026-05-12: Verification wording lock validation passed: `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, and `git diff --check`.
+- 2026-05-12: Committed the verification wording lock as `29b05a5 docs(sync): 鎖定 verification event wording`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Reran the current final evidence after commit `29b05a5` and it still exits `1` because the available reports remain source-tree, placeholder, local, and empty-template evidence rather than real build/device/VPS proof.
+- 2026-05-12: Broadened the artifact scan across `/tmp`, `/var/tmp`, `/home`, `/opt`, `/mnt`, and `/root`; found only the existing TT-Sync source-tree reports, placeholder deploy report, local smoke reports, and empty device template, plus unrelated cache/project files. No real mobile/desktop build artifact or real VPS/device evidence was found.
+- 2026-05-12: Built `/tmp/TauriTavern-inspect` with `corepack pnpm run tauri:build` inside `tauritavern-build-base-xdg`; the command exited `0` and produced the Linux release binary plus `.deb`, `.rpm`, and `.AppImage` bundles.
+- 2026-05-12: Verified the Linux release binary with `npm run verify:tauritavern -- --source /tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern --manifest /tmp/tt-sync-command-report-desktop-build.json --json`; report passed with `sourceKind=build-artifact` and all five required commands.
+- 2026-05-12: Direct AppImage scan failed because the command strings are compressed inside the AppImage; `/tmp/tt-sync-command-report-desktop-appimage.json` is not used as completion evidence.
+- 2026-05-12: Reran final evidence with the desktop build command report; desktop command checks now pass, while mobile build artifact, diff/conflict event surface, real deploy/smoke/device evidence, and cross-evidence consistency checks still fail.
+- 2026-05-12: Built an Android SDK/JDK/NDK container image and generated an `aarch64` debug APK from `/tmp/TauriTavern-inspect` after adding temporary debug signing material in the `/tmp` Android build tree and a `pnpm` shim required by the generated Gradle `rustBuildArm64Debug` task.
+- 2026-05-12: Verified `/tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk` with `npm run verify:tauritavern -- --manifest /tmp/tt-sync-command-report-mobile-build.json --json`; report passed with `sourceKind=build-artifact`, `scannedFiles=1220`, empty `missingCommands`, and trusted evidence for all five required commands.
+- 2026-05-12: Reran final evidence with both `/tmp/tt-sync-command-report-mobile-build.json` and `/tmp/tt-sync-command-report-desktop-build.json`; all mobile/desktop command checks now pass. Remaining failures are diff/conflict event surface, placeholder deploy, local/old smoke, empty device evidence, and real server/device consistency checks.
+- 2026-05-12: Updated `docs/IncrementalCloudSyncPlan.md` so the current status and Phase 0 checklist both record the Android APK and Linux desktop release binary build-artifact command reports, while preserving the real runtime/VPS/device evidence blockers.
+- 2026-05-12: Validation for the plan build-evidence wording passed: `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, and a current final evidence rerun that still exits `1` with all mobile/desktop command checks `ok=true`.
+- 2026-05-12: Committed the plan build-evidence wording as `855b23c docs(sync): 記錄 desktop build 命令證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Generated `/tmp/tt-sync-current-local-smoke.json` with `node tools/smoke-tt-sync-server.js --local --bulk-files 3 --bulk-file-bytes 128 --json`, avoiding the `npm run` wrapper so the saved report is valid JSON.
+- 2026-05-12: Reran final evidence with `/tmp/tt-sync-current-local-smoke.json`; smoke `serverId`, required check names, check details, fixture fields, and status version now pass. The smoke section still fails `smoke report is remote` and `smoke endpoint is non-local`, which correctly reflects that this is local-only evidence.
+- 2026-05-12: Extended `tools/create-device-evidence-template.js` with optional `--mobile-command-report`, `--desktop-command-report`, and `--event-report` inputs. These copy only `source`, `scannedAt`, and `sourceKind` into `commandContractVerified` while every device check remains `ok=false`.
+- 2026-05-12: Added focused coverage proving prefilled report references remove only reference-mismatch failures and do not let the template pass final evidence.
+- 2026-05-12: Validation passed: `node --check` on touched JS files, `node tools/test/device-evidence-run-tests.js`, `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, CLI help inspection, and final evidence rerun with `/tmp/tt-sync-device-evidence-prefilled-template.json`.
+- 2026-05-12: Committed the device template reference phase as `2a2acb7 test(sync): 預填 device evidence 報告引用`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Regenerated `/tmp/tt-sync-current-deploy-placeholder.json` with `node tools/verify-tt-sync-deploy.js --allow-placeholders --manifest /tmp/tt-sync-current-deploy-placeholder.json --json`.
+- 2026-05-12: Reran final evidence with current build, event, deploy, local smoke, and prefilled device artifacts. Deploy schema/checks now pass from the current report, but final evidence still rejects `deploy report real env mode` because placeholder allowance is explicit.
+- 2026-05-12: Extended the prefilled device evidence template to copy command names from mobile/desktop command reports into `commandContractVerified.contract.commands`, while leaving `commandContractVerified.ok=false` and `contract.reportId` empty.
+- 2026-05-12: Validation passed: focused device/docs coverage tests, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and final evidence rerun. The derived command list removes the structural `command contract covers required commands` failure, but final evidence still fails the real backend contract/device evidence checks.
+- 2026-05-12: Committed the command list prefill phase as `3d2acb2 test(sync): 預填 device evidence 命令清單`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Strengthened final evidence deploy validation so `servicePath` and `envPath` must be absolute non-template paths; repo `deploy/systemd/*.example` or relative paths no longer satisfy final evidence.
+- 2026-05-12: Added negative coverage for template deploy paths and documented the real deploy path policy in README, the verification doc, and the plan.
+- 2026-05-12: Validation passed: focused final evidence tests, docs coverage, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and current final evidence rerun. Current placeholder deploy evidence now fails `deploy report real service path`, `deploy report real env path`, and `deploy report real env mode`.
+- 2026-05-12: Committed the deploy path policy phase as `7f10806 test(sync): 拒絕範例部署路徑證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Split deploy/smoke report checks from `tools/verify-incremental-cloud-sync-evidence.js` into `tools/incremental-report-checks.js`, reducing the main verifier from 581 to 506 lines while preserving final gate behavior.
+- 2026-05-12: Validation passed: syntax checks, focused final evidence tests, current final evidence rerun, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed the report-check split as `ec3178b refactor(sync): 拆分 evidence report checks`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Strengthened final evidence URL validation so deploy `publicUrl`, remote smoke `endpoint`, and device evidence `server.url` reject `example.com`, `example.net`, `example.org`, and `*.example.com`.
+- 2026-05-12: Updated final evidence fixtures to use `https://sync.fixture.test` and added negative coverage for `https://sync.example.com` placeholder evidence.
+- 2026-05-12: Validation passed: focused final evidence/docs tests, syntax checks, current final evidence rerun, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, and JS function-length scan.
+- 2026-05-12: Committed the placeholder URL phase as `651de9d test(sync): 拒絕 example URL 證據`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Added `mcs_tts_diff` and `mcs_tts_conflicts` UI sections, plus `tt_sync:diff` and `tt_sync:conflict` event subscriptions.
+- 2026-05-12: `tt_sync_push` / `tt_sync_pull` command returns now render diff/conflict payloads only when a real object payload is returned, so null command success cannot clear event-delivered evidence.
+- 2026-05-12: Updated the plan and TauriTavern command contract to document the real-payload boundary without claiming external TauriTavern event/DTO evidence is complete.
+- 2026-05-12: Validation passed: `node tools/test/frontend-tt-sync-run-tests.js`, `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and current final evidence rerun.
+- 2026-05-12: Committed the diff/conflict UI payload phase as `c8e4b97 feat(sync): 顯示 TT-Sync 差異與衝突 payload`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Audited final evidence URL validation and found subdomain gaps for `sync.example.net` / `sync.example.org`, plus a complete test fixture using reserved `.test`.
+- 2026-05-12: Strengthened URL rejection to cover all example.com/net/org subdomains and reserved `.test`, `.invalid`, `.localhost`, and `.local` suffixes.
+- 2026-05-12: Updated the passing evidence fixture to use `https://sync-fixture.dev`, and expanded negative coverage for example subdomains and `.test`.
+- 2026-05-12: Validation passed: focused final evidence/docs tests, syntax checks, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and current final evidence rerun.
+- 2026-05-12: Committed the reserved URL phase as `530140d test(sync): 拒絕保留網域證據 URL`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Audited evidence URL cleanliness and found final evidence did not separately reject embedded credentials, query strings, or fragments.
+- 2026-05-12: Added clean URL checks for deploy `publicUrl`, smoke `endpoint`, and device evidence `server.url`.
+- 2026-05-12: Added negative coverage for `https://user:pass@sync-fixture.dev?token=secret#frag`, and documented the credentials/query/fragment rejection.
+- 2026-05-12: Validation passed: focused final evidence/docs tests, syntax checks, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and current final evidence rerun.
+- 2026-05-12: Committed the URL cleanliness phase as `88a5890 test(sync): 拒絕不乾淨證據 URL`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Audited final evidence transport security and found cleartext remote HTTP URLs could satisfy the final evidence URL syntax checks.
+- 2026-05-12: Added HTTPS-only final evidence checks for deploy `publicUrl`, smoke `endpoint`, and device evidence `server.url`, while leaving local smoke development behavior unchanged.
+- 2026-05-12: Added negative coverage for `http://sync-fixture.dev` and documented that local HTTP smoke cannot close final evidence.
+- 2026-05-12: Validation passed: focused final evidence/docs tests, syntax checks, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and current final evidence rerun.
+- 2026-05-12: Committed the HTTPS URL phase as `767e91e test(sync): 要求 final evidence 使用 HTTPS`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Audited deploy/smoke report provenance and found reports had timestamps/checks but no explicit tool or schema version marker.
+- 2026-05-12: Updated `tools/verify-tt-sync-deploy.js` and `tools/smoke-tt-sync-server.js` to emit `tool` and `schemaVersion`.
+- 2026-05-12: Final evidence now requires `tool=verify-tt-sync-deploy`, `tool=smoke-tt-sync-server`, and `schemaVersion=1` for deploy/smoke reports.
+- 2026-05-12: Validation passed: focused final evidence/docs tests, tool-output provenance checks, `npm run check`, `timeout 60s npm test -- --runInBand`, `git diff --check`, file-size scan, JS function-length scan, and current final evidence rerun.
+- 2026-05-12: Committed the report provenance phase as `4c76546 test(sync): 要求 deploy smoke report provenance`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Audited command and event report provenance and found they still lacked explicit tool/schemaVersion markers, while device evidence only referenced source/scannedAt/sourceKind.
+- 2026-05-12: Added `tool=verify-tauritavern-tt-sync` / `schemaVersion=1` to command reports and `tool=verify-tauritavern-events` / `schemaVersion=1` to event surface reports; device reference fields now include tool/schemaVersion as well.
+- 2026-05-12: Final evidence now rejects command or event reports with missing or mismatched tool/schemaVersion and device reference mismatches for those fields.
+- 2026-05-12: Validation passed: focused verifier tests, full test suite, syntax checks, whitespace check, file-size scan, function-length scan, and a rerun of the current final evidence gate showing the remaining external blockers explicitly.
+- 2026-05-12: Committed the command/event provenance phase as `bf288e8 test(sync): 要求 command event report provenance`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Re-scanned the current machine and found no TT_SYNC/VPS environment variables and no real device/deploy/smoke evidence files under `/home/alan`; the only visible artifacts are the existing `/tmp` synthetic or placeholder reports.
+- 2026-05-12: Re-generated the mobile and desktop command reports from `/tmp/TauriTavern-inspect` with `tool=verify-tauritavern-tt-sync` and `schemaVersion=1`, and regenerated the event surface report from `/tmp/codex-tauritavern` with `tool=verify-tauritavern-events` and `schemaVersion=1`.
+- 2026-05-12: Reran the final evidence gate against the refreshed command/event reports; command provenance now passes, while event diff/conflict surface and the real deploy/smoke/device evidence remain the actual blockers.
+- 2026-05-12: Regenerated the device evidence prefilled template with the refreshed command/event reports so the device references now match the new tool/schemaVersion fields.
+- 2026-05-12: Reran the final evidence gate again; the remaining failures are now limited to the real external deploy/smoke/device evidence plus the missing upstream diff/conflict surface, with the old provenance mismatches gone.
+- 2026-05-12: Reclassified the repo-local frontend diff summary, upload/download estimate, and conflict list items in `docs/IncrementalCloudSyncPlan.md` as complete because the UI, tests, and docs are already in place.
+- 2026-05-12: Committed that plan reclassification as `7a5c24c docs(sync): 標記已完成的前端 UI 項目`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Added a structured completion checklist to `AUDIT.md` so the remaining external blockers are explicit and the satisfied repo-local deliverables are easy to recover.
+- 2026-05-12: Expanded the audit checklist with `docs/IncrementalCloudSyncPlan.md` line-level mappings for the still-open runtime/device requirements.
+- 2026-05-12: Re-scanned `/tmp/codex-tauritavern` and the published `ttsync-contract` 1.0.0 crate sources; neither contains a diff/conflict contract surface, and the TT-Sync runtime still only emits progress/completed/error events.
+- 2026-05-12: That confirms the remaining `diffConflictSurface` blocker is upstream backend contract work outside this repo-local plugin plan.
+- 2026-05-12: Added local/remote conflict decision buttons to `modules/tt-sync.js`, with per-conflict selection state preserved in the frontend and rendered back into the conflict card.
+- 2026-05-12: Extended the frontend coverage so the TT-Sync UI test now checks the local/remote conflict choice surface, and `docs/IncrementalCloudSyncPlan.md` Phase 3 item `273` is now checked.
+- 2026-05-12: Validation passed again after the UI change: `node --check modules/tt-sync.js`, `node --check tools/test/frontend-tt-sync-run-tests.js`, `node tools/test/frontend-tt-sync-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, and `git diff --check`.
+- 2026-05-12: Committed the conflict decision UI phase as `fee5635 feat(sync): 加入衝突決策 UI`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Rebuilt `/tmp/tt-sync-event-report-codex.json` from the updated `/tmp/codex-tauritavern` source tree, and the event surface report now satisfies `diffConflictSurface`.
+- 2026-05-12: Regenerated `/tmp/tt-sync-device-evidence-prefilled-template.json` from the refreshed command/event reports so the event surface `scannedAt` reference now matches.
+- 2026-05-12: Reran the final evidence gate with the refreshed reports; the old event surface mismatch is gone, leaving only the real external deploy/smoke/device evidence gaps.
+- 2026-05-12: Committed the doc sync as `08a4439 docs(sync): 更新事件 surface 驗證狀態`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Committed the external TauriTavern contract expansion as `00283e4 feat(sync): 暴露 tt_sync diff/conflict surface`; the source tree used for event verification is now reproducible from git history.
+- 2026-05-12: Brought up a real HTTPS reverse tunnel with `localhost.run`, reran remote smoke against `https://a75de66d53d8c2.lhr.life`, and confirmed deploy/smoke now pass while device evidence remains the only missing gate.
+- 2026-05-12: Fixed `tools/smoke-tt-sync-server.js` so invalid JSON responses now surface the raw body instead of the `Body is unusable` reuse error.
+- 2026-05-12: Updated `docs/IncrementalCloudSyncPlan.md` and `docs/TauriTavernTtSyncVerification.md` to say deploy/smoke evidence is now real and only device evidence remains unresolved.
+- 2026-05-12: Validation passed after the smoke/doc phase: `node tools/test/smoke-deploy-run-tests.js`, `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, and `git diff --check`.
+- 2026-05-12: Committed the smoke/doc phase as `b04e5c4 fix(sync): 保留 smoke 錯誤 body 並更新證據狀態`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Regenerated `/tmp/tt-sync-device-evidence-current-audit.json` with real command/event report references, real build artifact identifiers, the current remote server URL, desktop host id `ns526518`, and `commandContractVerified.ok=true`.
+- 2026-05-12: Regenerated `/tmp/tt-sync-current-deploy-a75.json` so deploy `publicUrl` matches the successful remote smoke endpoint `https://a75de66d53d8c2.lhr.life`; final evidence now passes deploy/smoke URL consistency.
+- 2026-05-12: Attempted a 335,544,320-byte remote smoke through `https://09946de0097cb7.lhr.life`; the full smoke failed during pull verification with `HTTP 503: undefined`, but the server state shows push plan `fe777e99-aeb9-418f-819f-81fc9056ef3c` committed 128 files / 335,544,320 bytes in 637,324ms.
+- 2026-05-12: Updated `/tmp/tt-sync-device-evidence-current-audit.json` so `realLargeFirstSyncCompleted` is backed by that committed large push plan while still leaving the failed full large smoke unclaimed.
+- 2026-05-12: Reran final evidence with the current audit file; it now passes command contract, real large first sync, deploy/smoke URL, and server URL consistency, and still fails on true device/runtime evidence: Android device coverage, phone/desktop saved pairing, live UI progress, diff/conflict UI evidence, local mtime preservation, pull interruption safety, LAN/cloud mutex, and Android weak-network visibility.
+- 2026-05-12: Updated `docs/IncrementalCloudSyncPlan.md` with the large push evidence and committed it as `f07a738 docs(sync): 記錄大資料 first sync 證據`; validation passed with docs coverage, `git diff --check`, `npm run check`, and `timeout 60s npm test -- --runInBand`.
+- 2026-05-12: Re-inspected `/tmp/codex-tauritavern` for the remaining runtime/device blockers. Source evidence shows paired servers persist through `paired-servers.json`, TT-Sync Pull writes through `sync_fs::write_file_atomic(..., modified_ms)` with an existing mtime unit test, and LAN Sync / TT-Sync share one `Arc<Semaphore>` from bootstrap. This is source-level support only; it does not satisfy the final evidence gate's required Android/desktop runtime captures.
+- 2026-05-12: Attempted to add and run a narrow external Rust test for reader-failure interruption safety. Host `cargo test write_file_atomic` failed before crate tests because `glib-2.0.pc` / `gobject-2.0.pc` are missing; Docker `tauritavern-build-base` has those deps but repeated 60-second test runs still timed out during Tauri crate test binary compilation/linking before assertions ran. The exploratory external edits were reverted, leaving `/tmp/codex-tauritavern` clean.
+- 2026-05-12: Installed Android emulator and `system-images;android-35;google_apis;x86_64` into `/tmp/tt-android-sdk` via the existing `tauritavern-android-build-pnpm` Docker image.
+- 2026-05-12: Booted AVD `tt_sync_api35` with Docker `/dev/kvm`, installed `/tmp/TauriTavern-inspect/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk`, launched package `com.tauritavern.client`, and saved adb/install/pid/screenshot/logcat artifacts under `/tmp/tt-sync-android-runtime-evidence`.
+- 2026-05-12: Updated `/tmp/tt-sync-device-evidence-current-audit.json` with Android emulator device id `EMULATOR36X5X11X0`, model `sdk_gphone64_x86_64`, and Android 15 platform evidence. Rerunning final evidence now passes `device coverage`; remaining failures are pairing persistence, live progress, pre-transfer diff UI, conflict UI, Pull mtime, interruption safety, LAN/cloud mutex, Android weak-network visibility, and semantic checks derived from those missing fields.
+- 2026-05-12: Diagnosed the Android black screen as a build-order/package-content issue: prior runtime logcat showed repeated `import('./lib.js')` failures, while `src/lib.js` depends on `src/dist/lib.core.bundle.js`; `pnpm run web:build` generated the missing `src/dist` bundle files.
+- 2026-05-12: Rebuilt a clean x86_64 Android debug APK after generating `src/dist`, removed the temporary generated WebView asset-probe patch from `/tmp/TauriTavern-inspect`, and confirmed the clean APK launches to the real `Welcome to TauriTavern!` UI on Android 15 emulator. Evidence lives under `/tmp/tt-sync-android-runtime-evidence-run5`.
+- 2026-05-12: Refreshed `/tmp/tt-sync-command-report-mobile-build.json` against the clean APK and updated `/tmp/tt-sync-device-evidence-current-audit.json` to reference run5 Android runtime artifacts. The final evidence gate now passes Android device coverage and report consistency, while still failing the genuine remaining runtime evidence requirements: saved phone/desktop pairing, live progress UI, pre-transfer diff UI, conflict UI, Pull mtime, interruption safety, LAN/cloud mutex, Android weak-network visibility, and derived semantic checks.
+- 2026-05-12: Updated `docs/IncrementalCloudSyncPlan.md` to record the x86_64 clean Android APK, run5 emulator UI evidence, and current remote smoke/deploy state without closing the still-missing synchronization runtime evidence.
+- 2026-05-12: Probed the clean Android debug APK through its real WebView Chrome DevTools socket and confirmed `window.__TAURI__.core.invoke` is available in the Android runtime.
+- 2026-05-12: Fixed the Minimal TT-Sync server pairing contract so it now also accepts TauriTavern's v2 `POST /v2/pair/complete?token=...` shape with `device_id`, `device_name`, and `device_pubkey`, returns `server_device_id` / `server_device_name` / `granted_permissions`, and creates UUID server/device ids compatible with TauriTavern's `DeviceId` type.
+- 2026-05-12: Because public `localtunnel` endpoints returned `503 - Tunnel Unavailable` during Android POST requests, ran the product server code inside the Android emulator container behind emulator-local self-signed HTTPS with SPKI pinning at `https://10.0.2.2:9443`. This removed tunnel instability from the runtime probe without faking the Tauri command path.
+- 2026-05-12: Android runtime pairing now succeeds through real `tt_sync_pair`; after app restart, `tt_sync_list_servers` still returns server `f18da39c-9044-43bf-8eef-6babb2cc01ef`, and `/storage/emulated/0/Android/data/com.tauritavern.client/data/default-user/user/lan-sync/tt-sync-v2/paired-servers.json` contains the same server. Evidence is under `/tmp/tt-sync-android-command-probe`.
+- 2026-05-12: Updated `/tmp/tt-sync-device-evidence-current-audit.json` with an `androidRuntimePairingEvidence` section and reran the final evidence gate. It still fails the same 14 runtime evidence checks because desktop pairing, public smoke URL matching, progress/diff/conflict UI, Pull mtime, interruption safety, LAN/cloud mutex, and Android weak-network evidence are not complete.
+- 2026-05-12: Validation passed for the Tauri pairing contract phase: `node tools/test/docs-coverage-run-tests.js`, `npm run check`, `timeout 60s npm test -- --runInBand`, and `git diff --check`.
+- 2026-05-12: Committed the Tauri pairing contract and Android runtime evidence docs as `bd8b53e fix(sync): support TauriTavern pairing contract`; only `.codex-tasks/` remains untracked.
+- 2026-05-12: Launched the Linux desktop release binary `/tmp/TauriTavern-inspect/src-tauri/target/release/tauritavern` in Docker/Xvfb after installing WebKitGTK runtime libraries; `ldd` has no missing libraries.
+- 2026-05-12: Confirmed `WEBKIT_INSPECTOR_HTTP_SERVER=127.0.0.1:9226` exposes the `TauriTavern` target and that `Target.sendMessageToTarget -> Runtime.evaluate` can execute `window.__TAURI__.core.invoke` in the desktop runtime.
+- 2026-05-12: Ran a real desktop `tt_sync_pair` against a container-local self-signed HTTPS Minimal TT-Sync server with SPKI pinning at `https://127.0.0.1:9443`; pairing returned server `7f5a1d00-9efb-4d10-a632-1e0a377eea81`.
+- 2026-05-12: Restarted the desktop app with the same HOME and verified `tt_sync_list_servers` still returns the same server from `/evidence/home-http/.local/share/com.tauritavern.client/data/default-user/user/lan-sync/tt-sync-v2/paired-servers.json`.
+- 2026-05-12: Wrote desktop runtime evidence to `/tmp/tt-sync-desktop-runtime-probe/probe-summary.json` and `/tmp/tt-sync-device-evidence-current-audit.json`. The final phone+desktop pairing gate remains open because Android and desktop captures use local pinned HTTPS endpoints, not the final public smoke URL/server id.
+- 2026-05-12: Updated `docs/IncrementalCloudSyncPlan.md` to record the Linux desktop pairing probe as completed while keeping the final public smoke gap explicit.
+- 2026-05-12: Validation passed after the desktop doc update: `node tools/test/docs-coverage-run-tests.js`, `git diff --check`, and a rerun of `node tools/verify-incremental-cloud-sync-evidence.js --mobile-commands /tmp/tt-sync-command-report-mobile-build.json --desktop-commands /tmp/tt-sync-command-report-desktop-build.json --events /tmp/tt-sync-event-report-codex.json --deploy /tmp/tt-sync-current-deploy-a75.json --smoke /tmp/tt-sync-current-remote-smoke-tunnel.json --device-evidence /tmp/tt-sync-device-evidence-current-audit.json --manifest /tmp/tt-sync-current-failed-final-evidence-report.json --json`, which still fails the same 13 public endpoint/runtime checks.
