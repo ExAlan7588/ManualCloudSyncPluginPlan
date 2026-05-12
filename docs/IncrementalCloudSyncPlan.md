@@ -78,8 +78,8 @@ TT-Sync v2 已經具備很多理想形態：
 仍屬外部交付，不能在此 repo 內驗證完成：
 
 - 手機/電腦 app build command evidence 已用 `/tmp/TauriTavern-inspect` 的 Android `aarch64` debug APK 與 Linux desktop release binary 產生並通過 verifier；仍需真機 runtime evidence 證明這些 build 在實際手機/桌面流程中完成配對、Push/Pull、mtime、互斥與錯誤顯示。
-- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；真實 VPS 上線與網路可達性需以 `npm run smoke:tt-sync-server -- --endpoint <url>` 產生部署環境證據，大資料部署驗證可加上 `--bulk-files` / `--bulk-file-bytes`。
-- 真實端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；全部外部證據需再通過 `npm run verify:incremental-evidence`。
+- Minimal TT-Sync server 已在 repo 內建立並以自動測試驗證；systemd/env 設定可用 `npm run verify:tt-sync-deploy` 檢查；遠端 smoke 已通過，且大資料 first-sync push 已用 HTTPS tunnel commit 335,544,320 bytes；完整 device/VPS Pull、mtime 與弱網路證據仍需外部環境。
+- 真實裝置端到端首同步、mtime 保留、mirror delete、弱網路與 LAN Sync 互斥驗證；全部外部證據需再通過 `npm run verify:incremental-evidence`。
 
 ## 4. 非目標
 
@@ -296,7 +296,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ## 11. 驗證清單
 
-- [x] 首次同步大資料目錄可完成。結果：server test `bulk first sync completes` 覆蓋 128-file first sync fixture，live smoke 也支援 `--bulk-files` / `--bulk-file-bytes` 產生多檔或大檔 HTTP 證據；真實 300MB device/VPS 測試仍需外部環境。
+- [x] 首次同步大資料目錄可完成。結果：server test `bulk first sync completes` 覆蓋 128-file first sync fixture；HTTPS tunnel 大資料 first-sync push plan `fe777e99-aeb9-418f-819f-81fc9056ef3c` 已 commit 128 檔 / 335,544,320 bytes / 637,324ms，後段 Pull 驗證遭 tunnel 503 中斷，因此完整 device/VPS Pull 證據仍需外部環境。
 - [x] 第二次未變更同步不傳檔案。結果：server test `pair, push, pull, and empty diff`。
 - [x] 只新增一個聊天檔時，只傳該檔案。結果：server test `only changed files transfer and bundle endpoints work`。
 - [x] 圖片/附件未變更時不重傳。結果：server test `only changed files transfer and bundle endpoints work`。
