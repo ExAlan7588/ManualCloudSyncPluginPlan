@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+    createProgressTracker,
+    progressRows,
+    resetProgressTracker,
+} from '../../modules/tt-sync-progress.js';
+import {
     backendCommandMissingMessage,
     isTtSyncCommandMissingError,
     normalizeError,
@@ -32,6 +37,7 @@ const tests = [
     ['TT-Sync frontend calls required backend commands', testRequiredCommands],
     ['TT-Sync frontend uses upstream command payloads', testUpstreamCommandPayloads],
     ['TT-Sync conflict UI exposes local and remote choices', testConflictChoiceUi],
+    ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -85,6 +91,37 @@ async function testConflictChoiceUi() {
     assert.ok(source.includes('state.conflictChoices'), 'frontend must track conflict decisions locally');
     assert.ok(source.includes('setConflictDecision(state, conflict, decision)'), 'frontend must update local conflict selection');
     assert.ok(source.includes('renderConflictList(state, state.lastConflictPayload)'), 'frontend must rerender conflict choices after selection');
+}
+
+function testProgressMetrics() {
+    const tracker = createProgressTracker();
+    resetProgressTracker(tracker, 1000);
+    progressRows({
+        bytes_done: 0,
+        bytes_total: 4096,
+        files_done: 0,
+        files_total: 4,
+        phase: 'Downloading',
+    }, tracker, 1000);
+
+    const rows = progressRows({
+        bytes_done: 2048,
+        bytes_total: 4096,
+        current_path: 'default-user/backgrounds/a.jpg',
+        files_done: 2,
+        files_total: 4,
+        phase: 'Downloading',
+    }, tracker, 3000);
+    assertProgressRow(rows, '完成度', '50.0%');
+    assertProgressRow(rows, '速度', '1.0 KB/s');
+    assertProgressRow(rows, '耗時', '2s');
+    assertProgressRow(rows, '剩餘', '2s');
+    assertProgressRow(rows, '目前檔案', 'default-user/backgrounds/a.jpg');
+}
+
+function assertProgressRow(rows, label, expected) {
+    const row = rows.find(item => item.label === label);
+    assert.equal(row?.value, expected, `${label} should be ${expected}`);
 }
 
 function testMissingTtSyncCommandError() {

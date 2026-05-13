@@ -1,4 +1,9 @@
 import { formatBytes } from './format.js';
+import {
+    createProgressTracker,
+    progressRows,
+    resetProgressTracker,
+} from './tt-sync-progress.js';
 
 const TT_COMMANDS = {
     listServers: 'tt_sync_list_servers',
@@ -39,6 +44,7 @@ function createTtSyncController(deps) {
     const state = {
         conflictChoices: new Map(),
         lastConflictPayload: null,
+        progressTracker: createProgressTracker(),
         servers: [],
     };
     return {
@@ -90,7 +96,8 @@ async function runTransfer(deps, state, direction) {
 
     await deps.runAction(`TT-Sync ${directionLabel(direction)} 完成`, async () => {
         resetConflictState(state);
-        renderProgress(submittedProgress(direction));
+        resetProgressTracker(state.progressTracker);
+        renderProgress(submittedProgress(direction), state.progressTracker);
         renderDiffSummary(null);
         renderConflictList(state, null);
         const result = await deps.invokeCommand(TT_COMMANDS[direction], transferArgs());
@@ -107,7 +114,7 @@ async function removeServer(deps, state) {
             serverDeviceId: requireSelectedServerId(),
         });
         renderTransferSummary(null);
-        renderProgress(null);
+        renderProgress(null, state.progressTracker);
         await loadServers(deps, state);
     });
 }
@@ -130,7 +137,7 @@ function installTtSyncEventListeners(deps, state) {
 
     eventListenersInstalled = true;
     void Promise.all([
-        deps.listen(TT_SYNC_EVENTS.progress, event => handleProgressEvent(event?.payload)),
+        deps.listen(TT_SYNC_EVENTS.progress, event => handleProgressEvent(state, event?.payload)),
         deps.listen(TT_SYNC_EVENTS.completed, event => handleCompletedEvent(deps, state, event?.payload)),
         deps.listen(TT_SYNC_EVENTS.diff, event => handleDiffEvent(state, event?.payload)),
         deps.listen(TT_SYNC_EVENTS.conflict, event => handleConflictEvent(state, event?.payload)),
@@ -141,14 +148,14 @@ function installTtSyncEventListeners(deps, state) {
     });
 }
 
-function handleProgressEvent(payload) {
-    renderProgress(payload);
+function handleProgressEvent(state, payload) {
+    renderProgress(payload, state.progressTracker);
     renderTtStatus(progressStatus(payload));
 }
 
 function handleCompletedEvent(deps, state, payload) {
     renderTransferArtifacts(state, payload);
-    renderProgress(payload);
+    renderProgress(payload, state.progressTracker);
     renderTtStatus(`TT-Sync ${directionLabel(payload?.direction)} 完成`);
     void loadServers(deps, state).catch(error => {
         renderTtStatus(`TT-Sync 服務端列表更新失敗：${errorMessage(error)}`);
@@ -170,7 +177,7 @@ function handleConflictEvent(state, payload) {
 }
 
 function handleErrorEvent(payload) {
-    renderProgress(payload);
+    renderProgress(payload, createProgressTracker());
     renderTtStatus(`TT-Sync ${directionLabel(payload?.direction)} 失敗：${errorMessage(payload?.message)}`);
 }
 
@@ -231,7 +238,7 @@ function renderTransferSummary(result) {
     }
 }
 
-function renderProgress(progress) {
+function renderProgress(progress, tracker = createProgressTracker()) {
     const container = document.getElementById('mcs_tts_progress');
     container.replaceChildren();
     if (!progress) {
@@ -239,7 +246,7 @@ function renderProgress(progress) {
         return;
     }
 
-    for (const row of progressRows(progress)) {
+    for (const row of progressRows(progress, tracker)) {
         container.appendChild(metricElement(row.label, row.value));
     }
 }
@@ -298,15 +305,6 @@ function diffSummaryRows(payload) {
         { label: '下載大小', value: formatOptionalBytes(firstValue(summary, ['downloadBytes', 'download_bytes'])) },
         { label: '刪除檔案', value: formatOptionalCount(firstValue(summary, ['deleteFiles', 'delete_files'])) },
         { label: '衝突檔案', value: formatOptionalCount(firstValue(summary, ['conflictFiles', 'conflict_files'])) },
-    ];
-}
-
-function progressRows(progress) {
-    return [
-        { label: 'phase', value: stringValue(firstValue(progress, ['phase', 'stage'])) },
-        { label: 'files', value: progressPair(progress, ['files_done', 'filesDone', 'filesTransferred', 'completedFiles'], ['files_total', 'filesTotal', 'totalFiles', 'fileTotal']) },
-        { label: 'bytes', value: bytesPair(progress, ['bytes_done', 'bytesDone', 'bytesTransferred', 'completedBytes'], ['bytes_total', 'bytesTotal', 'totalBytes', 'byteTotal']) },
-        { label: '目前檔案', value: stringValue(firstValue(progress, ['current_path', 'currentPath', 'currentFile'])) },
     ];
 }
 
@@ -550,24 +548,6 @@ function formatOptionalCount(value) {
 function formatOptionalBytes(value) {
     const number = Number(value);
     return Number.isFinite(number) ? formatBytes(number) : EMPTY_VALUE;
-}
-
-function progressPair(progress, completedKeys, totalKeys) {
-    const completed = firstValue(progress, completedKeys);
-    const total = firstValue(progress, totalKeys);
-    if (completed === undefined && total === undefined) {
-        return EMPTY_VALUE;
-    }
-    return `${formatOptionalCount(completed)} / ${formatOptionalCount(total)}`;
-}
-
-function bytesPair(progress, completedKeys, totalKeys) {
-    const completed = firstValue(progress, completedKeys);
-    const total = firstValue(progress, totalKeys);
-    if (completed === undefined && total === undefined) {
-        return EMPTY_VALUE;
-    }
-    return `${formatOptionalBytes(completed)} / ${formatOptionalBytes(total)}`;
 }
 
 function directionLabel(direction) {
