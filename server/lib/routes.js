@@ -1,6 +1,7 @@
 import { decodePath, safeName } from './encoding.js';
 import { badRequest, HttpError, notFound } from './http-error.js';
 import { buildPullPlan, buildPushPlan } from './planner.js';
+import { pipeFileToResponse } from './stream-io.js';
 import {
     isTauriPlanRequest,
     isTauriPairingRequest,
@@ -201,19 +202,20 @@ async function handlePlanEvents(context, url) {
 
 async function downloadPlanFile(context, plan, syncPath) {
     const entry = findPlanEntry(plan.downloads, syncPath);
-    const buffer = await context.storage.readRemoteFile(plan.namespace, entry);
+    const filePath = context.storage.remoteFilePath(plan.namespace, entry.path);
+    const fileStat = await context.storage.remoteFileStat(plan.namespace, entry);
     context.response.writeHead(200, {
-        'Content-Length': buffer.length,
+        'Content-Length': fileStat.size,
         'Content-Type': BINARY_TYPE,
         'Last-Modified': new Date(entry.modifiedMs).toUTCString(),
         'X-TT-Sync-Modified-Ms': String(entry.modifiedMs),
     });
-    context.response.end(buffer);
+    await pipeFileToResponse({ filePath, response: context.response });
 }
 
 async function uploadPlanFile(context, plan, syncPath) {
     const entry = findPlanEntry(plan.uploads, syncPath);
-    await context.storage.stageFile(plan, entry, await readRawBody(context.request));
+    await context.storage.stageFileStream(plan, entry, context.request, maxBodyBytes());
     sendJson(context.response, { ok: true, path: syncPath });
 }
 

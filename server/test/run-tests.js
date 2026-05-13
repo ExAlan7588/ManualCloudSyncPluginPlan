@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { Readable } from 'node:stream';
 import { encodePath } from '../lib/encoding.js';
 import { sha256 } from '../lib/manifest.js';
 import { buildPairingUri, startServer } from '../tt-sync-server.js';
@@ -9,12 +10,14 @@ import { buildPairingUri, startServer } from '../tt-sync-server.js';
 const TEST_TOKEN = 'test-pairing-token';
 const FILE_PATH = 'default-user/chats/example.jsonl';
 const IMAGE_PATH = 'default-user/files/avatar.png';
+const STREAM_INVALID_PATH = 'default-user/chats/stream-invalid.jsonl';
 const BASE_MTIME = 1778500000000;
 const BULK_FILE_COUNT = 128;
 
 const tests = [
     ['pair, push, pull, and empty diff', testPushPullEmptyDiff],
     ['only changed files transfer and bundle endpoints work', testChangedFilesAndBundle],
+    ['single file transfer streams without buffered route body', testStreamingSingleFileTransfer],
     ['bundle upload validates file payload', testBundleValidatesFilePayload],
     ['bulk first sync completes', testBulkFirstSync],
     ['uncommitted push plan does not delete remote files', testUncommittedPushKeepsRemote],
@@ -133,6 +136,25 @@ async function testChangedFilesAndBundle() {
         const pullPlan = await pullPlanFor(context, pair, []);
         const bundle = await getBundle(context, pullPlan.id, pair.authToken);
         assert.deepEqual(bundle.files.map(file => file.path).sort(), [FILE_PATH, IMAGE_PATH].sort());
+    });
+}
+
+async function testStreamingSingleFileTransfer() {
+    await withServer(async context => {
+        const pair = await pairDevice(context);
+        const content = 'streamed-content';
+        const entry = entryForPath(FILE_PATH, content, BASE_MTIME);
+        const plan = await pushPlan({ baseManifest: [], context, localManifest: [entry], pair });
+        await putFileStream({ content, context, planId: plan.id, syncPath: FILE_PATH, token: pair.authToken });
+        await postJson({ context, route: `/v2/plans/${plan.id}/commit`, body: {}, token: pair.authToken });
+        const downloaded = await getFile({ context, planId: (await pullPlanFor(context, pair, [])).id, syncPath: FILE_PATH, token: pair.authToken });
+        assert.equal(downloaded.text, content);
+        const invalidEntry = entryForPath(STREAM_INVALID_PATH, content, BASE_MTIME);
+        const invalidPlan = await pushPlan({ baseManifest: [], context, localManifest: [invalidEntry], pair });
+        await assert.rejects(
+            putFileStream({ content: `${content}-too-large`, context, planId: invalidPlan.id, syncPath: invalidEntry.path, token: pair.authToken }),
+            /Uploaded size does not match manifest/,
+        );
     });
 }
 
@@ -419,6 +441,16 @@ async function getJson(options) {
 async function putFile(options) {
     const response = await fetch(`${options.context.baseUrl}/v2/plans/${options.planId}/files/${encodePath(options.syncPath)}`, {
         body: Buffer.from(options.content),
+        headers: requestHeaders(options.token, 'application/octet-stream'),
+        method: 'PUT',
+    });
+    await parseJsonResponse(response);
+}
+
+async function putFileStream(options) {
+    const response = await fetch(`${options.context.baseUrl}/v2/plans/${options.planId}/files/${encodePath(options.syncPath)}`, {
+        body: Readable.from([Buffer.from(options.content)]),
+        duplex: 'half',
         headers: requestHeaders(options.token, 'application/octet-stream'),
         method: 'PUT',
     });

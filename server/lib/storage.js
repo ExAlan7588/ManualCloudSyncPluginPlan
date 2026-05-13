@@ -1,9 +1,11 @@
-import { mkdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, stat, utimes } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { encodePath, safeName } from './encoding.js';
 import { forbidden, notFound, serverError, unauthorized } from './http-error.js';
 import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
+import { readJson, uploadEntry, validateStagedBuffer, writeFileAtomic, writeJsonAtomic } from './storage-io.js';
+import { writeRequestStreamAtomic } from './stream-io.js';
 
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -148,6 +150,37 @@ export class TtSyncStorage {
             const updated = { ...latest, staged };
             await this.writePlan(updated);
             return updated;
+        });
+    }
+
+    async stageFileStream(plan, entry, stream, maxBytes) {
+        const latest = await this.readPlan(plan.id);
+        const latestEntry = uploadEntry(latest, entry.path);
+        const result = await writeRequestStreamAtomic({
+            expectedBytes: Number(latestEntry.sizeBytes),
+            expectedSha256: latestEntry.sha256 || '',
+            filePath: this.stagedFilePath(latest.id, latestEntry.path),
+            maxBytes,
+            stream,
+            syncPath: latestEntry.path,
+        });
+        return this.withPlanLock(plan.id, async () => {
+            const locked = await this.readPlan(plan.id);
+            const lockedEntry = uploadEntry(locked, latestEntry.path);
+            const staged = { ...(locked.staged || {}) };
+            staged[lockedEntry.path] = result;
+            const updated = { ...locked, staged };
+            await this.writePlan(updated);
+            return updated;
+        });
+    }
+
+    async remoteFileStat(namespace, entry) {
+        return stat(this.remoteFilePath(namespace, entry.path)).catch(error => {
+            if (error.code === 'ENOENT') {
+                throw notFound(`Remote file not found: ${entry.path}`);
+            }
+            throw error;
         });
     }
 
@@ -381,45 +414,6 @@ export class TtSyncStorage {
         }
         await this.writeNamespace(plan.namespace, record);
     }
-}
-
-async function readJson(filePath, fallback) {
-    try {
-        return JSON.parse(await readFile(filePath, 'utf8'));
-    } catch (error) {
-        if (error.code === 'ENOENT' && fallback !== undefined) {
-            return fallback;
-        }
-        throw error;
-    }
-}
-
-async function writeJsonAtomic(filePath, value) {
-    await writeFileAtomic(filePath, `${JSON.stringify(value, null, 2)}\n`);
-}
-
-async function writeFileAtomic(filePath, value) {
-    await mkdir(path.dirname(filePath), { recursive: true });
-    const tmpPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
-    await writeFile(tmpPath, value);
-    await rename(tmpPath, filePath);
-}
-
-function validateStagedBuffer(entry, buffer) {
-    if (buffer.length !== Number(entry.sizeBytes)) {
-        throw forbidden(`Uploaded size does not match manifest for ${entry.path}`);
-    }
-    if (entry.sha256 && sha256(buffer) !== entry.sha256) {
-        throw forbidden(`Uploaded sha256 does not match manifest for ${entry.path}`);
-    }
-}
-
-function uploadEntry(plan, syncPath) {
-    const entry = plan.uploads.find(item => item.path === syncPath);
-    if (!entry) {
-        throw notFound(`Path is not part of this plan: ${syncPath}`);
-    }
-    return entry;
 }
 
 function assertPairingToken(actual, expected) {
