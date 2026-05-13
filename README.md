@@ -71,12 +71,12 @@ TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/Ta
 
 ## 增量 TT-Sync 使用方式
 
-1. 在 VPS 或同網路主機啟動 TT-Sync v2 服務。
-2. 取得服務端配對 URI。
-3. 在 `增量 TT-Sync` 面板填入配對 URI 後按「配對」。
-4. 按「刷新服務端」確認已保存的服務端。
+1. 在 VPS 或同網路主機啟動 TT-Sync v2 服務，並讓手機與電腦都能連到同一個 HTTPS 公開 URL。
+2. 設定同一組服務端配對 token，產生 TauriTavern App 可用的配對 URI。
+3. 在插件的 `增量 TT-Sync` 面板填入配對 URI 後按「配對」。
+4. 按「刷新服務端」確認已保存的服務端；手機與電腦都要各自配對一次。
 5. 選擇 `Incremental` 或 `Mirror` 同步模式。
-6. 按 `Push` 或 `Pull` 執行同步。
+6. 要把目前裝置的變更送上服務端時按 `Push`；要把服務端變更套到目前裝置時按 `Pull`。
 
 目前上游 TauriTavern command surface 沒有獨立 dry-run diff command；插件不呼叫不存在的 `tt_sync_check_diff`，也不會用 fake summary 模擬成功。這個插件只負責 UI 與 command 呼叫；manifest 掃描、plan、原子寫入、mtime 保留、mirror delete、mutex 與 commit 必須由 TauriTavern TT-Sync 後端實作。
 
@@ -90,12 +90,75 @@ TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:server
 TT_SYNC_PAIRING_TOKEN='change-me' npm run tt-sync:pair
 ```
 
+本機快速測試時，上面會啟動 `http://127.0.0.1:8787`，並印出 Minimal smoke client 使用的 `tt-sync://pair?...` URI。這個 URI 可給本 repo 的 smoke verifier 使用；TauriTavern App 插件面板要填的是 TauriTavern 後端認得的 `tauritavern://tt-sync/pair?...` URI，格式如下：
+
+```text
+tauritavern://tt-sync/pair?v=2&url=https%3A%2F%2Fsync.example.com&token=<pairing-token>&exp=<unix-ms>&spki=<base64url-spki-pin>
+```
+
+欄位含義：
+
+- `url`：TT-Sync server 的公開 HTTPS URL，必須和 `TT_SYNC_PUBLIC_URL`、smoke verifier 的 `--endpoint` 一致。
+- `token`：服務端 `TT_SYNC_PAIRING_TOKEN`，用來完成一次配對；請用足夠長的隨機字串。
+- `exp`：配對 URI 過期時間，Unix milliseconds；TauriTavern 後端會拒絕過期 URI。
+- `spki`：HTTPS 憑證的 SPKI SHA-256 base64url pin；TauriTavern 用它確認連到的是預期服務端。
+
+產生 App 配對 URI 的一個可重複範例：
+
+```bash
+export TT_SYNC_PUBLIC_URL='https://sync.example.com'
+export TT_SYNC_PAIRING_TOKEN="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
+
+host="$(node -e 'console.log(new URL(process.env.TT_SYNC_PUBLIC_URL).hostname)')"
+port="$(node -e 'const url = new URL(process.env.TT_SYNC_PUBLIC_URL); console.log(url.port || "443")')"
+spki="$(
+    echo | openssl s_client -servername "$host" -connect "$host:$port" 2>/dev/null \
+        | openssl x509 -pubkey -noout \
+        | openssl pkey -pubin -outform der \
+        | openssl dgst -sha256 -binary \
+        | base64 | tr '+/' '-_' | tr -d '='
+)"
+
+SPKI="$spki" node -e '
+const url = new URL("tauritavern://tt-sync/pair");
+url.searchParams.set("v", "2");
+url.searchParams.set("url", process.env.TT_SYNC_PUBLIC_URL);
+url.searchParams.set("token", process.env.TT_SYNC_PAIRING_TOKEN);
+url.searchParams.set("exp", String(Date.now() + 10 * 60 * 1000));
+url.searchParams.set("spki", process.env.SPKI);
+console.log(url.toString());
+'
+```
+
+同一組 `TT_SYNC_PAIRING_TOKEN` 也要放進服務端環境變數；否則 App 端送到 `/v2/pair/complete?token=...` 時會被服務端拒絕。配對完成後，TauriTavern 後端會保存服務端 ID、URL、裝置 key 與授權資訊，後續 `Push` / `Pull` 不再靠前端 localStorage 保存同步憑證。
+
+在手機與電腦各打開一次插件，將同一條 `tauritavern://tt-sync/pair?...` 貼到 `配對 URI` 後按「配對」。配對成功後按「刷新服務端」，下拉選單應看到同一個服務端 URL。之後其中一台按 `Push` 上傳變更，另一台按 `Pull` 下載變更。
+
+如果只是要驗證 Minimal server 本身，不需要 TauriTavern App，也可以直接用 smoke verifier 走 `tt-sync://pair?...` 流程：
+
+```bash
+npm run smoke:tt-sync-server -- --endpoint https://sync.example.com --pairing-token "$TT_SYNC_PAIRING_TOKEN" --manifest /tmp/tt-sync-smoke-report.json
+```
+
+若要用 PM2 跑服務端，可在部署目錄設定 env 後啟動 Node 入口：
+
+```bash
+TT_SYNC_DATA_DIR=/var/lib/manual-cloud-tt-sync \
+TT_SYNC_HOST=127.0.0.1 \
+TT_SYNC_PORT=8787 \
+TT_SYNC_PUBLIC_URL=https://sync.example.com \
+TT_SYNC_PAIRING_TOKEN='<strong-random-token>' \
+pm2 start server/tt-sync-server.js --name manual-cloud-tt-sync -- serve
+```
+
+PM2 只負責把服務掛起來；手機通常不能直接連 VPS 的 `127.0.0.1:8787`。請在外層用 Nginx、Caddy、Cloudflare Tunnel 或 Tailscale Serve 提供 HTTPS，並把公開 URL 寫入 `TT_SYNC_PUBLIC_URL`。
+
 主要環境變數：
 
 - `TT_SYNC_DATA_DIR`：資料目錄，預設 `.tt-sync-data`
 - `TT_SYNC_HOST`：監聽位址，預設 `127.0.0.1`
 - `TT_SYNC_PORT`：監聽 port，預設 `8787`
-- `TT_SYNC_PUBLIC_URL`：產生配對 URI 時使用的公開 URL
+- `TT_SYNC_PUBLIC_URL`：產生配對 URI 時使用的公開 URL；真機使用時應是 HTTPS
 - `TT_SYNC_PAIRING_TOKEN`：配對必填 token
 - `TT_SYNC_ACCOUNT_USERNAME`：帳號登入使用者名稱
 - `TT_SYNC_ACCOUNT_PASSWORD`：帳號登入密碼

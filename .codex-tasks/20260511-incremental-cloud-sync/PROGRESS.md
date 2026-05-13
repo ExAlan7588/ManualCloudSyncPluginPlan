@@ -422,3 +422,6 @@
 
 - 2026-05-13: Added a symlink from `/opt/Luker/public/scripts/extensions/third-party/ManualCloudSyncPluginPlan` to this repo; no PM2 restart, Docker, real Tauri runtime, sync command, large sync, or data-root scan was performed.
 - 2026-05-13: Luker HTTP session login as `default-user` succeeded, `/api/extensions/discover` lists `third-party/ManualCloudSyncPluginPlan`, and plugin static resources plus settings panel markers returned 200. Evidence saved at `/tmp/manual-cloud-sync-luker-evidence.json`.
+- 2026-05-13: Luker web runtime loading support was validated with syntax checks, frontend TT-Sync tests, full `npm run check`, `timeout 60s npm test`, and `git diff --check`; committed as `1a8be9a fix(sync): support Luker web runtime loading` and pushed to `origin/main`.
+- 2026-05-13: README now documents the practical TT-Sync service flow: run Minimal server, expose it through HTTPS, set `TT_SYNC_PUBLIC_URL` / `TT_SYNC_PAIRING_TOKEN`, generate the TauriTavern `tauritavern://tt-sync/pair?...` URI with `exp` and SPKI pin, pair each device in the plugin panel, then use Push/Pull.
+- 2026-05-13: The README explicitly distinguishes the Minimal server smoke URI `tt-sync://pair?...` from the TauriTavern App pairing URI `tauritavern://tt-sync/pair?...`, so the plugin UI is not documented with the wrong URI scheme.
