@@ -8,6 +8,8 @@ import {
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 
 const SETTINGS_HTML = new URL('../../settings.html', import.meta.url);
+const DATA_MIGRATION_MODULE = new URL('../../modules/data-migration.js', import.meta.url);
+const INDEX_MODULE = new URL('../../index.js', import.meta.url);
 const TT_SYNC_MODULE = new URL('../../modules/tt-sync.js', import.meta.url);
 
 const REQUIRED_TT_SYNC_IDS = Object.freeze([
@@ -31,6 +33,7 @@ const tests = [
     ['TT-Sync frontend uses upstream command payloads', testUpstreamCommandPayloads],
     ['TT-Sync conflict UI exposes local and remote choices', testConflictChoiceUi],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
+    ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
 
 for (const [name, test] of tests) {
@@ -98,4 +101,26 @@ function testMissingTtSyncCommandError() {
 
     const cloudSyncMessage = backendCommandMissingMessage(new Error('Command cloud_sync_upload_now not found'));
     assert.notEqual(cloudSyncMessage, expectedMessage, 'cloud sync missing commands must keep separate messaging');
+}
+
+async function testNoLoadTimeRuntimeHardDependencies() {
+    const source = await readFile(INDEX_MODULE, 'utf8');
+    assert.equal(
+        source.includes("import { invoke } from '/tauri-bridge.js'"),
+        false,
+        'frontend must not fail module loading when /tauri-bridge.js is absent',
+    );
+    assert.ok(source.includes("import('/tauri-bridge.js')"), 'Tauri bridge must be loaded on demand');
+    assert.ok(source.includes('Command ${command} not found'), 'missing bridge must surface as explicit command failure');
+
+    const dataMigrationSource = await readFile(DATA_MIGRATION_MODULE, 'utf8');
+    assert.equal(
+        dataMigrationSource.includes("import { isAndroidRuntime, isIosRuntime } from '/scripts/util/mobile-runtime.js'"),
+        false,
+        'frontend must not fail module loading when Tauri mobile runtime helper is absent',
+    );
+    assert.ok(
+        dataMigrationSource.includes("import('/scripts/util/mobile-runtime.js')"),
+        'mobile runtime helper must be loaded on demand',
+    );
 }

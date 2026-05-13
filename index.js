@@ -1,4 +1,3 @@
-import { invoke } from '/tauri-bridge.js';
 import { renderExtensionTemplateAsync } from '/scripts/extensions.js';
 import { Popup } from '/scripts/popup.js';
 import {
@@ -54,6 +53,8 @@ const state = {
     mode: MODE_NATIVE,
 };
 
+let tauriBridgePromise = null;
+
 function resolveModuleName(moduleUrl) {
     const extensionPath = new URL(moduleUrl).pathname.replace(/\\/g, '/');
     const marker = '/scripts/extensions/';
@@ -81,7 +82,7 @@ function setBusy(busy) {
 
 async function invokeCommand(command, args) {
     try {
-        return await invoke(command, args);
+        return await invokeViaTauriBridge(command, args);
     } catch (error) {
         const commandMissingMessage = backendCommandMissingMessage(error);
         if (commandMissingMessage) {
@@ -90,6 +91,52 @@ async function invokeCommand(command, args) {
 
         throw new Error(normalizeError(error));
     }
+}
+
+async function invokeViaTauriBridge(command, args) {
+    const invoke = await resolveTauriInvoke(command);
+    return invoke(command, args);
+}
+
+async function resolveTauriInvoke(command) {
+    const globalInvoke = window.__TAURI__?.core?.invoke;
+    if (typeof globalInvoke === 'function') {
+        return globalInvoke.bind(window.__TAURI__.core);
+    }
+
+    try {
+        const bridge = await loadTauriBridge();
+        if (typeof bridge.invoke === 'function') {
+            return bridge.invoke;
+        }
+    } catch (error) {
+        throw missingTauriCommand(command, error);
+    }
+
+    throw missingTauriCommand(command, new Error('Tauri bridge does not export invoke'));
+}
+
+async function loadTauriBridge() {
+    if (!tauriBridgePromise) {
+        tauriBridgePromise = import('/tauri-bridge.js').catch(error => {
+            tauriBridgePromise = null;
+            throw error;
+        });
+    }
+
+    return tauriBridgePromise;
+}
+
+function missingTauriCommand(command, cause) {
+    return new Error(`Command ${command} not found: Tauri bridge unavailable (${errorMessage(cause)})`);
+}
+
+function errorMessage(error) {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    return String(error || 'unknown error');
 }
 
 async function loadConfig() {

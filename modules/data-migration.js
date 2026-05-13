@@ -1,4 +1,3 @@
-import { isAndroidRuntime, isIosRuntime } from '/scripts/util/mobile-runtime.js';
 import {
     JOB_POLL_INTERVAL_MS,
     JSON_CONTENT_TYPE,
@@ -6,6 +5,8 @@ import {
 } from './constants.js';
 import { normalizeError, readFailureMessage } from './errors.js';
 import { formatProgress } from './format.js';
+
+let mobileRuntimePromise = null;
 
 export async function runCompatExportToFile(context) {
     const jobId = await startDataArchiveExportJob();
@@ -46,14 +47,47 @@ async function startDataArchiveExportJob() {
 }
 
 async function saveDataArchiveExport(jobId) {
-    if (isAndroidRuntime()) {
+    const runtime = await resolveMobileRuntime();
+    if (runtime.isAndroidRuntime()) {
         return postDataArchiveSave('/api/extensions/data-migration/export/android/save', jobId);
     }
-    if (isIosRuntime()) {
+    if (runtime.isIosRuntime()) {
         return shareIosDataArchive(jobId);
     }
 
     return postDataArchiveSave('/api/extensions/data-migration/export/save', jobId);
+}
+
+async function resolveMobileRuntime() {
+    try {
+        const module = await loadMobileRuntimeModule();
+        return {
+            isAndroidRuntime: requireRuntimeFunction(module, 'isAndroidRuntime'),
+            isIosRuntime: requireRuntimeFunction(module, 'isIosRuntime'),
+        };
+    } catch (error) {
+        throw new Error(`資料遷移匯出需要 TauriTavern runtime helper：${normalizeError(error)}`);
+    }
+}
+
+async function loadMobileRuntimeModule() {
+    if (!mobileRuntimePromise) {
+        mobileRuntimePromise = import('/scripts/util/mobile-runtime.js').catch(error => {
+            mobileRuntimePromise = null;
+            throw error;
+        });
+    }
+
+    return mobileRuntimePromise;
+}
+
+function requireRuntimeFunction(module, name) {
+    const fn = module?.[name];
+    if (typeof fn !== 'function') {
+        throw new Error(`mobile-runtime.js 缺少 ${name}`);
+    }
+
+    return fn;
 }
 
 async function postDataArchiveSave(url, jobId) {
