@@ -10,6 +10,7 @@
 - WebDAV：Basic 帳密或 Bearer Token。
 - S3 相容儲存：含 Path Style 模式。
 - TT-Sync 配對、服務端列表、Push、Pull、解除配對入口。
+- TT-Sync 帳號登入、短效配對 URI 產生、裝置列表與同步歷史入口。
 - 增量同步進度欄位：phase、檔案數、bytes、目前檔案。
 - 增量同步完成摘要：方向、檔案數、bytes、刪除檔案。
 - 手動上傳完整資料封存。
@@ -72,8 +73,8 @@ TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/Ta
 ## 增量 TT-Sync 使用方式
 
 1. 在 VPS 或同網路主機啟動 TT-Sync v2 服務，並讓手機與電腦都能連到同一個 HTTPS 公開 URL。
-2. 設定同一組服務端配對 token，產生 TauriTavern App 可用的配對 URI。
-3. 在插件的 `增量 TT-Sync` 面板填入配對 URI 後按「配對」。
+2. 設定同一組服務端配對 token，或設定帳號登入環境變數後由插件產生短效配對 URI。
+3. 在插件的 `增量 TT-Sync` 面板登入帳號並產生配對 URI，或手動填入既有配對 URI 後按「配對」。
 4. 按「刷新服務端」確認已保存的服務端；手機與電腦都要各自配對一次。
 5. 選擇 `Incremental` 或 `Mirror` 同步模式。
 6. 要把目前裝置的變更送上服務端時按 `Push`；要把服務端變更套到目前裝置時按 `Pull`。
@@ -162,6 +163,15 @@ PM2 只負責把服務掛起來；手機通常不能直接連 VPS 的 `127.0.0.1
 - `TT_SYNC_PAIRING_TOKEN`：配對必填 token
 - `TT_SYNC_ACCOUNT_USERNAME`：帳號登入使用者名稱
 - `TT_SYNC_ACCOUNT_PASSWORD`：帳號登入密碼
+
+帳號式同步服務的最小流程：
+
+1. 在 Minimal server env 設定 `TT_SYNC_PUBLIC_URL`、`TT_SYNC_ACCOUNT_USERNAME`、`TT_SYNC_ACCOUNT_PASSWORD` 與 `TT_SYNC_PAIRING_TOKEN`。
+2. 在插件 `帳號式同步服務` 區塊填入服務端 URL、namespace、帳號、密碼與 SPKI pin。
+3. 按「登入」取得 access/refresh token；token 只存在目前插件頁面記憶體，不寫入 repo source。
+4. 按「產生配對 URI」呼叫 `POST /v2/account/pairing-uri`，服務端會建立 10 分鐘短效一次性 pairing token，並回傳 `tauritavern://tt-sync/pair?...` URI。
+5. 插件會把這條 URI 填入既有 `配對 URI` 欄位，再按「配對」走 TauriTavern 的 `tt_sync_pair`，由 App 後端保存 server id、裝置 key 與同步授權。
+6. 「刷新帳號資料」會查 `/v2/devices` 與 `/v2/history`，用來確認裝置最後同步時間與同步歷史。
 
 Minimal server 會在 `/v2/plans/{plan_id}/events` 提供 SSE progress event，內容包含 phase、files、bytes 與目前路徑；檔案下載會回傳 `X-TT-Sync-Modified-Ms`，讓 TauriTavern 後端可保留 mtime。服務端契約與儲存格式請看：[docs/MinimalTtSyncServer.md](docs/MinimalTtSyncServer.md)。systemd 範本在：[deploy/systemd/manual-cloud-tt-sync.service](deploy/systemd/manual-cloud-tt-sync.service)，env 範例在：[deploy/systemd/manual-cloud-tt-sync.env.example](deploy/systemd/manual-cloud-tt-sync.env.example)。
 

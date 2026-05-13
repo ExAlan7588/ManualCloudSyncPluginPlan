@@ -29,11 +29,11 @@ Environment variables:
 | `TT_SYNC_HOST` | no | `127.0.0.1` | Host for the HTTP listener. |
 | `TT_SYNC_PORT` | no | `8787` | Port for the HTTP listener. |
 | `TT_SYNC_PUBLIC_URL` | no | listener URL | Public URL embedded in generated pairing URIs. |
-| `TT_SYNC_PAIRING_TOKEN` | yes for pairing | none | Token required by `POST /v2/pair/complete`. |
+| `TT_SYNC_PAIRING_TOKEN` | yes for static pairing and smoke tests | none | Static pairing token accepted by `POST /v2/pair/complete`; account login can mint shorter one-time tokens. |
 | `TT_SYNC_ACCOUNT_USERNAME` | yes for login | none | Account username for `POST /v2/account/login`. |
 | `TT_SYNC_ACCOUNT_PASSWORD` | yes for login | none | Account password for `POST /v2/account/login`. |
 
-If `TT_SYNC_PAIRING_TOKEN` is missing, pairing fails with an explicit 500 error. Existing authenticated namespaces can still use non-pairing endpoints.
+If `TT_SYNC_PAIRING_TOKEN` is missing, static pairing fails with an explicit 500 error. Existing authenticated namespaces can still use account endpoints and previously opened sync sessions.
 
 ## Deployment Verification
 
@@ -101,6 +101,8 @@ Authorization: Bearer <namespace auth token>
 The minimal server stores one auth token per namespace. Pairing creates the namespace if needed and returns the namespace auth token to the trusted TauriTavern backend.
 
 Account login creates expiring access and refresh tokens stored in `namespace.json`. Authenticated endpoints accept either the namespace auth token or a live account access token.
+
+`POST /v2/account/pairing-uri` lets an authenticated account create a 10-minute one-time TauriTavern pairing URI. The response contains `pairingUri`, `expiresAt`, and `namespace`; it does not duplicate the token outside the URI. Once a device completes `/v2/pair/complete`, that one-time token is consumed and cannot be reused.
 
 ## Manifest Entry
 
@@ -200,6 +202,32 @@ Body:
 ```
 
 Returns a replacement access/refresh token pair.
+
+### `POST /v2/account/pairing-uri`
+
+Requires `Authorization: Bearer <account access token>`.
+
+Body:
+
+```json
+{
+  "endpoint": "https://sync.example.com",
+  "namespace": "default",
+  "spki": "base64url-spki-pin"
+}
+```
+
+Response:
+
+```json
+{
+  "expiresAt": "2026-05-13T16:00:00.000Z",
+  "namespace": "default",
+  "pairingUri": "tauritavern://tt-sync/pair?v=2&url=..."
+}
+```
+
+The generated URI can be pasted into the plugin's existing TT-Sync pairing field. The server enables CORS for these account endpoints so the Luker-hosted plugin panel can call them directly.
 
 ### `GET /v2/devices?namespace=default`
 

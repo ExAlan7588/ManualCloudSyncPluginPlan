@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { generateKeyPairSync } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -11,8 +12,12 @@ const TEST_USERNAME = 'test-user';
 const TEST_PASSWORD = 'test-password';
 const FILE_PATH = 'default-user/chats/example.jsonl';
 const BASE_MTIME = 1778500000000;
+const TEST_ENDPOINT = 'https://sync.example.test';
+const TEST_SPKI = 'abcDEF_123';
+const TAURI_DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 await testAccountDeviceHistoryRollback();
+await testAccountPairingUri();
 console.log('ok - account device history and rollback endpoints work');
 
 async function testAccountDeviceHistoryRollback() {
@@ -31,6 +36,43 @@ async function testAccountDeviceHistoryRollback() {
         const downloaded = await getFile({ context, planId: pullPlan.id, syncPath: FILE_PATH, token: pair.authToken });
         assert.equal(downloaded.text, 'hello');
     });
+}
+
+async function testAccountPairingUri() {
+    await withServer(async context => {
+        const account = await loginAccount(context);
+        const created = await createPairingUri(context, account.accessToken);
+        assert.equal(created.pairingToken, undefined);
+        const uri = new URL(created.pairingUri);
+        assert.equal(uri.protocol, 'tauritavern:');
+        assert.equal(uri.searchParams.get('url'), TEST_ENDPOINT);
+        assert.equal(uri.searchParams.get('spki'), TEST_SPKI);
+        assert.ok(Date.parse(created.expiresAt) > Date.now(), 'pairing URI must expire in the future');
+
+        const token = uri.searchParams.get('token');
+        const paired = await pairTauriDevice(context, token);
+        assert.equal(paired.server_device_name, 'Minimal TT-Sync');
+        await assertCorsPreflight(context);
+        await postJsonExpectError({
+            body: tauriPairBody(),
+            context,
+            route: `/v2/pair/complete?token=${token}`,
+            status: 401,
+        });
+    });
+}
+
+async function assertCorsPreflight(context) {
+    const response = await fetch(`${context.baseUrl}/v2/account/login`, {
+        headers: {
+            'Access-Control-Request-Headers': 'authorization, content-type',
+            'Access-Control-Request-Method': 'POST',
+            Origin: 'https://luker.example.test',
+        },
+        method: 'OPTIONS',
+    });
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get('access-control-allow-origin'), '*');
 }
 
 async function withServer(callback) {
@@ -65,6 +107,41 @@ async function refreshAccountToken(context, refreshToken) {
         context,
         route: '/v2/account/token/refresh',
     });
+}
+
+async function createPairingUri(context, token) {
+    return postJson({
+        body: {
+            endpoint: TEST_ENDPOINT,
+            namespace: 'default',
+            spki: TEST_SPKI,
+        },
+        context,
+        route: '/v2/account/pairing-uri',
+        token,
+    });
+}
+
+async function pairTauriDevice(context, token) {
+    return postJson({
+        body: tauriPairBody(),
+        context,
+        route: `/v2/pair/complete?token=${token}`,
+    });
+}
+
+function tauriPairBody() {
+    return {
+        device_id: TAURI_DEVICE_ID,
+        device_name: 'account-uri-device',
+        device_pubkey: tauriDevicePublicKey(),
+    };
+}
+
+function tauriDevicePublicKey() {
+    const { publicKey } = generateKeyPairSync('ed25519');
+    const der = publicKey.export({ format: 'der', type: 'spki' });
+    return Buffer.from(der).subarray(-32).toString('base64url');
 }
 
 async function openDeviceSession(context, pair, token) {
@@ -162,6 +239,18 @@ async function postJson(options) {
         method: 'POST',
     });
     return parseJsonResponse(response);
+}
+
+async function postJsonExpectError(options) {
+    const response = await fetch(`${options.context.baseUrl}${options.route}`, {
+        body: JSON.stringify(options.body),
+        headers: requestHeaders(options.token || ''),
+        method: 'POST',
+    });
+    const payload = await response.json();
+    assert.equal(response.status, options.status);
+    assert.ok(payload.error, 'error response must include message');
+    return payload;
 }
 
 async function getJson(options) {

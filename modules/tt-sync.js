@@ -4,6 +4,7 @@ import {
     progressRows,
     resetProgressTracker,
 } from './tt-sync-progress.js';
+import { bindTtSyncAccountPanel } from './tt-sync-account.js';
 
 const TT_COMMANDS = {
     listServers: 'tt_sync_list_servers',
@@ -37,6 +38,7 @@ export function bindTtSyncPanel(deps) {
     const controller = createTtSyncController(deps);
     controller.bind();
     controller.renderInitialState();
+    bindTtSyncAccountPanel(deps);
     return controller;
 }
 

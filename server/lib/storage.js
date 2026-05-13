@@ -1,14 +1,27 @@
 import { mkdir, readFile, rename, rm, stat, utimes } from 'node:fs/promises';
 import path from 'node:path';
-import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
+import {
+    accountPairingResponse,
+    activeAccessSession,
+    activeAccessToken,
+    activeRefreshSession,
+    addPairingToken,
+    addSession,
+    assertAccountLogin,
+    constantTimeEqual,
+    consumePairingToken,
+    pruneExpiredSessions,
+    prunePairingTokens,
+    randomToken,
+    sessionResponse,
+} from './account.js';
 import { encodePath, safeName } from './encoding.js';
-import { forbidden, notFound, serverError, unauthorized } from './http-error.js';
+import { forbidden, notFound, unauthorized } from './http-error.js';
 import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
 import { readJson, uploadEntry, validateStagedBuffer, writeFileAtomic, writeJsonAtomic } from './storage-io.js';
 import { writeRequestStreamAtomic } from './stream-io.js';
 
-const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
-const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_HISTORY_ITEMS = 100;
 const MAX_ROLLBACK_POINTS = 20;
 
@@ -24,23 +37,18 @@ export class TtSyncStorage {
     }
 
     async completePairing(options) {
-        assertPairingToken(options.token, process.env.TT_SYNC_PAIRING_TOKEN);
         const namespace = safeName(options.namespace || 'default', 'namespace');
-        const record = await this.readNamespace(namespace).catch(error => {
-            if (error.status === 404) {
-                return this.createNamespace(namespace);
-            }
-            throw error;
-        });
+        const record = await this.readOrCreateNamespace(namespace);
+        consumePairingToken(record, options.token);
         const device = addDevice(record, options.deviceName);
         await this.writeNamespace(namespace, record);
         return pairingResponse(record, device, options.endpoint);
     }
 
     async completeTauriPairing(options) {
-        assertPairingToken(options.token, process.env.TT_SYNC_PAIRING_TOKEN);
         const namespace = safeName(options.namespace || 'default', 'namespace');
         const record = await this.readOrCreateNamespace(namespace);
+        consumePairingToken(record, options.token);
         upsertDevice(record, {
             deviceId: options.deviceId,
             deviceName: options.deviceName,
@@ -85,6 +93,20 @@ export class TtSyncStorage {
         const session = addSession(record);
         await this.writeNamespace(namespace, record);
         return sessionResponse(record, session);
+    }
+
+    async createAccountPairing(options) {
+        const namespace = safeName(options.namespace || 'default', 'namespace');
+        await this.requireAuth(namespace, options.authHeader);
+        const record = await this.readNamespace(namespace);
+        const token = addPairingToken(record);
+        await this.writeNamespace(namespace, record);
+        return accountPairingResponse({
+            endpoint: String(options.endpoint || '').trim(),
+            namespace,
+            spki: String(options.spki || '').trim(),
+            token,
+        });
     }
 
     async refreshAccountToken(namespace, refreshToken) {
@@ -309,6 +331,7 @@ export class TtSyncStorage {
             serverId: randomUUID(),
             authToken: randomToken(),
             devices: [],
+            pairingTokens: [],
             rollbackPoints: [],
             sessions: [],
             syncHistory: [],
@@ -318,6 +341,7 @@ export class TtSyncStorage {
 
     async writeNamespace(namespace, record) {
         record.sessions = pruneExpiredSessions(record.sessions || []);
+        record.pairingTokens = prunePairingTokens(record.pairingTokens || []);
         await mkdir(path.join(this.namespaceDir(namespace), 'files'), { recursive: true });
         await writeJsonAtomic(this.namespacePath(namespace), record);
         await writeJsonAtomic(this.manifestPath(namespace), await this.readManifest(namespace).catch(() => []));
@@ -416,15 +440,6 @@ export class TtSyncStorage {
     }
 }
 
-function assertPairingToken(actual, expected) {
-    if (!expected) {
-        throw serverError('TT_SYNC_PAIRING_TOKEN is required for pairing');
-    }
-    if (!constantTimeEqual(String(actual || ''), expected)) {
-        throw unauthorized('Invalid pairing token');
-    }
-}
-
 function assertConflictDecisions(plan, decisions) {
     for (const item of plan.conflicts) {
         if (decisions[item.path] !== 'local' && decisions[item.path] !== 'remote') {
@@ -470,65 +485,6 @@ function touchDevice(record, deviceId, patch) {
     record.devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
 }
 
-function addSession(record, deviceId = '') {
-    const now = Date.now();
-    const session = {
-        accessToken: randomToken(),
-        deviceId,
-        expiresAt: new Date(now + ACCESS_TOKEN_TTL_MS).toISOString(),
-        refreshExpiresAt: new Date(now + REFRESH_TOKEN_TTL_MS).toISOString(),
-        refreshToken: randomToken(),
-    };
-    record.sessions = [session, ...pruneExpiredSessions(record.sessions || [])];
-    return session;
-}
-
-function activeAccessToken(record, token) {
-    return Boolean(activeAccessSession(record, token));
-}
-
-function activeAccessSession(record, token) {
-    const now = Date.now();
-    return (record.sessions || []).find(session => {
-        return Date.parse(session.expiresAt) > now && constantTimeEqual(token, session.accessToken);
-    });
-}
-
-function activeRefreshSession(record, refreshToken) {
-    const now = Date.now();
-    return (record.sessions || []).find(session => {
-        return Date.parse(session.refreshExpiresAt) > now && constantTimeEqual(String(refreshToken || ''), session.refreshToken);
-    });
-}
-
-function pruneExpiredSessions(sessions) {
-    const now = Date.now();
-    return sessions.filter(session => Date.parse(session.expiresAt) > now || Date.parse(session.refreshExpiresAt) > now);
-}
-
-function sessionResponse(record, session) {
-    return {
-        accessToken: session.accessToken,
-        expiresAt: session.expiresAt,
-        namespace: record.namespace,
-        refreshExpiresAt: session.refreshExpiresAt,
-        refreshToken: session.refreshToken,
-        serverId: record.serverId,
-    };
-}
-
-function assertAccountLogin(options) {
-    if (!process.env.TT_SYNC_ACCOUNT_USERNAME || !process.env.TT_SYNC_ACCOUNT_PASSWORD) {
-        throw serverError('TT_SYNC_ACCOUNT_USERNAME and TT_SYNC_ACCOUNT_PASSWORD are required for account login');
-    }
-    if (options.username !== process.env.TT_SYNC_ACCOUNT_USERNAME) {
-        throw unauthorized('Invalid account credentials');
-    }
-    if (options.password !== process.env.TT_SYNC_ACCOUNT_PASSWORD) {
-        throw unauthorized('Invalid account credentials');
-    }
-}
-
 function affectedPaths(plan) {
     return Array.from(new Set([
         ...plan.uploads.map(entry => entry.path),
@@ -571,16 +527,6 @@ function pairingResponse(record, device, endpoint) {
         namespace: record.namespace,
         serverId: record.serverId,
     };
-}
-
-function randomToken(size = 32) {
-    return randomBytes(size).toString('base64url');
-}
-
-function constantTimeEqual(left, right) {
-    const leftBuffer = Buffer.from(left);
-    const rightBuffer = Buffer.from(right);
-    return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 function withoutConflictFlag(entry) {

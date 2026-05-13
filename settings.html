@@ -13,6 +13,74 @@
                 <div class="inline-drawer-content">
                     <small id="mcs_tts_status" class="extensions_info"></small>
 
+                    <div class="inline-drawer mcs-account-panel">
+                        <div class="inline-drawer-toggle inline-drawer-header">
+                            <b>帳號式同步服務</b>
+                            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                        </div>
+                        <div class="inline-drawer-content">
+                            <small id="mcs_tts_account_status" class="extensions_info"></small>
+
+                            <div class="mcs-grid">
+                                <label>
+                                    <span>服務端 URL</span>
+                                    <input id="mcs_tts_account_endpoint" class="text_pole" type="url" autocomplete="off" />
+                                </label>
+                                <label>
+                                    <span>Namespace</span>
+                                    <input id="mcs_tts_account_namespace" class="text_pole" type="text" autocomplete="off" value="default" />
+                                </label>
+                                <label>
+                                    <span>使用者名稱</span>
+                                    <input id="mcs_tts_account_username" class="text_pole" type="text" autocomplete="username" />
+                                </label>
+                                <label>
+                                    <span>密碼</span>
+                                    <input id="mcs_tts_account_password" class="text_pole" type="password" autocomplete="current-password" />
+                                </label>
+                                <label>
+                                    <span>SPKI Pin</span>
+                                    <input id="mcs_tts_account_spki" class="text_pole" type="text" autocomplete="off" />
+                                </label>
+                            </div>
+
+                            <div class="flex-container flexGap5 mcs-toolbar">
+                                <button id="mcs_tts_account_login" class="menu_button menu_button_icon" type="button">
+                                    <i class="fa-solid fa-right-to-bracket"></i>
+                                    <span>登入</span>
+                                </button>
+                                <button id="mcs_tts_account_refresh_token" class="menu_button menu_button_icon" type="button">
+                                    <i class="fa-solid fa-key"></i>
+                                    <span>刷新 Token</span>
+                                </button>
+                                <button id="mcs_tts_account_pairing_uri" class="menu_button menu_button_icon" type="button">
+                                    <i class="fa-solid fa-qrcode"></i>
+                                    <span>產生配對 URI</span>
+                                </button>
+                                <button id="mcs_tts_account_refresh_data" class="menu_button menu_button_icon" type="button">
+                                    <i class="fa-solid fa-list-check"></i>
+                                    <span>刷新帳號資料</span>
+                                </button>
+                            </div>
+
+                            <label>
+                                <span>帳號產生的配對 URI</span>
+                                <textarea id="mcs_tts_account_generated_uri" class="text_pole mcs-pairing-uri-output" readonly></textarea>
+                            </label>
+
+                            <div class="mcs-sync-grid">
+                                <section>
+                                    <h4>裝置列表</h4>
+                                    <div id="mcs_tts_account_devices" class="mcs-account-list"></div>
+                                </section>
+                                <section>
+                                    <h4>同步歷史</h4>
+                                    <div id="mcs_tts_account_history" class="mcs-account-list"></div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mcs-grid">
                         <label>
                             <span>配對 URI</span>

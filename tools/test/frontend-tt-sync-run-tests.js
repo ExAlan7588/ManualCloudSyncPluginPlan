@@ -15,9 +15,23 @@ import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 const SETTINGS_HTML = new URL('../../settings.html', import.meta.url);
 const DATA_MIGRATION_MODULE = new URL('../../modules/data-migration.js', import.meta.url);
 const INDEX_MODULE = new URL('../../index.js', import.meta.url);
+const TT_SYNC_ACCOUNT_MODULE = new URL('../../modules/tt-sync-account.js', import.meta.url);
 const TT_SYNC_MODULE = new URL('../../modules/tt-sync.js', import.meta.url);
 
 const REQUIRED_TT_SYNC_IDS = Object.freeze([
+    'mcs_tts_account_devices',
+    'mcs_tts_account_endpoint',
+    'mcs_tts_account_generated_uri',
+    'mcs_tts_account_history',
+    'mcs_tts_account_login',
+    'mcs_tts_account_namespace',
+    'mcs_tts_account_pairing_uri',
+    'mcs_tts_account_password',
+    'mcs_tts_account_refresh_data',
+    'mcs_tts_account_refresh_token',
+    'mcs_tts_account_spki',
+    'mcs_tts_account_status',
+    'mcs_tts_account_username',
     'mcs_tts_pair_uri',
     'mcs_tts_pair',
     'mcs_tts_refresh_servers',
@@ -37,6 +51,7 @@ const tests = [
     ['TT-Sync frontend calls required backend commands', testRequiredCommands],
     ['TT-Sync frontend uses upstream command payloads', testUpstreamCommandPayloads],
     ['TT-Sync conflict UI exposes local and remote choices', testConflictChoiceUi],
+    ['TT-Sync account panel uses server account API', testAccountPanelApi],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
@@ -91,6 +106,19 @@ async function testConflictChoiceUi() {
     assert.ok(source.includes('state.conflictChoices'), 'frontend must track conflict decisions locally');
     assert.ok(source.includes('setConflictDecision(state, conflict, decision)'), 'frontend must update local conflict selection');
     assert.ok(source.includes('renderConflictList(state, state.lastConflictPayload)'), 'frontend must rerender conflict choices after selection');
+}
+
+async function testAccountPanelApi() {
+    const accountSource = await readFile(TT_SYNC_ACCOUNT_MODULE, 'utf8');
+    assert.ok(accountSource.includes('/v2/account/login'), 'account panel must call login endpoint');
+    assert.ok(accountSource.includes('/v2/account/pairing-uri'), 'account panel must mint pairing URI');
+    assert.ok(accountSource.includes('/v2/devices'), 'account panel must list devices');
+    assert.ok(accountSource.includes('/v2/history'), 'account panel must list sync history');
+    assert.ok(accountSource.includes('Authorization'), 'account panel must send bearer token');
+    assert.ok(accountSource.includes("$('#mcs_tts_pair_uri').val(pairingUri)"), 'generated URI must fill existing pair field');
+
+    const indexSource = await readFile(INDEX_MODULE, 'utf8');
+    assert.ok(indexSource.includes('fetch: window.fetch.bind(window)'), 'account panel must receive fetch dependency');
 }
 
 function testProgressMetrics() {

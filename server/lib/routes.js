@@ -19,14 +19,21 @@ import {
 const JSON_TYPE = 'application/json; charset=utf-8';
 const BINARY_TYPE = 'application/octet-stream';
 const SSE_TYPE = 'text/event-stream; charset=utf-8';
+const CORS_HEADERS = Object.freeze({
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Origin': '*',
+});
 const DEFAULT_MAX_BODY_BYTES = 512 * 1024 * 1024;
 const PROGRESS_EVENT_INTERVAL_MS = 1000;
 const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 const STATIC_ROUTE_HANDLERS = Object.freeze({
     'GET /v2/status': handleStatus,
     'POST /v2/pair/complete': handlePair,
     'POST /v2/account/login': handleAccountLogin,
+    'POST /v2/account/pairing-uri': handleAccountPairingUri,
     'POST /v2/account/token/refresh': handleTokenRefresh,
     'POST /v2/session/open': handleSession,
     'GET /v2/devices': handleDevices,
@@ -48,6 +55,9 @@ export function createHandler(storage) {
 
 async function dispatch(context) {
     const url = new URL(context.request.url, 'http://127.0.0.1');
+    if (context.request.method === 'OPTIONS') {
+        return sendOptions(context.response);
+    }
     const route = routeKey(context.request.method, url.pathname);
     const staticHandler = STATIC_ROUTE_HANDLERS[route];
     if (staticHandler) {
@@ -92,6 +102,16 @@ async function handlePair(context, url) {
 async function handleAccountLogin(context) {
     const body = await readJsonBody(context.request);
     return sendJson(context.response, await context.storage.loginAccount(body));
+}
+
+async function handleAccountPairingUri(context) {
+    const body = await readJsonBody(context.request);
+    return sendJson(context.response, await context.storage.createAccountPairing({
+        authHeader: context.request.headers.authorization,
+        endpoint: pairingEndpoint(body),
+        namespace: body.namespace,
+        spki: pairingSpki(body),
+    }));
 }
 
 async function handleTokenRefresh(context) {
@@ -272,6 +292,41 @@ function normalizePairingBody(body) {
     };
 }
 
+function pairingEndpoint(body) {
+    const value = String(body.endpoint || process.env.TT_SYNC_PUBLIC_URL || '').trim();
+    if (!value) {
+        throw badRequest('endpoint is required for account pairing URI');
+    }
+    const url = parseHttpUrl(value, 'endpoint');
+    return url.toString().replace(/\/$/, '');
+}
+
+function pairingSpki(body) {
+    const value = String(body.spki || '').trim();
+    if (!value) {
+        throw badRequest('spki is required for account pairing URI');
+    }
+    if (!BASE64URL_PATTERN.test(value)) {
+        throw badRequest('spki must be base64url');
+    }
+    return value;
+}
+
+function parseHttpUrl(value, label) {
+    try {
+        const url = new URL(value);
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+            throw badRequest(`${label} must use http or https`);
+        }
+        return url;
+    } catch (error) {
+        if (error instanceof HttpError) {
+            throw error;
+        }
+        throw badRequest(`${label} must be a valid URL`);
+    }
+}
+
 function pairingBodyFromUri(body) {
     const uri = parsePairingUri(body.pairingUri);
     if (uri.protocol !== 'tt-sync:') {
@@ -413,6 +468,7 @@ function startEventStream(response) {
     response.writeHead(200, {
         'Cache-Control': 'no-store',
         Connection: 'keep-alive',
+        ...CORS_HEADERS,
         'Content-Type': SSE_TYPE,
     });
 }
@@ -472,10 +528,16 @@ function readRawBody(request) {
 function sendJson(response, body, status = 200) {
     const payload = Buffer.from(`${JSON.stringify(body)}\n`);
     response.writeHead(status, {
+        ...CORS_HEADERS,
         'Content-Length': payload.length,
         'Content-Type': JSON_TYPE,
     });
     response.end(payload);
+}
+
+function sendOptions(response) {
+    response.writeHead(204, CORS_HEADERS);
+    response.end();
 }
 
 async function sendError(response, error) {

@@ -385,6 +385,7 @@ function bindFullArchivePanel() {
 function bindIncrementalPanel() {
     bindTtSyncPanel({
         confirm: Popup.show.confirm,
+        fetch: window.fetch.bind(window),
         invokeCommand,
         listen: window.__TAURI__?.event?.listen?.bind(window.__TAURI__.event),
         runAction,
