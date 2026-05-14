@@ -21,7 +21,13 @@ export async function startServer(options = {}) {
     const host = options.host || process.env.TT_SYNC_HOST || DEFAULT_HOST;
     const port = Number(options.port ?? process.env.TT_SYNC_PORT ?? DEFAULT_PORT);
     const server = createTtSyncServer(options);
-    await new Promise(resolve => server.listen(port, host, resolve));
+    await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(port, host, () => {
+            server.off('error', reject);
+            resolve();
+        });
+    });
     return { host, port: server.address().port, server };
 }
 

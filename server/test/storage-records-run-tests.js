@@ -1,0 +1,75 @@
+import assert from 'node:assert/strict';
+import {
+    addDevice,
+    affectedPaths,
+    cappedList,
+    historyEntry,
+    pairingResponse,
+    rollbackPointSummary,
+    touchDevice,
+    upsertDevice,
+    withoutConflictFlag,
+} from '../lib/storage-records.js';
+
+testStorageRecordHelpers();
+console.log('ok - storage record helpers preserve response shapes');
+
+function testStorageRecordHelpers() {
+    const record = {
+        authToken: 'auth-token',
+        devices: [],
+        namespace: 'default',
+        serverId: 'server-id',
+    };
+    const device = addDevice(record, ' Phone ');
+    assert.equal(device.deviceName, 'Phone');
+    assert.equal(record.devices.length, 1);
+
+    upsertDevice(record, { deviceId: device.deviceId, deviceName: 'Desktop', publicKey: 'spki' });
+    assert.equal(record.devices[0].deviceName, 'Desktop');
+    assert.equal(record.devices[0].publicKey, 'spki');
+
+    touchDevice(record, 'missing-device', { lastSeenAt: '2026-05-14T00:00:00.000Z' });
+    assert.equal(record.devices[1].deviceId, 'missing-device');
+    assert.equal(record.devices[1].lastSeenAt, '2026-05-14T00:00:00.000Z');
+
+    assert.deepEqual(affectedPaths(planFixture()), ['a.txt', 'b.txt', 'c.txt']);
+    assert.deepEqual(cappedList([1, 2, 3], 2), [1, 2]);
+    assert.deepEqual(rollbackPointSummary({ createdAt: 'now', files: [{}, {}], id: 'rollback-1', planId: 'plan-1' }), {
+        affectedFiles: 2,
+        createdAt: 'now',
+        id: 'rollback-1',
+        planId: 'plan-1',
+    });
+    assert.deepEqual(historyEntry(planFixture()), {
+        committedAt: 'committed',
+        conflicts: 2,
+        deviceId: 'device-1',
+        downloads: 1,
+        kind: 'push',
+        planId: 'plan-1',
+        remoteDeletes: 1,
+        uploads: 2,
+    });
+    assert.deepEqual(pairingResponse(record, device, 'https://sync.example.com'), {
+        authToken: 'auth-token',
+        deviceId: device.deviceId,
+        endpoint: 'https://sync.example.com',
+        namespace: 'default',
+        serverId: 'server-id',
+    });
+    assert.deepEqual(withoutConflictFlag({ conflict: true, path: 'a.txt', sizeBytes: 1 }), { path: 'a.txt', sizeBytes: 1 });
+}
+
+function planFixture() {
+    return {
+        committedAt: 'committed',
+        conflicts: [{ path: 'c.txt' }, { path: 'a.txt' }],
+        deviceId: 'device-1',
+        downloads: [{ path: 'remote.txt' }],
+        id: 'plan-1',
+        kind: 'push',
+        remoteDeletes: ['b.txt'],
+        uploads: [{ path: 'a.txt' }, { path: 'b.txt' }],
+    };
+}

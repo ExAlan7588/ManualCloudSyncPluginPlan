@@ -6,6 +6,7 @@ const DEFAULT_NAMESPACE = 'default';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ED25519_SPKI_PREFIX = Buffer.from('302a300506032b6570032100', 'hex');
+const SESSION_TIMESTAMP_WINDOW_MS = 5 * 60 * 1000;
 const TAURI_SESSION_HEADERS = Object.freeze([
     'tt-device-id',
     'tt-timestamp-ms',
@@ -59,6 +60,7 @@ export function verifyTauriSessionRequest(options) {
     if (headers.deviceId !== options.body.deviceId) {
         throw unauthorized('Session device id does not match signed header');
     }
+    assertFreshTimestamp(headers.timestampMs);
     const canonical = canonicalSessionRequest({
         bodyBuffer: options.bodyBuffer,
         deviceId: headers.deviceId,
@@ -141,6 +143,14 @@ function canonicalSessionRequest(options) {
         '/v2/session/open',
         bodyHash,
     ].join('\n');
+}
+
+function assertFreshTimestamp(timestampMs) {
+    const timestamp = Number(timestampMs);
+    const deltaMs = Math.abs(Date.now() - timestamp);
+    if (!Number.isSafeInteger(timestamp) || deltaMs > SESSION_TIMESTAMP_WINDOW_MS) {
+        throw unauthorized('TT-Sync session timestamp is outside the allowed window');
+    }
 }
 
 function publicKeyFromRaw(publicKey) {

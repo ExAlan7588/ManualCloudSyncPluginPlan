@@ -287,7 +287,7 @@ Response headers include:
 
 ### `PUT /v2/plans/{plan_id}/files/{path_b64}`
 
-Stages one uploaded file for a push plan.
+Stages one uploaded file for a push plan. The server writes to a unique temporary path, validates size and sha256 when supplied, then renames into the staged directory. A failed upload removes the temp file and does not increment staged progress.
 
 ### `GET /v2/plans/{plan_id}/bundle`
 
@@ -311,10 +311,11 @@ Streams Server-Sent Events:
 
 ```text
 event: progress
-data: {"phase":"transferring","filesTransferred":1,"totalFiles":2,"bytesTransferred":5,"totalBytes":10,"currentPath":"file.txt"}
+data: {"phase":"transferring","filesTransferred":1,"totalFiles":2,"bytesTransferred":5,"totalBytes":10,"currentPath":"file.txt","partial_upload_safe":true}
 ```
 
 Use `?once=1` to receive one progress event and close the connection, which is useful for health checks and automated tests.
+For push plans, `partial_upload_safe:true` means files are only staged. They do not affect the remote manifest or remote files until `/commit` succeeds, so a cancelled or failed upload can be retried from the same plan or a fresh plan.
 
 ### `POST /v2/plans/{plan_id}/commit`
 

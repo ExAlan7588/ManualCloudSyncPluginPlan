@@ -63,9 +63,13 @@ async function testPushPullEmptyDiff() {
 async function assertProgressLifecycle(options) {
     assert.deepEqual(await getProgress(options.context, options.pushPlan.id, options.pair.authToken), {
         bytesTransferred: 0,
+        committed: false,
         currentPath: FILE_PATH,
         filesTransferred: 0,
+        partial_upload_safe: true,
+        pending_files: 1,
         phase: 'planned',
+        staged_files: 0,
         totalBytes: options.entry.sizeBytes,
         totalFiles: 1,
     });
@@ -155,6 +159,7 @@ async function testStreamingSingleFileTransfer() {
             putFileStream({ content: `${content}-too-large`, context, planId: invalidPlan.id, syncPath: invalidEntry.path, token: pair.authToken }),
             /Uploaded size does not match manifest/,
         );
+        assert.equal((await getProgress(context, invalidPlan.id, pair.authToken)).filesTransferred, 0);
     });
 }
 

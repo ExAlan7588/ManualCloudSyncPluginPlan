@@ -8,6 +8,7 @@ const EXCLUDED_PREFIXES = [
 const EXCLUDED_FILES = new Set([
     '_tauritavern/.ios-policy.json',
 ]);
+const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 export function encodePath(value) {
     return Buffer.from(validateSyncPath(value), 'utf8').toString('base64url');
@@ -15,7 +16,11 @@ export function encodePath(value) {
 
 export function decodePath(value) {
     try {
-        return validateSyncPath(Buffer.from(String(value || ''), 'base64url').toString('utf8'));
+        const encoded = String(value || '');
+        if (!BASE64URL_PATTERN.test(encoded)) {
+            throw badRequest('Invalid encoded sync path');
+        }
+        return validateSyncPath(Buffer.from(encoded, 'base64url').toString('utf8'));
     } catch (error) {
         if (error?.status) {
             throw error;

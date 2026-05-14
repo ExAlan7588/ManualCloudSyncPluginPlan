@@ -1,5 +1,17 @@
+import { decodeBase64Content } from './base64-content.js';
 import { decodePath, safeName } from './encoding.js';
+import {
+    maxBodyBytes,
+    readJsonBody,
+    readJsonRequest,
+    sendError,
+    sendJson,
+    sendOptions,
+    startEventStream,
+    writeServerSentEvent,
+} from './http-helpers.js';
 import { badRequest, HttpError, notFound } from './http-error.js';
+import { planSummary, progressSummary } from './plan-response.js';
 import { buildPullPlan, buildPushPlan } from './planner.js';
 import { pipeFileToResponse } from './stream-io.js';
 import {
@@ -16,18 +28,10 @@ import {
     verifyTauriSessionRequest,
 } from './tauri-contract.js';
 
-const JSON_TYPE = 'application/json; charset=utf-8';
 const BINARY_TYPE = 'application/octet-stream';
-const SSE_TYPE = 'text/event-stream; charset=utf-8';
-const CORS_HEADERS = Object.freeze({
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-    'Access-Control-Allow-Origin': '*',
-});
-const DEFAULT_MAX_BODY_BYTES = 512 * 1024 * 1024;
 const PROGRESS_EVENT_INTERVAL_MS = 1000;
-const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
+const SPKI_SHA256_BYTES = 32;
 
 const STATIC_ROUTE_HANDLERS = Object.freeze({
     'GET /v2/status': handleStatus,
@@ -212,7 +216,11 @@ async function handlePlanEvents(context, url) {
     const planId = safeName(url.pathname.split('/')[3], 'plan id');
     const plan = await loadAuthedPlan(context, planId);
     startEventStream(context.response);
-    await writeProgressEvent(context, plan.id);
+    const currentPlan = await writeProgressEventOrClose(context, plan.id);
+    if (!currentPlan) {
+        context.response.end();
+        return;
+    }
     if (url.searchParams.get('once') === '1') {
         context.response.end();
         return;
@@ -309,6 +317,9 @@ function pairingSpki(body) {
     if (!BASE64URL_PATTERN.test(value)) {
         throw badRequest('spki must be base64url');
     }
+    if (Buffer.from(value, 'base64url').length !== SPKI_SHA256_BYTES) {
+        throw badRequest('spki must be a base64url SHA-256 pin');
+    }
     return value;
 }
 
@@ -349,13 +360,7 @@ function parsePairingUri(value) {
 }
 
 function decodeBundleContent(file) {
-    if (typeof file?.contentBase64 !== 'string') {
-        throw badRequest('Bundle file contentBase64 must be a base64 string');
-    }
-    if (!BASE64_PATTERN.test(file.contentBase64)) {
-        throw badRequest('Bundle file contentBase64 must be valid base64');
-    }
-    return Buffer.from(file.contentBase64, 'base64');
+    return decodeBase64Content(file?.contentBase64, 'Bundle file contentBase64');
 }
 
 function bundleFilePath(file) {
@@ -363,30 +368,6 @@ function bundleFilePath(file) {
         throw badRequest('Bundle file path must be a string');
     }
     return file.path;
-}
-
-function planSummary(plan) {
-    return {
-        id: plan.id,
-        kind: plan.kind,
-        ok: Boolean(plan.committedAt),
-        namespace: plan.namespace,
-        uploads: plan.uploads,
-        downloads: plan.downloads,
-        remoteDeletes: plan.remoteDeletes,
-        localDeletes: plan.localDeletes,
-        conflicts: plan.conflicts,
-        committedAt: plan.committedAt,
-        progress: progressSummary(plan),
-        summary: {
-            conflictFiles: plan.conflicts.length,
-            deleteFiles: plan.kind === 'push' ? plan.remoteDeletes.length : plan.localDeletes.length,
-            downloadBytes: sumBytes(plan.downloads),
-            downloadFiles: plan.downloads.length,
-            uploadBytes: sumBytes(plan.uploads.filter(entry => !entry.conflict)),
-            uploadFiles: plan.uploads.filter(entry => !entry.conflict).length,
-        },
-    };
 }
 
 function buildPlan(input) {
@@ -401,21 +382,6 @@ function pairedDevice(record, deviceId) {
         throw badRequest(`Paired Tauri device not found: ${deviceId}`);
     }
     return device;
-}
-
-function progressSummary(plan) {
-    const totalFiles = plan.uploads.length + plan.downloads.length;
-    const totalBytes = sumBytes([...plan.uploads, ...plan.downloads]);
-    const staged = Object.values(plan.staged || {});
-    const committed = Boolean(plan.committedAt);
-    return {
-        bytesTransferred: committed ? totalBytes : sumBytes(staged),
-        currentPath: currentProgressPath(plan),
-        phase: progressPhase(plan, staged),
-        totalBytes,
-        totalFiles,
-        filesTransferred: committed ? totalFiles : staged.length,
-    };
 }
 
 function routeKey(method, pathname) {
@@ -447,106 +413,37 @@ function findPlanEntry(entries, syncPath) {
     return entry;
 }
 
-function sumBytes(entries) {
-    return entries.reduce((total, entry) => total + Number(entry.sizeBytes || 0), 0);
-}
-
-function currentProgressPath(plan) {
-    const staged = new Set(Object.keys(plan.staged || {}));
-    const pending = [...plan.uploads, ...plan.downloads].find(entry => !staged.has(entry.path));
-    return pending?.path || '';
-}
-
-function progressPhase(plan, staged) {
-    if (plan.committedAt) {
-        return 'committed';
-    }
-    return staged.length > 0 ? 'transferring' : 'planned';
-}
-
-function startEventStream(response) {
-    response.writeHead(200, {
-        'Cache-Control': 'no-store',
-        Connection: 'keep-alive',
-        ...CORS_HEADERS,
-        'Content-Type': SSE_TYPE,
-    });
-}
-
 async function writeProgressEvent(context, planId) {
     const plan = await context.storage.readPlan(planId);
-    context.response.write(`event: progress\ndata: ${JSON.stringify(progressSummary(plan))}\n\n`);
+    writeServerSentEvent(context.response, 'progress', progressSummary(plan));
     return plan;
 }
 
 function streamProgressEvents(context, planId) {
     const timer = setInterval(async () => {
-        const plan = await writeProgressEvent(context, planId);
-        if (plan.committedAt) {
-            clearInterval(timer);
-            context.response.end();
+        const plan = await writeProgressEventOrClose(context, planId);
+        if (!plan || plan.committedAt) {
+            closeProgressStream(context.response, timer);
         }
     }, PROGRESS_EVENT_INTERVAL_MS);
     context.request.on('close', () => clearInterval(timer));
 }
 
-async function readJsonBody(request, fallback) {
-    const { body } = await readJsonRequest(request, fallback);
-    return body;
-}
-
-async function readJsonRequest(request, fallback) {
-    const buffer = await readRawBody(request);
-    if (buffer.length === 0 && fallback !== undefined) {
-        return { body: fallback, buffer };
-    }
+async function writeProgressEventOrClose(context, planId) {
     try {
-        return { body: JSON.parse(buffer.toString('utf8')), buffer };
-    } catch {
-        throw badRequest('Request body must be valid JSON');
+        return await writeProgressEvent(context, planId);
+    } catch (error) {
+        writeProgressErrorEvent(context.response, error);
+        return null;
     }
 }
 
-function readRawBody(request) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        let size = 0;
-        request.on('data', chunk => {
-            size += chunk.length;
-            if (size > maxBodyBytes()) {
-                reject(badRequest('Request body is too large'));
-                request.destroy();
-                return;
-            }
-            chunks.push(chunk);
-        });
-        request.on('end', () => resolve(Buffer.concat(chunks)));
-        request.on('error', reject);
-    });
-}
-
-function sendJson(response, body, status = 200) {
-    const payload = Buffer.from(`${JSON.stringify(body)}\n`);
-    response.writeHead(status, {
-        ...CORS_HEADERS,
-        'Content-Length': payload.length,
-        'Content-Type': JSON_TYPE,
-    });
-    response.end(payload);
-}
-
-function sendOptions(response) {
-    response.writeHead(204, CORS_HEADERS);
+function closeProgressStream(response, timer) {
+    clearInterval(timer);
     response.end();
 }
 
-async function sendError(response, error) {
-    const status = error instanceof HttpError ? error.status : 500;
+function writeProgressErrorEvent(response, error) {
     const message = error instanceof Error ? error.message : String(error || 'Unknown error');
-    sendJson(response, { error: message }, status);
-}
-
-function maxBodyBytes() {
-    const configured = Number(process.env.TT_SYNC_MAX_BODY_BYTES);
-    return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_BODY_BYTES;
+    writeServerSentEvent(response, 'error', { error: message });
 }

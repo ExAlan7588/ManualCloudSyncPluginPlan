@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, rm, stat, utimes } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { decodeBase64Content } from './base64-content.js';
 import {
     accountPairingResponse,
     activeAccessSession,
@@ -20,6 +21,17 @@ import { encodePath, safeName } from './encoding.js';
 import { forbidden, notFound, unauthorized } from './http-error.js';
 import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
 import { readJson, uploadEntry, validateStagedBuffer, writeFileAtomic, writeJsonAtomic } from './storage-io.js';
+import {
+    addDevice,
+    affectedPaths,
+    cappedList,
+    historyEntry,
+    pairingResponse,
+    rollbackPointSummary,
+    touchDevice,
+    upsertDevice,
+    withoutConflictFlag,
+} from './storage-records.js';
 import { writeRequestStreamAtomic } from './stream-io.js';
 
 const MAX_HISTORY_ITEMS = 100;
@@ -216,18 +228,21 @@ export class TtSyncStorage {
     }
 
     async commitPlan(plan, body = {}) {
-        if (plan.committedAt) {
-            throw forbidden(`Plan already committed: ${plan.id}`);
-        }
-        let rollbackPoint = null;
-        if (plan.kind === 'push') {
-            rollbackPoint = await this.createRollbackPoint(plan);
-            await this.commitPushPlan(plan, body.conflictDecisions || {});
-        }
-        plan.committedAt = new Date().toISOString();
-        await this.writePlan(plan);
-        await this.recordCommittedPlan(plan, rollbackPoint || null);
-        return plan;
+        return this.withPlanLock(plan.id, async () => {
+            const latest = await this.readPlan(plan.id);
+            if (latest.committedAt) {
+                throw forbidden(`Plan already committed: ${latest.id}`);
+            }
+            let rollbackPoint = null;
+            if (latest.kind === 'push') {
+                rollbackPoint = await this.createRollbackPoint(latest);
+                await this.commitPushPlan(latest, body.conflictDecisions || {});
+            }
+            const committed = { ...latest, committedAt: new Date().toISOString() };
+            await this.writePlan(committed);
+            await this.recordCommittedPlan(committed, rollbackPoint || null);
+            return committed;
+        });
     }
 
     async listDevices(namespace) {
@@ -422,7 +437,7 @@ export class TtSyncStorage {
                 await this.deleteRemote(namespace, file.path, manifest);
                 continue;
             }
-            await writeFileAtomic(this.remoteFilePath(namespace, file.path), Buffer.from(file.contentBase64, 'base64'));
+            await writeFileAtomic(this.remoteFilePath(namespace, file.path), decodeBase64Content(file.contentBase64, 'Rollback file contentBase64'));
             await utimes(this.remoteFilePath(namespace, file.path), new Date(), new Date(file.entry.modifiedMs));
             manifest.set(file.path, file.entry);
         }
@@ -446,90 +461,4 @@ function assertConflictDecisions(plan, decisions) {
             throw forbidden(`Missing conflict decision for ${item.path}`);
         }
     }
-}
-
-function addDevice(record, deviceName) {
-    const device = {
-        deviceId: randomUUID(),
-        deviceName: String(deviceName || '').trim(),
-        pairedAt: new Date().toISOString(),
-    };
-    record.devices.push(device);
-    return device;
-}
-
-function upsertDevice(record, input) {
-    const existing = record.devices.find(device => device.deviceId === input.deviceId);
-    if (existing) {
-        Object.assign(existing, {
-            deviceName: input.deviceName,
-            publicKey: input.publicKey,
-            pairedAt: existing.pairedAt || new Date().toISOString(),
-        });
-        return existing;
-    }
-    const device = { ...input, pairedAt: new Date().toISOString() };
-    record.devices.push(device);
-    return device;
-}
-
-function touchDevice(record, deviceId, patch) {
-    if (!deviceId) {
-        return;
-    }
-    const existing = record.devices.find(device => device.deviceId === deviceId);
-    if (existing) {
-        Object.assign(existing, patch);
-        return;
-    }
-    record.devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
-}
-
-function affectedPaths(plan) {
-    return Array.from(new Set([
-        ...plan.uploads.map(entry => entry.path),
-        ...plan.remoteDeletes,
-        ...plan.conflicts.map(item => item.path),
-    ]));
-}
-
-function rollbackPointSummary(snapshot) {
-    return {
-        affectedFiles: snapshot.files.length,
-        createdAt: snapshot.createdAt,
-        id: snapshot.id,
-        planId: snapshot.planId,
-    };
-}
-
-function historyEntry(plan) {
-    return {
-        committedAt: plan.committedAt,
-        conflicts: plan.conflicts.length,
-        deviceId: plan.deviceId,
-        downloads: plan.downloads.length,
-        kind: plan.kind,
-        planId: plan.id,
-        remoteDeletes: plan.remoteDeletes.length,
-        uploads: plan.uploads.length,
-    };
-}
-
-function cappedList(items, limit) {
-    return items.slice(0, limit);
-}
-
-function pairingResponse(record, device, endpoint) {
-    return {
-        authToken: record.authToken,
-        deviceId: device.deviceId,
-        endpoint: String(endpoint || ''),
-        namespace: record.namespace,
-        serverId: record.serverId,
-    };
-}
-
-function withoutConflictFlag(entry) {
-    const { conflict: _conflict, ...rest } = entry;
-    return rest;
 }

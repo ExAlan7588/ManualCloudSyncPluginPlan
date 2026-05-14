@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { forbidden, notFound } from './http-error.js';
@@ -11,6 +11,9 @@ export async function readJson(filePath, fallback) {
         if (error.code === 'ENOENT' && fallback !== undefined) {
             return fallback;
         }
+        if (error instanceof SyntaxError) {
+            throw new Error(`Storage JSON is invalid: ${filePath}: ${error.message}`);
+        }
         throw error;
     }
 }
@@ -22,8 +25,13 @@ export async function writeJsonAtomic(filePath, value) {
 export async function writeFileAtomic(filePath, value) {
     await mkdir(path.dirname(filePath), { recursive: true });
     const tmpPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
-    await writeFile(tmpPath, value);
-    await rename(tmpPath, filePath);
+    try {
+        await writeFile(tmpPath, value);
+        await rename(tmpPath, filePath);
+    } catch (error) {
+        await rm(tmpPath, { force: true });
+        throw error;
+    }
 }
 
 export function validateStagedBuffer(entry, buffer) {

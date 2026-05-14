@@ -94,10 +94,10 @@ export function assertAccountLogin(options) {
     if (!process.env.TT_SYNC_ACCOUNT_USERNAME || !process.env.TT_SYNC_ACCOUNT_PASSWORD) {
         throw serverError('TT_SYNC_ACCOUNT_USERNAME and TT_SYNC_ACCOUNT_PASSWORD are required for account login');
     }
-    if (options.username !== process.env.TT_SYNC_ACCOUNT_USERNAME) {
+    if (!constantTimeEqual(String(options.username || ''), process.env.TT_SYNC_ACCOUNT_USERNAME)) {
         throw unauthorized('Invalid account credentials');
     }
-    if (options.password !== process.env.TT_SYNC_ACCOUNT_PASSWORD) {
+    if (!constantTimeEqual(String(options.password || ''), process.env.TT_SYNC_ACCOUNT_PASSWORD)) {
         throw unauthorized('Invalid account credentials');
     }
 }
