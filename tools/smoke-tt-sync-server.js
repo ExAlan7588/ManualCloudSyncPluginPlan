@@ -8,6 +8,13 @@ import { parseArgs } from 'node:util';
 import { encodePath } from '../server/lib/encoding.js';
 import { sha256 } from '../server/lib/manifest.js';
 import { buildPairingUri, startServer } from '../server/tt-sync-server.js';
+import {
+    parseJsonResponse,
+    parseSseProgress,
+    requestHeaders,
+    responseErrorText,
+} from './smoke-http.js';
+export { parseSseProgress } from './smoke-http.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_FIXTURE_FILE_BYTES = null;
@@ -101,17 +108,24 @@ function parseIntegerOption(options) {
 
 async function createLocalRuntime(options) {
     const dataDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-smoke-'));
+    const host = options.host || DEFAULT_HOST;
     const previousToken = process.env[TOKEN_ENV_NAME];
     const pairingToken = randomUUID();
     process.env[TOKEN_ENV_NAME] = pairingToken;
-    const started = await startServer({ dataDir, host: DEFAULT_HOST, port: LOCAL_PORT });
-    return {
-        ...options,
-        cleanup: { dataDir, previousToken, server: started.server },
-        endpoint: `http://${started.host}:${started.port}`,
-        mode: 'local',
-        pairingToken,
-    };
+    try {
+        const started = await startServer({ dataDir, host, port: LOCAL_PORT });
+        return {
+            ...options,
+            cleanup: { dataDir, previousToken, server: started.server },
+            endpoint: `http://${started.host}:${started.port}`,
+            mode: 'local',
+            pairingToken,
+        };
+    } catch (error) {
+        restorePairingToken(previousToken);
+        await rm(dataDir, { force: true, recursive: true });
+        throw error;
+    }
 }
 
 async function cleanupRuntime(runtime) {
@@ -316,38 +330,6 @@ async function postJson(options) {
         method: 'POST',
     });
     return parseJsonResponse(response);
-}
-
-async function parseJsonResponse(response) {
-    const responseText = await response.text();
-    let payload;
-    try {
-        payload = JSON.parse(responseText);
-    } catch {
-        throw new Error(responseErrorText(response, responseText));
-    }
-    if (!response.ok) {
-        throw new Error(payload.error || `HTTP ${response.status}`);
-    }
-    return payload;
-}
-
-function responseErrorText(response, responseText) {
-    return `HTTP ${response.status}: ${responseText}`;
-}
-
-function requestHeaders(token, contentType = 'application/json') {
-    const headers = { 'Content-Type': contentType };
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-    return headers;
-}
-
-function parseSseProgress(text) {
-    const dataLine = text.split(/\r?\n/).find(line => line.startsWith('data: '));
-    assertCondition(Boolean(dataLine), 'SSE progress response must include a data line');
-    return JSON.parse(dataLine.slice('data: '.length));
 }
 
 function smokeFixture(runtime) {

@@ -103,8 +103,8 @@ async function readReportFile(options) {
 function parseReportJson(options) {
     try {
         return JSON.parse(options.text);
-    } catch {
-        throw new Error(`${options.label} must be valid JSON: ${options.path}`);
+    } catch (error) {
+        throw new Error(`${options.label} must be valid JSON: ${error.message}: ${options.path}`);
     }
 }
 

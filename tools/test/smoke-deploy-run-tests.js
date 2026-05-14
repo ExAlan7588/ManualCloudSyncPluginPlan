@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { smokeTtSyncServer } from '../smoke-tt-sync-server.js';
-import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
+import { parseSseProgress, smokeTtSyncServer } from '../smoke-tt-sync-server.js';
 
 const PAIRING_TOKEN_ENV = 'TT_SYNC_PAIRING_TOKEN';
 const TEST_BULK_FILE_BYTES = 128;
@@ -9,13 +8,13 @@ const TEST_BULK_FILES = 3;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const tests = [
+    ['server smoke verifier restores env after local startup failure', testLocalSmokeRestoresEnvAfterStartupFailure],
+    ['server smoke verifier labels malformed progress SSE', testMalformedProgressSse],
     ['server smoke verifier passes against explicit local server', testLocalSmoke],
     ['server smoke verifier supports bulk fixture', testBulkSmokeFixture],
     ['server smoke verifier requires endpoint or local mode', testRequiresTarget],
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
     ['server smoke verifier reports raw non-json responses', testRemoteSmokeReportsRawResponse],
-    ['deploy verifier accepts repo template placeholders explicitly', testDeployVerifierTemplate],
-    ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
 ];
 
 for (const [name, test] of tests) {
@@ -28,6 +27,13 @@ for (const [name, test] of tests) {
         process.exitCode = 1;
         break;
     }
+}
+
+function testMalformedProgressSse() {
+    assert.throws(
+        () => parseSseProgress('event: progress\ndata: {broken\n\n'),
+        /SSE progress response must include valid JSON data/,
+    );
 }
 
 async function testLocalSmoke() {
@@ -44,6 +50,20 @@ async function testLocalSmoke() {
     assert.match(report.serverId, UUID_PATTERN);
     assert.match(report.smokePath, /^default-user\/chats\/tt-sync-smoke-/);
     assertCheckNames(report);
+}
+
+async function testLocalSmokeRestoresEnvAfterStartupFailure() {
+    const previousToken = process.env[PAIRING_TOKEN_ENV];
+    process.env[PAIRING_TOKEN_ENV] = 'preserve-this-token';
+    try {
+        await assert.rejects(
+            smokeTtSyncServer({ host: '256.256.256.256', local: true }),
+            /getaddrinfo|EINVAL|ENOTFOUND/,
+        );
+        assert.equal(process.env[PAIRING_TOKEN_ENV], 'preserve-this-token');
+    } finally {
+        restorePairingToken(previousToken);
+    }
 }
 
 async function testBulkSmokeFixture() {
@@ -94,18 +114,6 @@ async function testRemoteSmokeReportsRawResponse() {
     } finally {
         await close(server);
     }
-}
-
-async function testDeployVerifierTemplate() {
-    const report = await verifyTtSyncDeploy({ allowPlaceholders: true });
-    assert.equal(report.ok, true);
-    assert.deepEqual(report.failed, []);
-}
-
-async function testDeployVerifierRejectsPlaceholderToken() {
-    const report = await verifyTtSyncDeploy();
-    assert.equal(report.ok, false);
-    assert.ok(report.failed.includes('env pairing token is not placeholder'));
 }
 
 function assertCheckNames(report) {

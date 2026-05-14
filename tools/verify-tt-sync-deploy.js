@@ -75,11 +75,24 @@ function parseKeyValueLine(line) {
     if (index < 0) {
         return null;
     }
-    return { key: line.slice(0, index), value: trimQuotes(line.slice(index + 1)) };
+    return { key: line.slice(0, index), ...parseValue(line.slice(index + 1)) };
 }
 
-function trimQuotes(value) {
-    return value.replace(/^['"]|['"]$/g, '');
+function parseValue(rawValue) {
+    const quote = quoteChar(rawValue);
+    if (!quote) {
+        return { quoteError: false, value: rawValue };
+    }
+    const isClosed = rawValue.length > 1 && rawValue.endsWith(quote);
+    return {
+        quoteError: !isClosed,
+        value: isClosed ? rawValue.slice(1, -1) : rawValue,
+    };
+}
+
+function quoteChar(value) {
+    const first = value[0];
+    return first === '"' || first === "'" ? first : '';
 }
 
 function serviceChecks(service) {
@@ -97,6 +110,7 @@ function serviceChecks(service) {
 
 function envChecks(options) {
     return [
+        check('env quoted values are well formed', noQuoteErrors(options.env), 'quoted env values must use matching quotes'),
         ...REQUIRED_ENV_KEYS.map(key => check(`env ${key}`, hasText(firstValue(options.env, key)), `${key} must be set`)),
         check('env data dir is absolute', path.isAbsolute(firstValue(options.env, 'TT_SYNC_DATA_DIR')), 'TT_SYNC_DATA_DIR must be absolute'),
         check('env public URL', isHttpUrl(firstValue(options.env, 'TT_SYNC_PUBLIC_URL')), 'TT_SYNC_PUBLIC_URL must be http or https'),
@@ -124,6 +138,10 @@ function firstValue(entries, key) {
 
 function valuesFor(entries, key) {
     return entries.filter(entry => entry.key === key).map(entry => entry.value);
+}
+
+function noQuoteErrors(entries) {
+    return entries.every(entry => entry.quoteError !== true);
 }
 
 function wordsFor(entries, key) {
