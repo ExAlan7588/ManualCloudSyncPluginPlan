@@ -43,7 +43,7 @@ const STATIC_CONTAINER_ID = 'manual_cloud_sync_container';
 const SETTINGS_CONTAINER_ID = 'manual_cloud_sync_settings';
 const EXTENSION_SETTINGS_TARGETS = ['extensions_settings2', 'extensions_settings'];
 const BUSY_SELECTOR = [
-    '#manual_cloud_sync_settings button',
+    '#manual_cloud_sync_settings button:not(#mcs_tts_cancel)',
     '#mcs_upload_archive_input',
 ].join(', ');
 
@@ -55,7 +55,7 @@ const state = {
 
 let tauriBridgePromise = null;
 
-function resolveModuleName(moduleUrl) {
+export function resolveModuleName(moduleUrl) {
     const extensionPath = new URL(moduleUrl).pathname.replace(/\\/g, '/');
     const marker = '/scripts/extensions/';
     const markerIndex = extensionPath.indexOf(marker);
@@ -63,12 +63,20 @@ function resolveModuleName(moduleUrl) {
         throw new Error(`手動雲端同步無法解析擴充路徑：${moduleUrl}`);
     }
 
-    const relativePath = decodeURIComponent(extensionPath.slice(markerIndex + marker.length));
+    const relativePath = decodeExtensionPath(extensionPath.slice(markerIndex + marker.length), moduleUrl);
     if (!relativePath.endsWith('/index.js')) {
         throw new Error(`手動雲端同步入口腳本必須命名為 index.js：${relativePath}`);
     }
 
     return relativePath.slice(0, -'/index.js'.length);
+}
+
+function decodeExtensionPath(pathname, moduleUrl) {
+    try {
+        return decodeURIComponent(pathname);
+    } catch (error) {
+        throw new Error(`手動雲端同步擴充路徑 URL 編碼不正確：${moduleUrl}：${errorMessage(error)}`);
+    }
 }
 
 function setStatus(message) {

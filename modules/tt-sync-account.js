@@ -199,8 +199,16 @@ function accountNamespace() {
 }
 
 function requiredUrl(selector, message) {
-    const url = new URL(requiredValue(selector, message));
+    const url = parseRequiredUrl(requiredValue(selector, message));
     return url.toString().replace(/\/$/, '');
+}
+
+function parseRequiredUrl(value) {
+    try {
+        return new URL(value);
+    } catch {
+        throw new Error('帳號服務端 URL 格式不正確');
+    }
 }
 
 function requiredValue(selector, message) {

@@ -6,6 +6,7 @@
 
 前端呼叫點在 `modules/tt-sync.js`，命令名稱固定如下：
 
+- `tt_sync_cancel`
 - `tt_sync_pair`
 - `tt_sync_list_servers`
 - `tt_sync_push`
@@ -79,6 +80,29 @@
 }
 ```
 
+### Cancelled Event
+
+後端在使用者停止同步後可發出 Tauri event `tt_sync:cancelled`：
+
+```json
+{
+  "direction": "Push",
+  "message": "Cancelled by user"
+}
+```
+
+### Progress Safety
+
+若 push 已經成功暫存但尚未 commit，後端可在 `tt_sync:progress` 裡附帶：
+
+```json
+{
+  "partial_upload_safe": true
+}
+```
+
+前端會把它顯示成部分上傳仍可安全重試，而不是把未 commit 的 staged 檔案當成已完成。
+
 ### Diff Event
 
 後端在執行前或 plan 建立後可發出 Tauri event `tt_sync:diff`；payload 應包含可追溯的差異摘要：
@@ -121,7 +145,8 @@
 ```json
 {
   "direction": "Pull",
-  "message": "TT-Sync server does not grant read permission"
+  "message": "TT-Sync server does not grant read permission",
+  "retryable": false
 }
 ```
 
@@ -196,7 +221,9 @@ Required behavior:
 - Emit `tt_sync:diff` before transfer when a pre-transfer plan summary is available.
 - Emit `tt_sync:conflict` instead of destructive sync when unresolved conflicts require user review.
 - Emit `tt_sync:progress` events with files and bytes.
+- Emit progress for every completed file and periodically during slow single-file transfers. Do not batch UI-visible progress in fixed groups of 10 files.
 - Emit `tt_sync:completed` with transferred file/byte totals, or `tt_sync:error` with an explicit failure message.
+- If the push is still only staged, expose `partial_upload_safe: true` in progress/error payloads so the UI can report partial uploads as safe to retry.
 
 The command may return `null`/unit on success because completion data is delivered through events.
 
@@ -223,6 +250,25 @@ Required behavior:
 - Emit `tt_sync:conflict` instead of destructive sync when unresolved conflicts require user review.
 - Emit `tt_sync:progress`, `tt_sync:completed`, and `tt_sync:error` events with the same semantics as Push.
 - Refresh TauriTavern runtime caches after successful Pull before completion is surfaced.
+
+### `tt_sync_cancel`
+
+Payload:
+
+```json
+{
+  "direction": "Push",
+  "serverDeviceId": "server-device-id"
+}
+```
+
+Required behavior:
+
+- Request cancellation of the active TT-Sync transfer.
+- Return only after the current push or pull is safely stopped.
+- Leave any staged but uncommitted uploads safe to retry.
+- Emit `tt_sync:cancelled` or return a progress-like payload when cancellation succeeds.
+- Throw an explicit error when nothing is active.
 
 ### `tt_sync_remove_server`
 
@@ -253,6 +299,7 @@ Required error cases:
 - LAN Sync / cloud sync mutex violation.
 - Local manifest scan failure.
 - Atomic write or mtime preservation failure.
+- Transient network failures should be retried by the backend when the request is idempotent or safely resumable. If retries are exhausted, surface a retryable error explicitly. Do not hide failures behind success or partial success.
 
 Do not return `(mock) ok`, empty success, partial success, or fallback success when any required sync step fails.
 

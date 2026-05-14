@@ -10,8 +10,9 @@
 - WebDAV：Basic 帳密或 Bearer Token。
 - S3 相容儲存：含 Path Style 模式。
 - TT-Sync 配對、服務端列表、Push、Pull、解除配對入口。
+- TT-Sync 傳輸停止入口，會呼叫後端取消命令而不是假裝完成。
 - TT-Sync 帳號登入、短效配對 URI 產生、裝置列表與同步歷史入口。
-- 增量同步進度欄位：phase、檔案數、bytes、目前檔案。
+- 增量同步進度欄位：phase、檔案數、bytes、目前檔案、部分上傳安全性。
 - 增量同步完成摘要：方向、檔案數、bytes、刪除檔案。
 - 手動上傳完整資料封存。
 - 手動下載遠端佇列中最舊的一包。
@@ -32,6 +33,7 @@ https://github.com/ExAlan7588/ManualCloudSyncPluginPlan
 
 這個 repo 只包含前端插件。增量 TT-Sync 需要 TauriTavern 版本提供下列原生命令：
 
+- `tt_sync_cancel`
 - `tt_sync_pair`
 - `tt_sync_list_servers`
 - `tt_sync_push`
@@ -78,6 +80,7 @@ TauriTavern 後端需要實作的 `tt_sync_*` command contract 請看：[docs/Ta
 4. 按「刷新服務端」確認已保存的服務端；手機與電腦都要各自配對一次。
 5. 選擇 `Incremental` 或 `Mirror` 同步模式。
 6. 要把目前裝置的變更送上服務端時按 `Push`；要把服務端變更套到目前裝置時按 `Pull`。
+7. 傳輸中可按 `停止` 要求後端取消目前 TT-Sync；若後端尚未支援 `tt_sync_cancel`，插件會顯示明確錯誤，不會假裝已停止。
 
 目前上游 TauriTavern command surface 沒有獨立 dry-run diff command；插件不呼叫不存在的 `tt_sync_check_diff`，也不會用 fake summary 模擬成功。這個插件只負責 UI 與 command 呼叫；manifest 掃描、plan、原子寫入、mtime 保留、mirror delete、mutex 與 commit 必須由 TauriTavern TT-Sync 後端實作。
 

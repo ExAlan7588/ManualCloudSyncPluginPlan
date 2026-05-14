@@ -21,7 +21,7 @@
 - TT-Sync v2：`src-tauri/src/infrastructure/tt_sync/`
 - 同步檔案 IO：`src-tauri/src/infrastructure/sync_fs.rs`
 - 傳輸並發：`src-tauri/src/infrastructure/sync_transfer.rs`
-- 後端命令：`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_pull`、`tt_sync_push`
+- 後端命令：`tt_sync_cancel`、`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_pull`、`tt_sync_push`
 - 現況文件：`docs/CurrentState/Sync.md`
 
 TT-Sync v2 已經具備很多理想形態：
@@ -62,8 +62,8 @@ TT-Sync v2 已經具備很多理想形態：
 本 repo 是 GitHub 前端插件，原本不包含 `src-tauri` 後端、TT-Sync server、VPS 部署檔或手機 build pipeline。已完成 repo-local 交付：
 
 - 新增獨立 `增量 TT-Sync` 面板，和既有全量 zip 交棒同步分離。
-- UI 呼叫目前上游真實 `tt_sync_*` command 名稱：`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`。
-- 顯示服務端狀態、同步模式、Push/Pull 操作、進度欄位與完成摘要。
+- UI 呼叫目前上游真實 `tt_sync_*` command 名稱：`tt_sync_cancel`、`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`。
+- 顯示服務端狀態、同步模式、Push/Pull/停止操作、進度欄位與完成摘要。
 - 新增差異摘要與衝突列表 UI 承接面；只渲染後端 command 回傳或 `tt_sync:diff` / `tt_sync:conflict` event 內的真實 payload，不用 fake summary 或假衝突補齊缺失。
 - 目前上游沒有獨立 `tt_sync_check_diff` dry-run command；插件已移除該呼叫，不用 fake summary 模擬成功。
 - 缺少 TT-Sync 後端命令時顯示明確錯誤，不做 mock success 或靜默降級。
@@ -313,7 +313,7 @@ WebDAV 可繼續當作第一版全量 zip 相容模式與簡易備援，但不�
 
 ## 12. 決策紀錄與剩餘依賴
 
-- 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`，不在純前端插件內新增假的增量同步，也不呼叫不存在的 dry-run command。
+- 第一階段採用既有 TT-Sync command surface：前端呼叫 `tt_sync_cancel`、`tt_sync_pair`、`tt_sync_list_servers`、`tt_sync_push`、`tt_sync_pull`、`tt_sync_remove_server`，不在純前端插件內新增假的增量同步，也不呼叫不存在的 dry-run command。
 - TT-Sync 服務端以本 repo 的 Minimal TT-Sync server 作為可部署 artifact；systemd/env template、部署檢查器與 live smoke verifier 已提供。deploy report、遠端 smoke report 與公開 endpoint 一致的 Android/desktop 配對 device evidence 已用 Cloudflare HTTPS 來源補齊。
 - Minimal server 已相容 TauriTavern v2 pair/session/plan/commit schema：支援 Tauri pair body、Ed25519 signed session open、snake_case manifest plan input、Tauri plan response 與 commit `ok=true`。Android runtime push 暴露的並行 file upload plan 寫入 race 已修正，不以 mock/fallback 隱藏。
 - 第一版接受配對式流程；帳號式能力已在 Minimal server 內提供 login、token refresh、短效一次性 pairing URI、device list、history 與 rollback endpoints。插件已能登入 Minimal server 並把短效 URI 填入既有 TauriTavern 配對欄位；真正同步授權仍由 TauriTavern App 後端保存。

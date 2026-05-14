@@ -7,7 +7,6 @@ import {
     SYNC_FILE_PREFIX,
     SYNC_MANIFEST_EXTENSION,
     SYNC_ZIP_EXTENSION,
-    TRANSFER_PROGRESS_RENDER_INTERVAL_MS,
     WEBDAV_PROPFIND_BODY,
     ZIP_CONTENT_TYPE,
 } from './constants.js';
@@ -21,7 +20,7 @@ import {
 } from './config.js';
 import { importArchiveBlob, runCompatExportToFile as exportArchiveToFile } from './data-migration.js';
 import { normalizeError, readFailureMessage } from './errors.js';
-import { formatTransferProgress } from './format.js';
+import { webDavXhrTransfer } from './webdav-transfer.js';
 
 export { exportArchiveToFile as runCompatExportToFile };
 
@@ -215,121 +214,31 @@ async function fetchWebDav(options) {
 
 async function uploadWebDavBlobWithProgress(options) {
     await webDavXhrTransfer({
-        connection: options.connection,
         context: options.context,
         key: options.item.zipKey,
         method: 'PUT',
         body: options.file,
-        headers: { 'Content-Type': ZIP_CONTENT_TYPE },
+        headers: webDavTransferHeaders(options.connection, { 'Content-Type': ZIP_CONTENT_TYPE }),
         progressTarget: 'upload',
         responseType: 'text',
         totalBytes: options.file.size,
         label: '上傳同步包',
+        url: webDavUrlForKey(options.connection.config, options.item.zipKey),
     });
 }
 
 async function downloadWebDavBlobWithProgress(options) {
     return webDavXhrTransfer({
-        connection: options.connection,
         context: options.context,
         key: options.key,
         method: 'GET',
+        headers: webDavTransferHeaders(options.connection),
         progressTarget: 'download',
         responseType: 'blob',
         totalBytes: options.totalBytes,
         label: '下載同步包',
+        url: webDavUrlForKey(options.connection.config, options.key),
     });
-}
-
-function webDavXhrTransfer(options) {
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        const report = createTransferProgressReporter(options);
-        xhr.open(options.method, webDavUrlForKey(options.connection.config, options.key), true);
-        xhr.responseType = options.responseType;
-        setXhrHeaders(xhr, options.connection, options.headers);
-        bindXhrTransferEvents({ options, reject, report, resolve, xhr });
-        report(0, options.totalBytes, true);
-        xhr.send(options.body || null);
-    });
-}
-
-function setXhrHeaders(xhr, connection, extraHeaders) {
-    for (const [name, value] of Object.entries(webDavAuthHeaders(connection))) {
-        xhr.setRequestHeader(name, value);
-    }
-    for (const [name, value] of Object.entries(extraHeaders || {})) {
-        xhr.setRequestHeader(name, value);
-    }
-}
-
-function bindXhrTransferEvents(params) {
-    const progressSource = params.options.progressTarget === 'upload' ? params.xhr.upload : params.xhr;
-    progressSource.onprogress = event => params.report(
-        event.loaded,
-        progressEventTotal(event, params.options.totalBytes),
-        false,
-    );
-    params.xhr.onload = () => resolveCompletedXhr(params);
-    params.xhr.onerror = () => params.reject(new Error(`WebDAV ${params.options.method} 連線失敗，請確認端點與 CORS 設定`));
-    params.xhr.onabort = () => params.reject(new Error(`WebDAV ${params.options.method} 已中止`));
-    params.xhr.ontimeout = () => params.reject(new Error(`WebDAV ${params.options.method} 逾時`));
-}
-
-function resolveCompletedXhr(params) {
-    const finalBytes = finalTransferBytes(params.xhr, params.options);
-    params.report(finalBytes, finalBytes || params.options.totalBytes, true);
-    if (params.xhr.status >= 200 && params.xhr.status < 300) {
-        params.resolve(params.xhr.response);
-        return;
-    }
-
-    params.reject(new Error(xhrFailureMessage(params.xhr, params.options)));
-}
-
-function createTransferProgressReporter(options) {
-    const startedAt = performance.now();
-    let lastRenderAt = 0;
-    return (loadedBytes, totalBytes, force) => {
-        const now = performance.now();
-        if (!force && now - lastRenderAt < TRANSFER_PROGRESS_RENDER_INTERVAL_MS) {
-            return;
-        }
-
-        lastRenderAt = now;
-        options.context.setStatus(formatTransferProgress({
-            label: options.label,
-            loadedBytes,
-            now,
-            startedAt,
-            totalBytes: totalBytes || options.totalBytes,
-        }));
-    };
-}
-
-function progressEventTotal(event, fallbackTotal) {
-    return event.lengthComputable ? event.total : fallbackTotal;
-}
-
-function finalTransferBytes(xhr, options) {
-    if (options.progressTarget === 'upload') {
-        return options.totalBytes;
-    }
-
-    return xhr.response instanceof Blob ? xhr.response.size : options.totalBytes;
-}
-
-function xhrFailureMessage(xhr, options) {
-    const detail = xhrResponseText(xhr);
-    return `WebDAV ${options.method} ${options.key} 回傳 HTTP ${xhr.status}${detail ? `：${detail}` : ''}`;
-}
-
-function xhrResponseText(xhr) {
-    try {
-        return String(xhr.responseText || '').trim();
-    } catch {
-        return '';
-    }
 }
 
 async function ensureWebDavResponse(options) {
@@ -354,6 +263,10 @@ function webDavAuthHeaders(connection) {
     }
 
     throw new Error(`不支援的 WebDAV 驗證方式：${authMode}`);
+}
+
+function webDavTransferHeaders(connection, extraHeaders = {}) {
+    return { ...webDavAuthHeaders(connection), ...extraHeaders };
 }
 
 function webDavUrlForKey(config, key) {
@@ -383,10 +296,17 @@ function collectHrefTexts(doc) {
         .filter(Boolean);
 }
 
-function hrefFileName(href) {
+export function hrefFileName(href) {
     const normalized = href.trim().replace(/\/+$/, '');
     const segment = normalized.split('/').filter(Boolean).pop() || '';
-    return segment ? decodeURIComponent(segment) : '';
+    if (!segment) {
+        return '';
+    }
+    try {
+        return decodeURIComponent(segment);
+    } catch (error) {
+        throw new Error(`WebDAV PROPFIND href 編碼不正確：${href}：${normalizeError(error)}`);
+    }
 }
 
 function parseManifest(key, text) {

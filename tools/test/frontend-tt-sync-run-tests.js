@@ -10,6 +10,7 @@ import {
     isTtSyncCommandMissingError,
     normalizeError,
 } from '../../modules/errors.js';
+import { hrefFileName } from '../../modules/webdav-compat.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 
 const SETTINGS_HTML = new URL('../../settings.html', import.meta.url);
@@ -17,6 +18,7 @@ const DATA_MIGRATION_MODULE = new URL('../../modules/data-migration.js', import.
 const INDEX_MODULE = new URL('../../index.js', import.meta.url);
 const TT_SYNC_ACCOUNT_MODULE = new URL('../../modules/tt-sync-account.js', import.meta.url);
 const TT_SYNC_MODULE = new URL('../../modules/tt-sync.js', import.meta.url);
+const TT_SYNC_VIEW_MODULE = new URL('../../modules/tt-sync-view.js', import.meta.url);
 
 const REQUIRED_TT_SYNC_IDS = Object.freeze([
     'mcs_tts_account_devices',
@@ -39,6 +41,7 @@ const REQUIRED_TT_SYNC_IDS = Object.freeze([
     'mcs_tts_mode',
     'mcs_tts_push',
     'mcs_tts_pull',
+    'mcs_tts_cancel',
     'mcs_tts_unpair',
     'mcs_tts_summary',
     'mcs_tts_progress',
@@ -52,7 +55,10 @@ const tests = [
     ['TT-Sync frontend uses upstream command payloads', testUpstreamCommandPayloads],
     ['TT-Sync conflict UI exposes local and remote choices', testConflictChoiceUi],
     ['TT-Sync account panel uses server account API', testAccountPanelApi],
+    ['TT-Sync account endpoint URL errors include context', testAccountEndpointUrlErrors],
+    ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
+    ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -85,12 +91,19 @@ async function testRequiredCommands() {
 
 async function testUpstreamCommandPayloads() {
     const source = await readFile(TT_SYNC_MODULE, 'utf8');
+    const viewSource = await readFile(TT_SYNC_VIEW_MODULE, 'utf8');
     assert.ok(source.includes('deps.invokeCommand(TT_COMMANDS.pair, { pairUri })'), 'pair must use pairUri payload');
     assert.ok(source.includes('serverDeviceId: requireSelectedServerId()'), 'transfer must use serverDeviceId payload');
     assert.ok(source.includes('mode: selectedSyncMode()'), 'transfer must send SyncMode payload');
-    assert.ok(source.includes('server?.server_device_id'), 'server list must handle upstream snake_case ids');
-    assert.ok(source.includes('server?.base_url'), 'server list must handle upstream base_url');
-    assert.ok(source.includes('if (hasObjectPayload(result))'), 'empty command result must not clear event payloads');
+    assert.ok(viewSource.includes('server?.server_device_id'), 'server list must handle upstream snake_case ids');
+    assert.ok(viewSource.includes('server?.base_url'), 'server list must handle upstream base_url');
+    assert.ok(source.includes('hasObjectPayload(result)'), 'empty command result must not clear event payloads');
+    assert.ok(source.includes("cancel: 'tt_sync_cancel'"), 'frontend must call the real cancel command');
+    assert.ok(source.includes("cancelled: 'tt_sync:cancelled'"), 'frontend must listen for cancelled events');
+    assert.ok(source.includes('renderTransferControls(state.transfer)'), 'frontend must keep transfer controls in sync');
+    assert.ok(source.includes('beginTransfer(state.transfer'), 'frontend must mark active transfers before invoking backend');
+    assert.ok(source.includes('finishTransfer(state.transfer)'), 'frontend must clear active transfers on terminal states');
+    assert.ok(source.includes('renderProgress(result, createProgressTracker())'), 'cancel response payload must be visible');
     assert.ok(source.includes("diff: 'tt_sync:diff'"), 'frontend must subscribe to real diff events');
     assert.ok(source.includes("conflict: 'tt_sync:conflict'"), 'frontend must subscribe to real conflict events');
     assert.ok(source.includes('renderDiffSummary(payload)'), 'frontend must render diff payloads');
@@ -100,7 +113,7 @@ async function testUpstreamCommandPayloads() {
 }
 
 async function testConflictChoiceUi() {
-    const source = await readFile(TT_SYNC_MODULE, 'utf8');
+    const source = await readFile(TT_SYNC_VIEW_MODULE, 'utf8');
     assert.ok(source.includes('使用本機'), 'frontend must render a local conflict choice');
     assert.ok(source.includes('使用遠端'), 'frontend must render a remote conflict choice');
     assert.ok(source.includes('state.conflictChoices'), 'frontend must track conflict decisions locally');
@@ -121,6 +134,19 @@ async function testAccountPanelApi() {
     assert.ok(indexSource.includes('fetch: window.fetch.bind(window)'), 'account panel must receive fetch dependency');
 }
 
+async function testAccountEndpointUrlErrors() {
+    const accountSource = await readFile(TT_SYNC_ACCOUNT_MODULE, 'utf8');
+    assert.ok(accountSource.includes('parseRequiredUrl'), 'account endpoint URL parsing must be isolated for diagnostics');
+    assert.ok(accountSource.includes('帳號服務端 URL 格式不正確'), 'invalid account endpoint URLs must include field context');
+}
+
+async function testModuleNameDecodeErrorContext() {
+    const source = await readFile(INDEX_MODULE, 'utf8');
+    assert.ok(source.includes('export function resolveModuleName'), 'resolveModuleName must be exported for focused coverage');
+    assert.ok(source.includes('手動雲端同步擴充路徑 URL 編碼不正確'), 'decode failures must include extension URL context');
+    assert.ok(source.includes('decodeExtensionPath'), 'module path decoding must be isolated for diagnostics');
+}
+
 function testProgressMetrics() {
     const tracker = createProgressTracker();
     resetProgressTracker(tracker, 1000);
@@ -138,6 +164,7 @@ function testProgressMetrics() {
         current_path: 'default-user/backgrounds/a.jpg',
         files_done: 2,
         files_total: 4,
+        partial_upload_safe: true,
         phase: 'Downloading',
     }, tracker, 3000);
     assertProgressRow(rows, '完成度', '50.0%');
@@ -145,11 +172,20 @@ function testProgressMetrics() {
     assertProgressRow(rows, '耗時', '2s');
     assertProgressRow(rows, '剩餘', '2s');
     assertProgressRow(rows, '目前檔案', 'default-user/backgrounds/a.jpg');
+    assertProgressRow(rows, '部分上傳', '未提交，只暫存，可重試');
 }
 
 function assertProgressRow(rows, label, expected) {
     const row = rows.find(item => item.label === label);
     assert.equal(row?.value, expected, `${label} should be ${expected}`);
+}
+
+function testWebDavHrefDecodeErrors() {
+    assert.equal(hrefFileName('/dav/cloud-sync/sync-0102030405.manifest.json'), 'sync-0102030405.manifest.json');
+    assert.throws(
+        () => hrefFileName('/dav/cloud-sync/%E0%A4%A.manifest.json'),
+        /WebDAV PROPFIND href 編碼不正確/,
+    );
 }
 
 function testMissingTtSyncCommandError() {

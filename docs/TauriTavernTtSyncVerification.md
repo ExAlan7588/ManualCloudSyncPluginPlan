@@ -18,6 +18,7 @@ npm run verify:tauritavern -- --source /path/to/TauriTavern --manifest /tmp/tt-s
 
 必要命令：
 
+- `tt_sync_cancel`
 - `tt_sync_pair`
 - `tt_sync_list_servers`
 - `tt_sync_push`
@@ -286,7 +287,7 @@ final evidence gate 會檢查下列 dot-path 欄位：
       "evidence": "backend command contract test report path or build verification id",
       "contract": {
         "reportId": "contract-test-report-id",
-        "commands": ["tt_sync_pair", "tt_sync_list_servers", "tt_sync_push", "tt_sync_pull", "tt_sync_remove_server"]
+        "commands": ["tt_sync_cancel", "tt_sync_pair", "tt_sync_list_servers", "tt_sync_push", "tt_sync_pull", "tt_sync_remove_server"]
       },
       "mobileCommandReport": { "tool": "verify-tauritavern-tt-sync", "schemaVersion": 1, "scannedAt": "2026-05-12T00:00:00+08:00", "source": "/builds/TauriTavern-mobile.apk", "sourceKind": "build-artifact" },
       "desktopCommandReport": { "tool": "verify-tauritavern-tt-sync", "schemaVersion": 1, "scannedAt": "2026-05-12T00:00:20+08:00", "source": "/builds/TauriTavern-desktop.dmg", "sourceKind": "build-artifact" },

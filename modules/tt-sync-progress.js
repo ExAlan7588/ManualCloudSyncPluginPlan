@@ -20,7 +20,7 @@ export function resetProgressTracker(tracker, now = Date.now()) {
 
 export function progressRows(progress, tracker, now = Date.now()) {
     const snapshot = progressSnapshot(progress, tracker, now);
-    return [
+    const rows = [
         { label: 'phase', value: stringValue(firstValue(progress, ['phase', 'stage'])) },
         { label: 'files', value: progressPair(snapshot.filesDone, snapshot.filesTotal) },
         { label: 'bytes', value: bytesPair(snapshot.bytesDone, snapshot.bytesTotal) },
@@ -30,6 +30,11 @@ export function progressRows(progress, tracker, now = Date.now()) {
         { label: '剩餘', value: etaText(snapshot) },
         { label: '目前檔案', value: stringValue(firstValue(progress, ['current_path', 'currentPath', 'currentFile'])) },
     ];
+    const safety = partialUploadSafetyText(progress);
+    if (safety) {
+        rows.push({ label: '部分上傳', value: safety });
+    }
+    return rows;
 }
 
 function progressSnapshot(progress, tracker, now) {
@@ -91,6 +96,12 @@ function percentText(done, total) {
 
 function speedText(speedBytesPerSecond) {
     return Number.isFinite(speedBytesPerSecond) ? `${formatBytes(speedBytesPerSecond)}/s` : EMPTY_VALUE;
+}
+
+function partialUploadSafetyText(progress) {
+    return firstValue(progress, ['partial_upload_safe', 'partialUploadSafe']) === true
+        ? '未提交，只暫存，可重試'
+        : '';
 }
 
 function progressPair(done, total) {
