@@ -44,6 +44,8 @@ const ZIP_VERSION = 20;
 const tests = [
     ['TauriTavern command verifier passes when commands exist', testVerifierFindsCommands],
     ['TauriTavern command verifier scans compressed zip artifacts', testVerifierScansCompressedZip],
+    ['TauriTavern command verifier rejects corrupt zip-like artifacts', testVerifierRejectsCorruptZipLikeArtifact],
+    ['TauriTavern command verifier ignores zip metadata command strings', testVerifierIgnoresZipMetadataCommands],
     ['TauriTavern command verifier rejects unregistered source commands', testVerifierRejectsUnregisteredSourceCommands],
     ['TauriTavern command verifier rejects docs-only command strings', testVerifierRejectsDocsOnly],
     ['TauriTavern command verifier fails when commands are missing', testVerifierMissingCommands],
@@ -93,6 +95,28 @@ async function testVerifierScansCompressedZip() {
         assert.equal(report.ok, true);
         assert.equal(report.sourceKind, 'build-artifact');
         assert.equal(report.commands.every(command => command.files.includes('app-release.apk!/classes.dex')), true);
+    });
+}
+
+async function testVerifierRejectsCorruptZipLikeArtifact() {
+    await withVerifierFixture(async root => {
+        const artifactPath = path.join(root, 'corrupt.apk');
+        await writeFile(artifactPath, REQUIRED_TT_SYNC_COMMANDS.join('\n'));
+        await assert.rejects(
+            verifyTauriTavernCommands({ source: artifactPath }),
+            /ZIP end of central directory not found/,
+        );
+    });
+}
+
+async function testVerifierIgnoresZipMetadataCommands() {
+    await withVerifierFixture(async root => {
+        const artifactPath = path.join(root, 'metadata-only.apk');
+        const entryName = `${REQUIRED_TT_SYNC_COMMANDS.join('-')}.txt`;
+        await writeFile(artifactPath, zipArtifactFor({ content: 'metadata only', name: entryName }));
+        const report = await verifyTauriTavernCommands({ source: artifactPath });
+        assert.equal(report.ok, false);
+        assert.deepEqual(report.missingCommands, REQUIRED_TT_SYNC_COMMANDS);
     });
 }
 
