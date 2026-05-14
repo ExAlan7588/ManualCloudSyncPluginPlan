@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Reproduce stale concurrent commit risk,DONE,Focused storage test shows only one stale snapshot commit can succeed,timeout 60s node server/test/storage-run-tests.js,2026-05-14T23:03:21+08:00,0,"Test failed before fix when two independently read snapshots could both commit"
+2,Serialize commitPlan through plan lock,DONE,commitPlan re-reads latest plan under lock and does not mutate caller plan,node --check server/lib/storage.js,2026-05-14T23:03:21+08:00,0,"commitPlan now uses withPlanLock and re-reads latest plan"
+3,Run validation,DONE,Storage test and npm check pass,timeout 60s node server/test/storage-run-tests.js,2026-05-14T23:03:21+08:00,0,"storage-run-tests and npm run check pass; npm test reaches new tests then stops at sandbox listen EPERM"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

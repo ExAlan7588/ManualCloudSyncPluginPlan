@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm extraction boundary,DONE,Reusable response/request helpers identified,rg sendJson server/lib/routes.js,2026-05-14T22:47:09+08:00,0,"Generic body/CORS/JSON/SSE helpers are route-boundary utilities and routes.js is 579 lines"
+2,Extract helpers without behavior changes,DONE,routes.js drops below limit and imports helper module,node --check server/lib/routes.js,2026-05-14T22:54:13+08:00,0,"Extracted `server/lib/http-helpers.js`; routes.js is now 511 lines"
+3,Run validation,DONE,Static checks and focused tests pass,timeout 60s npm run check,2026-05-14T22:54:13+08:00,0,"`npm run check`, frontend tests, Tauri verifier tests, and progress-events test pass"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

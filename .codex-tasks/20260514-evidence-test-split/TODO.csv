@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm test file size risk,DONE,tools/test/run-tests.js is close to 600 lines,wc -l tools/test/run-tests.js,2026-05-14T23:11:48+08:00,0,"File is 584 lines"
+2,Split URL consistency tests,DONE,Tests move to a focused file and npm test still runs them,node --check tools/test/evidence-url-run-tests.js,2026-05-14T23:15:08+08:00,0,"Moved URL/server consistency tests to tools/test/evidence-url-run-tests.js; package test script includes it"
+3,Run validation,DONE,Focused evidence tests and npm check pass,timeout 60s node tools/test/run-tests.js,2026-05-14T23:15:08+08:00,0,"evidence-url-run-tests, run-tests, and npm run check pass"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

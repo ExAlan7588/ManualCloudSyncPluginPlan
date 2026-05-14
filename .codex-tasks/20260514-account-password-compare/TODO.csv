@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm direct credential compare,DONE,Direct username/password comparison identified,rg assertAccountLogin server/lib/account.js,2026-05-14T23:25:44+08:00,0,"assertAccountLogin used direct string equality"
+2,Use constant-time compare,DONE,Credential checks use constantTimeEqual while preserving errors,node --check server/lib/account.js,2026-05-14T23:28:35+08:00,0,"assertAccountLogin now compares username/password with constantTimeEqual"
+3,Run validation,DONE,Focused account unit tests and npm check pass,timeout 60s node server/test/account-unit-run-tests.js,2026-05-14T23:28:35+08:00,0,"account-unit-run-tests and npm run check pass; npm test reaches account unit then stops at sandbox listen EPERM"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

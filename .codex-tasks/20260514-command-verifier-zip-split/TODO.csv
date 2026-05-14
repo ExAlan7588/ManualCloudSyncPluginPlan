@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm ZIP parser extraction boundary,DONE,ZIP helpers are isolated in verifier,wc -l tools/verify-tauritavern-tt-sync.js,2026-05-14T23:15:52+08:00,0,"Verifier is 586 lines and ZIP parser is a separate bottom section"
+2,Extract ZIP parser helper,DONE,Verifier imports zipEntriesFrom and is below limit,node --check tools/verify-tauritavern-tt-sync.js,2026-05-14T23:20:03+08:00,0,"Extracted tools/zip-entries.js; command verifier is now 424 lines"
+3,Run validation,DONE,Verifier tests and npm check pass,timeout 60s node tools/test/verify-tauritavern-run-tests.js,2026-05-14T23:20:03+08:00,0,"Verifier tests and npm run check pass"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

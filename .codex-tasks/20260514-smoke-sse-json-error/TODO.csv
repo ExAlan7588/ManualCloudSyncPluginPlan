@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm SSE parse context gap,DONE,Raw JSON.parse path identified,rg parseSseProgress tools/smoke-tt-sync-server.js,2026-05-14T23:07:43+08:00,0,"parseSseProgress parsed data line JSON without contextual error"
+2,Add explicit malformed SSE error,DONE,Malformed progress SSE reports HTTP/SSE context,node --check tools/smoke-tt-sync-server.js,2026-05-14T23:11:09+08:00,0,"parseSseProgress now wraps JSON parse errors with SSE progress context"
+3,Run validation,DONE,Focused smoke-deploy path and npm check pass,timeout 60s node tools/test/smoke-deploy-run-tests.js,2026-05-14T23:11:09+08:00,0,"First two smoke-deploy tests pass; suite then reaches expected sandbox listen EPERM; npm run check passes"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

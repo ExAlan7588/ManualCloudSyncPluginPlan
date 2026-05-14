@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm timestamp replay risk,DONE,Signed timestamp is parsed but not bounded,rg timestampMs server/lib/tauri-contract.js,2026-05-14T23:22:07+08:00,0,"timestamp participates in signature but freshness is not checked"
+2,Add timestamp freshness check,DONE,Stale and future signed requests are rejected,node --check server/lib/tauri-contract.js,2026-05-14T23:25:01+08:00,0,"Added 5-minute signed session timestamp window"
+3,Run validation,DONE,Focused contract unit tests and npm check pass,timeout 60s node server/test/tauri-contract-unit-run-tests.js,2026-05-14T23:25:01+08:00,0,"Tauri contract unit test and npm run check pass; npm test reaches new test then stops at sandbox listen EPERM"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm SSE failure mode,DONE,Async progress stream failure path is identified,rg streamProgressEvents server/lib/routes.js,2026-05-14T22:45:33+08:00,0,"`streamProgressEvents()` had an async interval callback with no rejection handling"
+2,Implement explicit SSE error surface,DONE,Polling errors send an error event and close the stream,node --check server/lib/routes.js,2026-05-14T22:45:33+08:00,0,"Added `writeProgressEventOrClose`, `writeProgressErrorEvent`, and centralized stream close"
+3,Add focused non-listening test,DONE,Regression test covers failed progress polling without network listen,timeout 60s node server/test/progress-events-run-tests.js,2026-05-14T22:45:33+08:00,0,"New handler-level test avoids sandbox listen permissions"
+4,Run validation,DONE,Relevant checks pass or environment blockers are documented,timeout 60s npm run check,2026-05-14T22:45:33+08:00,0,"`npm run check` and new test pass; `npm test` reaches new test then remains blocked by listen EPERM"
+5,Record commit status,FAILED,Changes are committed or git blocker is documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"

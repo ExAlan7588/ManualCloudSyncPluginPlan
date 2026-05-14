@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm raw decode error,DONE,resolveModuleName calls decodeURIComponent without context,rg "decodeURIComponent" index.js,2026-05-15T00:09:58+08:00,0,"Malformed percent escapes can surface as generic URI malformed"
+2,Add contextual decode error,DONE,Frontend test covers malformed module URL context,timeout 60s node tools/test/frontend-tt-sync-run-tests.js,2026-05-15T00:11:27+08:00,0,"resolveModuleName is exported and decode failures include module URL context"
+3,Run validation,DONE,Frontend tests and syntax check pass,timeout 60s npm run check,2026-05-15T00:11:27+08:00,0,"frontend tests and npm run check passed"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git add index.js tools/test/frontend-tt-sync-run-tests.js .codex-tasks/20260515-module-name-decode-error/SPEC.md .codex-tasks/20260515-module-name-decode-error/TODO.csv .codex-tasks/20260515-module-name-decode-error/PROGRESS.md && git commit -m "fix: add module path decode context",2026-05-15T00:11:27+08:00,1,"Blocked: fatal unable to create .git/index.lock because .git is read-only"

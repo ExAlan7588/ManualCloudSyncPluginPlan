@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Confirm href decode risk,DONE,Raw decodeURIComponent failure path identified,rg hrefFileName modules/webdav-compat.js,2026-05-14T23:04:21+08:00,0,"hrefFileName directly decoded server-provided href segments"
+2,Add explicit href decode error,DONE,Malformed href reports WebDAV context instead of raw URIError,node --check modules/webdav-compat.js,2026-05-14T23:06:52+08:00,0,"hrefFileName now wraps malformed percent-encoding with WebDAV PROPFIND context"
+3,Run validation,DONE,Frontend tests and npm check pass,timeout 60s node tools/test/frontend-tt-sync-run-tests.js,2026-05-14T23:06:52+08:00,0,"Frontend TT-Sync tests and npm run check pass"
+4,Record commit status,FAILED,Changes are committed or git blocker documented,git status --short,,1,"Commit blocked: git add cannot create .git/index.lock on read-only filesystem"
