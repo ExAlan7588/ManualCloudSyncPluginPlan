@@ -19,6 +19,8 @@ const REQUIRED_ENV_KEYS = Object.freeze([
     'TT_SYNC_PORT',
     'TT_SYNC_PUBLIC_URL',
 ]);
+const TLS_CERT_KEY = 'TT_SYNC_TLS_CERT_PATH';
+const TLS_KEY_KEY = 'TT_SYNC_TLS_KEY_PATH';
 
 export async function verifyTtSyncDeploy(options = {}) {
     const input = await loadInputs(options);
@@ -109,12 +111,14 @@ function serviceChecks(service) {
 }
 
 function envChecks(options) {
+    const tls = tlsValues(options.env);
     return [
         check('env quoted values are well formed', noQuoteErrors(options.env), 'quoted env values must use matching quotes'),
         ...REQUIRED_ENV_KEYS.map(key => check(`env ${key}`, hasText(firstValue(options.env, key)), `${key} must be set`)),
         check('env data dir is absolute', path.isAbsolute(firstValue(options.env, 'TT_SYNC_DATA_DIR')), 'TT_SYNC_DATA_DIR must be absolute'),
         check('env public URL', isHttpUrl(firstValue(options.env, 'TT_SYNC_PUBLIC_URL')), 'TT_SYNC_PUBLIC_URL must be http or https'),
         check('env port', isValidPort(firstValue(options.env, 'TT_SYNC_PORT')), 'TT_SYNC_PORT must be a TCP port number'),
+        ...tlsChecks(tls, firstValue(options.env, 'TT_SYNC_PUBLIC_URL')),
         check('env pairing token is not placeholder', tokenAllowed(options), 'TT_SYNC_PAIRING_TOKEN must not be a placeholder in real env files'),
     ];
 }
@@ -159,6 +163,32 @@ function isHttpUrl(value) {
 function isValidPort(value) {
     const port = Number(value);
     return Number.isInteger(port) && port > 0 && port <= 65535;
+}
+
+function tlsChecks(tls, publicUrl) {
+    if (!tls.hasAny) {
+        return [];
+    }
+    return [
+        check('env TLS cert and key are paired', hasText(tls.certPath) && hasText(tls.keyPath), `${TLS_CERT_KEY} and ${TLS_KEY_KEY} must be set together`),
+        check('env TLS cert path is absolute', path.isAbsolute(tls.certPath), `${TLS_CERT_KEY} must be absolute when set`),
+        check('env TLS key path is absolute', path.isAbsolute(tls.keyPath), `${TLS_KEY_KEY} must be absolute when set`),
+        check('env TLS public URL is HTTPS', urlProtocol(publicUrl) === 'https:', 'TT_SYNC_PUBLIC_URL must be https when server TLS is enabled'),
+    ];
+}
+
+function tlsValues(env) {
+    const certPath = firstValue(env, TLS_CERT_KEY);
+    const keyPath = firstValue(env, TLS_KEY_KEY);
+    return { certPath, hasAny: hasText(certPath) || hasText(keyPath), keyPath };
+}
+
+function urlProtocol(value) {
+    try {
+        return new URL(value).protocol;
+    } catch {
+        return '';
+    }
 }
 
 function tokenAllowed(options) {

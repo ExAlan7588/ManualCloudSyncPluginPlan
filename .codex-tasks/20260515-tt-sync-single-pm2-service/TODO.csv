@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add task context,DONE,Task files exist,test -f .codex-tasks/20260515-tt-sync-single-pm2-service/SPEC.md,2026-05-15T00:00:00+08:00,0,
+2,Implement direct TLS server support,DONE,Main TT-Sync server can create HTTPS server from explicit cert/key env,npm run check,2026-05-15T20:03:17+08:00,0,
+3,Update deploy validation and examples,DONE,Deploy verifier accepts paired TLS env and rejects incomplete TLS env,node tools/test/deploy-run-tests.js,2026-05-15T20:03:17+08:00,0,
+4,Switch PM2 to one TT-Sync service,DONE,Only manual-cloud-tt-sync remains for TT-Sync and HTTPS status responds,pm2 ls --no-color,2026-05-15T20:07:34+08:00,0,
+5,Run final validation and commit,DONE,Checks pass and phase commit contains only relevant changes,git status --short,2026-05-15T20:07:34+08:00,0,
