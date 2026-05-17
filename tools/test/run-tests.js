@@ -54,6 +54,7 @@ const tests = [
     ['incremental evidence verifier rejects failed extra report checks', testFailedExtraReportCheck],
     ['incremental evidence verifier rejects invalid timestamps', testInvalidEvidenceTimestamp],
     ['incremental evidence verifier rejects undersized large sync evidence', testUndersizedLargeSyncEvidence],
+    ['incremental evidence verifier rejects malformed large sync byte evidence', testMalformedLargeSyncByteEvidence],
     ['incremental evidence verifier rejects mtime mismatch', testMtimeMismatch],
     ['incremental evidence verifier rejects interruption hash mismatch', testInterruptionHashMismatch],
     ['incremental evidence verifier rejects missing interruption run id', testMissingInterruptionRunId],
@@ -273,6 +274,14 @@ async function testInvalidEvidenceTimestamp() {
 async function testUndersizedLargeSyncEvidence() {
     const evidence = completeEvidence();
     evidence.deviceEvidence.checks.realLargeFirstSyncCompleted.metrics.totalBytes = TEST_BULK_FILES * TEST_BULK_FILE_BYTES;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('real large sync byte target'));
+}
+
+async function testMalformedLargeSyncByteEvidence() {
+    const evidence = completeEvidence();
+    evidence.deviceEvidence.checks.realLargeFirstSyncCompleted.metrics.totalBytes = '0x14000000';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('real large sync byte target'));

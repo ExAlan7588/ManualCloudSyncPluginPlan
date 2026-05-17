@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 35 audit finding,done,Large sync byte threshold accepts malformed numeric strings
+2,Add regression coverage,done,Focused tools test fails before fix because malformed totalBytes does not fail the target check
+3,Implement strict threshold comparison,done,Large sync threshold requires integer number before comparing minimum bytes
+4,Run focused and full validation,done,Focused tools test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 35 files and related code changes

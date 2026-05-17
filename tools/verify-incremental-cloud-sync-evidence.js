@@ -269,7 +269,10 @@ function serverConsistencyChecks(evidence) {
     return [
         check(
             'real large sync byte target',
-            Number(deviceCheckValue(evidence, 'realLargeFirstSyncCompleted', 'metrics.totalBytes')) >= MIN_REAL_LARGE_SYNC_BYTES,
+            integerAtLeast(
+                deviceCheckValue(evidence, 'realLargeFirstSyncCompleted', 'metrics.totalBytes'),
+                MIN_REAL_LARGE_SYNC_BYTES,
+            ),
             'realLargeFirstSyncCompleted.metrics.totalBytes must be at least 300MiB',
         ),
         check(
@@ -407,6 +410,10 @@ function sameText(left, right) {
 
 function sameNumber(left, right) {
     return Number.isFinite(left) && Number.isFinite(right) && left === right;
+}
+
+function integerAtLeast(value, minimum) {
+    return Number.isInteger(value) && value >= minimum;
 }
 
 function arrayIncludesAllTexts(values, requiredValues) {
