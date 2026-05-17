@@ -20,8 +20,13 @@ export async function readJsonRequest(request, fallback) {
         return { body: fallback, buffer };
     }
     try {
-        return { body: JSON.parse(buffer.toString('utf8')), buffer };
+        const body = JSON.parse(buffer.toString('utf8'));
+        assertJsonObject(body);
+        return { body, buffer };
     } catch (error) {
+        if (error instanceof HttpError) {
+            throw error;
+        }
         throw badRequest(`Request body must be valid JSON: ${error.message}`);
     }
 }
@@ -109,4 +114,10 @@ function readRawBody(request) {
             reject(error);
         });
     });
+}
+
+function assertJsonObject(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw badRequest('Request body must be a JSON object');
+    }
 }

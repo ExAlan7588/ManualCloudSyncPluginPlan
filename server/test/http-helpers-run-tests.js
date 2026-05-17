@@ -5,6 +5,7 @@ import { readJsonRequest } from '../lib/http-helpers.js';
 await testReadJsonRequestIncludesParserDetail();
 await testReadJsonRequestUsesFallbackForEmptyBody();
 await testReadJsonRequestReturnsBodyAndBuffer();
+await testReadJsonRequestRejectsNonObjectBody();
 await testReadJsonRequestRejectsOversizedBody();
 await testReadJsonRequestRejectsMalformedMaxBodyEnv();
 console.log('ok - HTTP JSON helpers expose parser details');
@@ -27,6 +28,17 @@ async function testReadJsonRequestReturnsBodyAndBuffer() {
     const result = await readJsonRequest(requestFrom('{"ok":true}'));
     assert.deepEqual(result.body, { ok: true });
     assert.equal(result.buffer.toString('utf8'), '{"ok":true}');
+}
+
+async function testReadJsonRequestRejectsNonObjectBody() {
+    await assert.rejects(
+        readJsonRequest(requestFrom('null')),
+        /Request body must be a JSON object/,
+    );
+    await assert.rejects(
+        readJsonRequest(requestFrom('[]')),
+        /Request body must be a JSON object/,
+    );
 }
 
 async function testReadJsonRequestRejectsOversizedBody() {

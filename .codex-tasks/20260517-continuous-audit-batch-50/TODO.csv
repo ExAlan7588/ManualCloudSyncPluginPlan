@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 50 audit finding,done,JSON request parser accepts non-object top-level bodies
+2,Add regression coverage,done,Assert top-level null and arrays fail with explicit JSON object error
+3,Implement body shape validation,done,Validate parsed JSON request body is a non-array object
+4,Run focused and full validation,done,Focused HTTP helper test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 50 files and related code changes
