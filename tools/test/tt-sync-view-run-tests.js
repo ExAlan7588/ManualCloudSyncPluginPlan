@@ -1,9 +1,22 @@
 import assert from 'node:assert/strict';
-import { renderConflictList } from '../../modules/tt-sync-view.js';
+import { renderConflictList, serverListFrom } from '../../modules/tt-sync-view.js';
 
+testServerListFromRejectsMalformedServers();
+testServerListFromKeepsMissingServersBehavior();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListKeepsMissingConflictPayloadBehavior();
 console.log('ok - TT-Sync view validates conflict payloads');
+
+function testServerListFromRejectsMalformedServers() {
+    assert.throws(
+        () => serverListFrom({ servers: {} }),
+        /TT-Sync 服務端列表格式不正確/,
+    );
+}
+
+function testServerListFromKeepsMissingServersBehavior() {
+    assert.deepEqual(serverListFrom({ ok: true }), []);
+}
 
 function testRenderConflictListRejectsMalformedConflicts() {
     const { elements, restore } = installDocumentFixture();

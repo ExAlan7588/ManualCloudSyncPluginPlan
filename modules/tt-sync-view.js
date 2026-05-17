@@ -150,6 +150,9 @@ export function serverListFrom(result) {
     if (Array.isArray(result?.servers)) {
         return result.servers;
     }
+    if (result?.servers !== undefined && result?.servers !== null) {
+        throw new Error('TT-Sync 服務端列表格式不正確');
+    }
     return [];
 }
 
