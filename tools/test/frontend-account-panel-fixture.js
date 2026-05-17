@@ -60,13 +60,13 @@ function jqueryElement(element) {
 }
 
 function accountPanelFetch(historyItem, overrides) {
-    return async input => {
+    return async (input, init = {}) => {
         const url = new URL(input);
-        return jsonResponse(accountPanelPayload(url.pathname, historyItem, overrides));
+        return jsonResponse(accountPanelPayload(url.pathname, historyItem, overrides, init));
     };
 }
 
-function accountPanelPayload(pathname, historyItem, overrides) {
+function accountPanelPayload(pathname, historyItem, overrides, init) {
     if (pathname === '/v2/account/login') {
         if (Object.hasOwn(overrides, 'login')) {
             return overrides.login;
@@ -84,6 +84,13 @@ function accountPanelPayload(pathname, historyItem, overrides) {
             return overrides.history;
         }
         return { history: [{ kind: 'sync', planId: 'plan-1', ...historyItem }] };
+    }
+    if (pathname === '/v2/account/pairing-uri') {
+        assert.equal(init?.headers?.Authorization, 'Bearer access-token');
+        if (Object.hasOwn(overrides, 'pairingUri')) {
+            return overrides.pairingUri;
+        }
+        return { expiresAt: '2026-05-17T00:00:00Z', pairingUri: 'tt-sync://pair/test' };
     }
     throw new Error(`Unexpected account panel route: ${pathname}`);
 }

@@ -142,7 +142,7 @@ function renderAccountState(state, message = '') {
 }
 
 function renderPairingUri(response) {
-    const pairingUri = String(response.pairingUri || '');
+    const pairingUri = responseText(response?.pairingUri);
     if (!pairingUri) {
         throw new Error('帳號配對回應缺少 pairingUri');
     }
@@ -277,6 +277,10 @@ function sessionText(value) {
     return typeof value === 'string' ? value : '';
 }
 
+function responseText(value) {
+    return typeof value === 'string' ? value : '';
+}
+
 function sessionNamespace(response) {
     if (!hasSessionField(response, 'namespace') || response.namespace === null || response.namespace === '') {
         return accountNamespace();
@@ -292,7 +296,8 @@ function hasSessionField(response, name) {
 }
 
 function expiryText(response) {
-    return response.expiresAt ? `配對 URI 到期：${response.expiresAt}` : '配對 URI 已產生';
+    const expiresAt = responseText(response?.expiresAt);
+    return expiresAt ? `配對 URI 到期：${expiresAt}` : '配對 URI 已產生';
 }
 
 function timePart(label, value) {
