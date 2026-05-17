@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 66 audit finding,done,required secret validation accepts truthy non-boolean saved flags
+2,Add focused config coverage,done,Assert malformed saved secret flags fail explicitly
+3,Implement saved flag validation,done,Allow booleans and missing flags but reject non-boolean values
+4,Run focused and full validation,done,Focused config test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 66 files and related code changes

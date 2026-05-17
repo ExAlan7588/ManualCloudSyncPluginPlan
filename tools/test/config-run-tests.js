@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { normalizeCompatConfig, normalizeCompatSecrets } from '../../modules/config.js';
+import { normalizeCompatConfig, normalizeCompatSecrets, validateBeforeSave } from '../../modules/config.js';
+import { BACKEND_WEBDAV, MODE_COMPAT } from '../../modules/constants.js';
 
 testNormalizeCompatConfigRejectsMalformedTextFields();
 testNormalizeCompatConfigRejectsMalformedBooleanFields();
 testNormalizeCompatConfigTrimsStrings();
 testNormalizeCompatSecretsRejectsMalformedValues();
 testNormalizeCompatSecretsTrimsStrings();
+testValidateBeforeSaveRejectsMalformedSecretFlags();
 console.log('ok - config helpers validate compat secrets');
 
 function testNormalizeCompatConfigRejectsMalformedTextFields() {
@@ -54,4 +56,23 @@ function testNormalizeCompatSecretsTrimsStrings() {
         webdavPassword: 'pass',
         webdavToken: null,
     });
+}
+
+function testValidateBeforeSaveRejectsMalformedSecretFlags() {
+    assert.throws(
+        () => validateBeforeSave(
+            {
+                backend: BACKEND_WEBDAV,
+                endpoint: 'https://storage.example.test/dav',
+                remotePrefix: 'cloud-sync',
+                webdav: { authMode: 'basic', username: 'user' },
+            },
+            { webdavPassword: null },
+            {
+                configView: { secrets: { hasWebdavPassword: 'yes' } },
+                mode: MODE_COMPAT,
+            },
+        ),
+        /Invalid saved secret flag hasWebdavPassword/,
+    );
 }

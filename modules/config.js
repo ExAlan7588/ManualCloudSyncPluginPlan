@@ -324,9 +324,20 @@ function requireText(value, message) {
 }
 
 function requireSecret(options) {
-    if (String(options.value || '').trim() || Boolean(options.configView?.secrets?.[options.savedKey])) {
+    if (String(options.value || '').trim() || savedSecretFlag(options.configView, options.savedKey)) {
         return;
     }
 
     throw new Error(options.message);
+}
+
+function savedSecretFlag(configView, savedKey) {
+    const value = configView?.secrets?.[savedKey];
+    if (value === undefined || value === null) {
+        return false;
+    }
+    if (typeof value !== 'boolean') {
+        throw new Error(`Invalid saved secret flag ${savedKey}`);
+    }
+    return value;
 }
