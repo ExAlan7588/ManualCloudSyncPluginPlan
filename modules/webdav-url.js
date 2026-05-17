@@ -17,6 +17,9 @@ export function webDavTransferHeaders(connection, extraHeaders = {}) {
 }
 
 export function webDavUrlForKey(config, key) {
+    if (typeof key !== 'string' || key.trim() === '') {
+        throw new Error('WebDAV key 必須是非空文字');
+    }
     const url = new URL(config.endpoint);
     const basePath = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
     const suffix = key.split('/').filter(Boolean).map(encodeURIComponent).join('/');
