@@ -6,6 +6,7 @@ const UPPERCASE_SHA256 = 'A'.repeat(64);
 
 testNormalizeManifestAcceptsLowercaseSha256();
 testNormalizeManifestRejectsUppercaseSha256();
+testNormalizeManifestRejectsMalformedEntries();
 testNormalizeManifestRejectsNullNumericFields();
 testNormalizeManifestRejectsNonDecimalNumericStrings();
 console.log('ok - manifest validation enforces lowercase sha256');
@@ -18,6 +19,17 @@ function testNormalizeManifestRejectsUppercaseSha256() {
     assert.throws(
         () => normalizeManifest([entryWithSha256(UPPERCASE_SHA256)]),
         /sha256 must be a 64-character lowercase hex digest/,
+    );
+}
+
+function testNormalizeManifestRejectsMalformedEntries() {
+    assert.throws(
+        () => normalizeManifest([null]),
+        /Manifest entry must be an object/,
+    );
+    assert.throws(
+        () => normalizeManifest([[]]),
+        /Manifest entry must be an object/,
     );
 }
 

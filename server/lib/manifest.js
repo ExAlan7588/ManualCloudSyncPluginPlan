@@ -13,6 +13,9 @@ export function normalizeManifest(input) {
 }
 
 export function normalizeEntry(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        throw badRequest('Manifest entry must be an object');
+    }
     const path = validateSyncPath(input?.path);
     const sizeBytes = nonNegativeInteger(input?.sizeBytes, `Invalid sizeBytes for ${path}`);
     const modifiedMs = nonNegativeInteger(input?.modifiedMs, `Invalid modifiedMs for ${path}`);
