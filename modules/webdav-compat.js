@@ -20,6 +20,7 @@ import {
 } from './config.js';
 import { importArchiveBlob, runCompatExportToFile as exportArchiveToFile } from './data-migration.js';
 import { normalizeError, readFailureMessage } from './errors.js';
+import { webDavHeaders } from './webdav-headers.js';
 import { webDavXhrTransfer } from './webdav-transfer.js';
 
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -180,10 +181,7 @@ async function deleteRemoteKey(connection, key, errors) {
 
 async function webDavFetch(params) {
     const options = params.options || {};
-    const headers = new Headers(webDavAuthHeaders(params.connection));
-    for (const [name, value] of Object.entries(options.headers || {})) {
-        headers.set(name, value);
-    }
+    const headers = webDavHeaders(webDavAuthHeaders(params.connection), options.headers);
 
     const response = await fetchWebDav({
         body: options.body,

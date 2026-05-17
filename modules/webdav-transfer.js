@@ -1,5 +1,6 @@
 import { TRANSFER_PROGRESS_RENDER_INTERVAL_MS } from './constants.js';
 import { formatTransferProgress } from './format.js';
+import { webDavHeaderMap } from './webdav-headers.js';
 
 export function webDavXhrTransfer(options) {
     return new Promise((resolve, reject) => {
@@ -15,19 +16,9 @@ export function webDavXhrTransfer(options) {
 }
 
 function setXhrHeaders(xhr, headers) {
-    for (const [name, value] of Object.entries(headerMap(headers))) {
+    for (const [name, value] of Object.entries(webDavHeaderMap(headers))) {
         xhr.setRequestHeader(name, value);
     }
-}
-
-function headerMap(headers) {
-    if (headers === undefined || headers === null) {
-        return {};
-    }
-    if (Array.isArray(headers) || typeof headers !== 'object') {
-        throw new Error('WebDAV headers must be an object');
-    }
-    return headers;
 }
 
 function bindXhrTransferEvents(params) {

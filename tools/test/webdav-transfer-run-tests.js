@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
+import { webDavHeaderMap, webDavHeaders } from '../../modules/webdav-headers.js';
 import { webDavXhrTransfer } from '../../modules/webdav-transfer.js';
 
 const originalXhr = globalThis.XMLHttpRequest;
 const originalPerformance = globalThis.performance;
 
 try {
+    testWebDavHeadersRejectMalformedInput();
+    console.log('ok - WebDAV header helper rejects malformed input');
+    testWebDavHeadersMergesExtraHeaders();
+    console.log('ok - WebDAV header helper merges extra headers');
     await testWebDavTransferSetsHeadersAndResolves();
     console.log('ok - WebDAV transfer helper sets headers and resolves responses');
     await testWebDavTransferReportsHttpFailureDetail();
@@ -14,6 +19,22 @@ try {
 } finally {
     globalThis.XMLHttpRequest = originalXhr;
     globalThis.performance = originalPerformance;
+}
+
+function testWebDavHeadersRejectMalformedInput() {
+    assert.throws(
+        () => webDavHeaderMap('Authorization: Basic abc'),
+        /WebDAV headers must be an object/,
+    );
+    assert.throws(
+        () => webDavHeaders({}, ['bad']),
+        /WebDAV headers must be an object/,
+    );
+}
+
+function testWebDavHeadersMergesExtraHeaders() {
+    const headers = webDavHeaders({ Authorization: 'Basic abc' }, { Authorization: 'Bearer xyz' });
+    assert.equal(headers.get('Authorization'), 'Bearer xyz');
 }
 
 async function testWebDavTransferSetsHeadersAndResolves() {

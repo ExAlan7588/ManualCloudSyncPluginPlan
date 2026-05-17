@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 62 audit finding,done,WebDAV fetch path still has unshared header validation
+2,Add shared header helper coverage,done,Assert helper rejects malformed headers and supports Headers construction
+3,Refactor WebDAV header validation,done,Use shared helper from XHR and fetch paths
+4,Run focused and full validation,done,Focused WebDAV transfer test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 62 files and related code changes
