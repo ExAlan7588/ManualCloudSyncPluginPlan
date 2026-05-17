@@ -103,9 +103,10 @@ export function normalizeTauriPlanInput(options) {
 }
 
 export function tauriPlanResponse(plan) {
-    const transfer = plan.kind === 'push' ? plan.uploads : plan.downloads;
+    const transferLabel = plan.kind === 'push' ? 'uploads' : 'downloads';
+    const transfer = tauriPlanArray(plan[transferLabel], transferLabel);
     const deletePaths = plan.mode === 'Mirror'
-        ? (plan.kind === 'push' ? plan.remoteDeletes : plan.localDeletes)
+        ? tauriPlanArray(plan.kind === 'push' ? plan.remoteDeletes : plan.localDeletes, plan.kind === 'push' ? 'remoteDeletes' : 'localDeletes')
         : [];
     return {
         bytes_total: sumBytes(transfer),
@@ -183,6 +184,13 @@ function tauriManifestEntry(entry) {
         path: entry.path,
         size_bytes: entry.sizeBytes,
     };
+}
+
+function tauriPlanArray(value, label) {
+    if (!Array.isArray(value)) {
+        throw new Error(`Invalid Tauri plan ${label}`);
+    }
+    return value;
 }
 
 function syncMode(value) {

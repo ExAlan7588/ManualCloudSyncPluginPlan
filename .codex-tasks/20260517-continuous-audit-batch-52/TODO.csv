@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 52 audit finding,done,Tauri plan response assumes transfer arrays are valid
+2,Add regression coverage,done,Assert malformed Tauri transfer arrays fail explicitly
+3,Implement Tauri transfer array validation,done,Validate uploads downloads and delete arrays before response generation
+4,Run focused and full validation,done,Focused tauri contract unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 52 files and related code changes

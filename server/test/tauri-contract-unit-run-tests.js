@@ -12,6 +12,7 @@ await testFutureSignedSessionRequestFails();
 await testTauriManifestRejectsNullNumericFields();
 await testTauriManifestRejectsNonDecimalNumericStrings();
 await testTauriPlanResponseRejectsMalformedSizeBytes();
+await testTauriPlanResponseRejectsMalformedArrays();
 console.log('ok - Tauri session timestamp freshness is enforced');
 
 async function testCurrentSignedSessionRequestPasses() {
@@ -69,6 +70,33 @@ async function testTauriPlanResponseRejectsMalformedSizeBytes() {
             uploads: [{ modifiedMs: 1, path: 'default-user/chats/example.jsonl', sizeBytes: '0x10' }],
         }),
         /Invalid Tauri plan sizeBytes/,
+    );
+}
+
+async function testTauriPlanResponseRejectsMalformedArrays() {
+    assert.throws(
+        () => tauriPlanResponse({
+            downloads: [],
+            id: 'plan-1',
+            kind: 'push',
+            localDeletes: [],
+            mode: 'Incremental',
+            remoteDeletes: [],
+            uploads: {},
+        }),
+        /Invalid Tauri plan uploads/,
+    );
+    assert.throws(
+        () => tauriPlanResponse({
+            downloads: null,
+            id: 'plan-1',
+            kind: 'pull',
+            localDeletes: [],
+            mode: 'Incremental',
+            remoteDeletes: [],
+            uploads: [],
+        }),
+        /Invalid Tauri plan downloads/,
     );
 }
 
