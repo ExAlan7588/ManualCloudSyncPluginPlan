@@ -1,0 +1,6 @@
+id,task,status,completed_at,notes
+1,Record audit finding and scope,DONE,2026-05-17,Finding recorded in SPEC.md
+2,Add focused failing test for malformed queue SHA values,DONE,2026-05-17,Focused test fails before implementation with TypeError
+3,Implement safe SHA preview formatting,DONE,2026-05-17,Malformed SHA preview values are skipped instead of crashing render
+4,Run focused and full validation,DONE,2026-05-17,Focused test npm run check npm test and git diff --check pass
+5,Commit batch changes,IN_PROGRESS,,

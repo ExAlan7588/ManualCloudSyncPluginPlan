@@ -50,8 +50,15 @@ function queueItemMeta(item) {
         queueSizeText(manifest.sizeBytes),
         manifest.createdAt || '',
         manifest.deviceId ? `來源：${manifest.deviceId}` : '',
-        manifest.sha256 ? `SHA-256：${manifest.sha256.slice(0, SHA_PREVIEW_LENGTH)}` : '',
+        queueShaText(manifest.sha256),
     ].filter(Boolean).join(' | ');
+}
+
+function queueShaText(value) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        return '';
+    }
+    return `SHA-256：${value.slice(0, SHA_PREVIEW_LENGTH)}`;
 }
 
 function queueSizeText(value) {
