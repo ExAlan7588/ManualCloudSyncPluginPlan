@@ -142,7 +142,7 @@ async function handleSession(context) {
     }
     const namespace = safeName(body.namespace || 'default', 'namespace');
     await authenticate(context, namespace);
-    return sendJson(context.response, await context.storage.openSession(namespace, sessionDeviceId(body.deviceId)));
+    return sendJson(context.response, await context.storage.openSession(namespace, requestDeviceId(body.deviceId)));
 }
 
 async function handleDevices(context, url) {
@@ -184,7 +184,7 @@ async function handlePlan(context, kind) {
     const namespace = safeName(body.namespace || 'default', 'namespace');
     await authenticate(context, namespace);
     const remoteManifest = await context.storage.readManifest(namespace);
-    const plan = buildPlan({ ...body, kind, namespace, remoteManifest });
+    const plan = buildPlan({ ...body, deviceId: requestDeviceId(body.deviceId), kind, namespace, remoteManifest });
     await context.storage.savePlan(plan);
     return sendJson(context.response, planSummary(plan));
 }
@@ -386,7 +386,7 @@ function pairingDeviceName(body) {
     return value.trim();
 }
 
-function sessionDeviceId(value) {
+function requestDeviceId(value) {
     if (value === undefined || value === null || value === '') {
         return '';
     }

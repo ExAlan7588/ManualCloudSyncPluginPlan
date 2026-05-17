@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Record audit finding,DONE,PROGRESS.md explains plan deviceId coercion risk,test -f .codex-tasks/20260517-continuous-audit-batch-135/PROGRESS.md,2026-05-17T00:00:00Z,0,
+2,Add failing regression coverage,DONE,Plan route rejects non-string deviceId before savePlan,node server/test/routes-unit-run-tests.js,2026-05-17T00:00:00Z,0,Failed before fix as expected
+3,Apply minimal validation fix,DONE,Direct plan deviceId is validated at request boundary,node server/test/routes-unit-run-tests.js,2026-05-17T00:00:00Z,0,Plan route now reuses request deviceId validation
+4,Run validation and commit,DONE,Check/test/diff validation pass and commit is created,timeout 60s npm test,2026-05-17T00:00:00Z,0,Validation passed and ready to commit

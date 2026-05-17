@@ -12,6 +12,7 @@ await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
 await testSessionOpenRejectsMalformedDeviceId();
 await testPlanRouteUsesNormalizedNamespace();
+await testPlanRouteRejectsMalformedDeviceId();
 await testPlanRouteIgnoresInjectedOppositeArrays();
 await testPlanRouteRejectsMalformedMode();
 await testCommitRouteUsesNormalizedPlanNamespace();
@@ -147,6 +148,29 @@ async function testPlanRouteUsesNormalizedNamespace() {
     });
     assert.equal(response.statusCode, 200);
     assert.equal(JSON.parse(response.body).namespace, 'default');
+}
+
+async function testPlanRouteRejectsMalformedDeviceId() {
+    const response = await dispatch({
+        body: { deviceId: { value: 'device-1' }, localManifest: [], namespace: 'default' },
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async readManifest(namespace) {
+                assert.equal(namespace, 'default');
+                return [];
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+            async savePlan() {
+                throw new Error('savePlan must not be called for malformed deviceId');
+            },
+        },
+        url: '/v2/sync/push-plan',
+    });
+    assert.equal(response.statusCode, 400);
+    assert.match(JSON.parse(response.body).error, /deviceId must be a string/);
 }
 
 async function testPlanRouteIgnoresInjectedOppositeArrays() {
