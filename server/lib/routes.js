@@ -2,6 +2,7 @@ import { decodeBase64Content } from './base64-content.js';
 import { decodePath, safeName } from './encoding.js';
 import {
     maxBodyBytes,
+    publicErrorMessage,
     readJsonBody,
     readJsonRequest,
     sendError,
@@ -483,6 +484,5 @@ function closeProgressStream(response, timer) {
 }
 
 function writeProgressErrorEvent(response, error) {
-    const message = error instanceof Error ? error.message : String(error || 'Unknown error');
-    writeServerSentEvent(response, 'error', { error: message });
+    writeServerSentEvent(response, 'error', { error: publicErrorMessage(error) });
 }

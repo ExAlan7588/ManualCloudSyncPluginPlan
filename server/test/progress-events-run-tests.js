@@ -36,6 +36,7 @@ async function testProgressStreamSurfacesPollingError() {
         assert.match(response.body, /event: progress/);
         assert.match(response.body, /event: error/);
         assert.match(response.body, /plan store unavailable/);
+        assert.equal(errorEventPayload(response.body).error, 'plan store unavailable');
     } finally {
         globalThis.setInterval = originalSetInterval;
         globalThis.clearInterval = originalClearInterval;
@@ -61,7 +62,7 @@ function failingStorage() {
                 throw new Error(`unexpected plan id: ${planId}`);
             }
             if (reads > 2) {
-                throw new Error('plan store unavailable');
+                throw new Error('plan store\n\tunavailable');
             }
             return PLAN;
         },
@@ -70,6 +71,13 @@ function failingStorage() {
             assert.equal(authHeader, 'Bearer test-token');
         },
     };
+}
+
+function errorEventPayload(body) {
+    const lines = body.split('\n');
+    const eventIndex = lines.indexOf('event: error');
+    assert.notEqual(eventIndex, -1);
+    return JSON.parse(lines[eventIndex + 1].replace(/^data: /, ''));
 }
 
 async function testProgressStreamSkipsOverlappingPolls() {

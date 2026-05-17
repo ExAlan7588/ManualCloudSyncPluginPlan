@@ -53,6 +53,11 @@ export function sendError(response, error) {
     sendJson(response, { error: message }, status);
 }
 
+export function publicErrorMessage(error) {
+    const message = error instanceof Error ? error.message : String(error || 'Unknown error');
+    return message.replace(CONTROL_WHITESPACE_PATTERN, ' ').trim();
+}
+
 export function startEventStream(response) {
     response.writeHead(200, {
         'Cache-Control': 'no-store',
@@ -121,9 +126,4 @@ function assertJsonObject(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         throw badRequest('Request body must be a JSON object');
     }
-}
-
-function publicErrorMessage(error) {
-    const message = error instanceof Error ? error.message : String(error || 'Unknown error');
-    return message.replace(CONTROL_WHITESPACE_PATTERN, ' ').trim();
 }
