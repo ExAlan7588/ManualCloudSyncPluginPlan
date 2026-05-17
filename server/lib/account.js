@@ -10,7 +10,7 @@ export function consumePairingToken(record, actual) {
     const token = String(actual || '');
     const dynamic = activePairingToken(record, token);
     if (dynamic) {
-        record.pairingTokens = (record.pairingTokens || [])
+        record.pairingTokens = optionalRecordArray(record.pairingTokens, 'namespace pairingTokens')
             .filter(item => item.token !== dynamic.token);
         return;
     }
@@ -27,7 +27,7 @@ export function addPairingToken(record) {
         expiresAt: new Date(now + PAIRING_TOKEN_TTL_MS).toISOString(),
         token: randomToken(),
     };
-    record.pairingTokens = [token, ...prunePairingTokens(record.pairingTokens || [])];
+    record.pairingTokens = [token, ...prunePairingTokens(optionalRecordArray(record.pairingTokens, 'namespace pairingTokens'))];
     return token;
 }
 
@@ -40,7 +40,7 @@ export function addSession(record, deviceId = '') {
         refreshExpiresAt: new Date(now + REFRESH_TOKEN_TTL_MS).toISOString(),
         refreshToken: randomToken(),
     };
-    record.sessions = [session, ...pruneExpiredSessions(record.sessions || [])];
+    record.sessions = [session, ...pruneExpiredSessions(optionalRecordArray(record.sessions, 'namespace sessions'))];
     return session;
 }
 
@@ -50,14 +50,14 @@ export function activeAccessToken(record, token) {
 
 export function activeAccessSession(record, token) {
     const now = Date.now();
-    return (record.sessions || []).find(session => {
+    return optionalRecordArray(record.sessions, 'namespace sessions').find(session => {
         return hasFutureIsoTimestamp(session.expiresAt, now) && constantTimeEqual(token, session.accessToken);
     });
 }
 
 export function activeRefreshSession(record, refreshToken) {
     const now = Date.now();
-    return (record.sessions || []).find(session => {
+    return optionalRecordArray(record.sessions, 'namespace sessions').find(session => {
         return hasFutureIsoTimestamp(session.refreshExpiresAt, now)
             && constantTimeEqual(String(refreshToken || ''), session.refreshToken);
     });
@@ -65,7 +65,7 @@ export function activeRefreshSession(record, refreshToken) {
 
 export function pruneExpiredSessions(sessions) {
     const now = Date.now();
-    return sessions.filter(session => {
+    return recordArray(sessions, 'namespace sessions').filter(session => {
         return hasFutureIsoTimestamp(session.expiresAt, now)
             || hasFutureIsoTimestamp(session.refreshExpiresAt, now);
     });
@@ -73,7 +73,7 @@ export function pruneExpiredSessions(sessions) {
 
 export function prunePairingTokens(tokens) {
     const now = Date.now();
-    return tokens.filter(token => hasFutureIsoTimestamp(token.expiresAt, now));
+    return recordArray(tokens, 'namespace pairingTokens').filter(token => hasFutureIsoTimestamp(token.expiresAt, now));
 }
 
 export function sessionResponse(record, session) {
@@ -119,13 +119,14 @@ export function constantTimeEqual(left, right) {
 
 function activePairingToken(record, token) {
     const now = Date.now();
-    return (record.pairingTokens || []).find(item => {
+    return optionalRecordArray(record.pairingTokens, 'namespace pairingTokens').find(item => {
         return hasFutureIsoTimestamp(item.expiresAt, now) && constantTimeEqual(token, item.token);
     });
 }
 
 function expiredPairingToken(record, token) {
-    return (record.pairingTokens || []).some(item => constantTimeEqual(token, item.token));
+    return optionalRecordArray(record.pairingTokens, 'namespace pairingTokens')
+        .some(item => constantTimeEqual(token, item.token));
 }
 
 function assertPairingToken(actual, expected) {
@@ -142,6 +143,20 @@ function hasFutureIsoTimestamp(value, now) {
         return false;
     }
     return Date.parse(value) > now;
+}
+
+function optionalRecordArray(value, label) {
+    if (value === undefined || value === null) {
+        return [];
+    }
+    return recordArray(value, label);
+}
+
+function recordArray(value, label) {
+    if (!Array.isArray(value)) {
+        throw new Error(`Invalid ${label}`);
+    }
+    return value;
 }
 
 function tauriPairingUri(options) {

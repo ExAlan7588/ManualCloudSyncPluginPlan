@@ -15,6 +15,7 @@ await testAccountLoginRejectsInvalidCredentials();
 await testAccountLoginRequiresConfiguredCredentials();
 await testAccountSessionsRejectNonIsoFutureExpiry();
 await testAccountPairingTokensRejectNonIsoFutureExpiry();
+await testAccountHelpersRejectMalformedRecordArrays();
 console.log('ok - account credential checks are explicit');
 
 async function testAccountLoginAcceptsValidCredentials() {
@@ -69,6 +70,17 @@ async function testAccountSessionsRejectNonIsoFutureExpiry() {
 async function testAccountPairingTokensRejectNonIsoFutureExpiry() {
     const tokens = [{ expiresAt: '9999', token: 'pairing-token' }];
     assert.deepEqual(prunePairingTokens(tokens), []);
+}
+
+async function testAccountHelpersRejectMalformedRecordArrays() {
+    assert.throws(
+        () => activeAccessToken({ sessions: 'bad' }, 'access-token'),
+        /Invalid namespace sessions/,
+    );
+    assert.throws(
+        () => prunePairingTokens('bad'),
+        /Invalid namespace pairingTokens/,
+    );
 }
 
 function withAccountEnv(callback) {

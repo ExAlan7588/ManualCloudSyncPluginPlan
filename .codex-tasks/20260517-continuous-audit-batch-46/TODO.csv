@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 46 audit finding,done,Account helpers assume sessions and pairingTokens are arrays
+2,Add regression coverage,done,Assert malformed sessions and pairingTokens fail with explicit namespace errors
+3,Implement account array validation,done,Validate optional namespace arrays before account helper array operations
+4,Run focused and full validation,done,Focused account unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 46 files and related code changes
