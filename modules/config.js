@@ -111,17 +111,17 @@ export function readCompatStore() {
 export function normalizeCompatConfig(config) {
     return {
         version: CONFIG_VERSION,
-        backend: config?.backend || BACKEND_WEBDAV,
-        endpoint: config?.endpoint || '',
-        remotePrefix: config?.remotePrefix || DEFAULT_REMOTE_PREFIX,
-        deviceId: config?.deviceId || '',
+        backend: compatString(config?.backend, 'backend', BACKEND_WEBDAV),
+        endpoint: compatString(config?.endpoint, 'endpoint', ''),
+        remotePrefix: compatString(config?.remotePrefix, 'remotePrefix', DEFAULT_REMOTE_PREFIX),
+        deviceId: compatString(config?.deviceId, 'deviceId', ''),
         webdav: {
-            authMode: config?.webdav?.authMode || AUTH_BASIC,
-            username: config?.webdav?.username || '',
+            authMode: compatString(config?.webdav?.authMode, 'webdav.authMode', AUTH_BASIC),
+            username: compatString(config?.webdav?.username, 'webdav.username', ''),
         },
         s3: {
-            bucket: config?.s3?.bucket || '',
-            region: config?.s3?.region || DEFAULT_S3_REGION,
+            bucket: compatString(config?.s3?.bucket, 's3.bucket', ''),
+            region: compatString(config?.s3?.region, 's3.region', DEFAULT_S3_REGION),
             pathStyle: config?.s3?.pathStyle ?? true,
         },
     };
@@ -197,6 +197,16 @@ function readS3Config() {
 function optionalSecret(selector) {
     const value = String($(selector).val() || '').trim();
     return value ? value : null;
+}
+
+function compatString(value, label, fallback) {
+    if (value === undefined || value === null || value === '') {
+        return fallback;
+    }
+    if (typeof value !== 'string') {
+        throw new Error(`Invalid compat config ${label}`);
+    }
+    return value.trim() || fallback;
 }
 
 function compatSecret(value, label) {
