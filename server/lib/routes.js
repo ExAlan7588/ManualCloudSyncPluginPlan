@@ -231,7 +231,7 @@ async function handlePlanEvents(context, url) {
 }
 
 async function downloadPlanFile(context, plan, syncPath) {
-    const entry = findPlanEntry(plan.downloads, syncPath);
+    const entry = findPlanEntry(plan.downloads, syncPath, 'downloads');
     const filePath = context.storage.remoteFilePath(plan.namespace, entry.path);
     const fileStat = await context.storage.remoteFileStat(plan.namespace, entry);
     context.response.writeHead(200, {
@@ -244,7 +244,7 @@ async function downloadPlanFile(context, plan, syncPath) {
 }
 
 async function uploadPlanFile(context, plan, syncPath) {
-    const entry = findPlanEntry(plan.uploads, syncPath);
+    const entry = findPlanEntry(plan.uploads, syncPath, 'uploads');
     await context.storage.stageFileStream(plan, entry, context.request, maxBodyBytes());
     sendJson(context.response, { ok: true, path: syncPath });
 }
@@ -265,7 +265,7 @@ async function stageUploadBundle(context, plan) {
     }
     let stagedPlan = plan;
     for (const file of body.files) {
-        const entry = findPlanEntry(stagedPlan.uploads, bundleFilePath(file));
+        const entry = findPlanEntry(stagedPlan.uploads, bundleFilePath(file), 'uploads');
         stagedPlan = await context.storage.stageFile(stagedPlan, entry, decodeBundleContent(file));
     }
     return stagedPlan;
@@ -408,7 +408,10 @@ function parsePlanBundlePath(pathname) {
     return safeName(pathname.split('/')[3], 'plan id');
 }
 
-function findPlanEntry(entries, syncPath) {
+function findPlanEntry(entries, syncPath, label) {
+    if (!Array.isArray(entries)) {
+        throw new Error(`Invalid plan ${label}`);
+    }
     const entry = entries.find(item => item.path === syncPath);
     if (!entry) {
         throw notFound(`Path is not part of this plan: ${syncPath}`);

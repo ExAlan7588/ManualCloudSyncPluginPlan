@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 51 audit finding,done,Route plan entry lookup assumes uploads/downloads are arrays
+2,Add regression coverage,done,Assert malformed route plan downloads fails explicitly
+3,Implement route array validation,done,Validate plan entry arrays before route find lookup
+4,Run focused and full validation,done,Focused routes unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 51 files and related code changes

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
+import { encodePath } from '../lib/encoding.js';
 import { createHandler } from '../lib/routes.js';
 
 const VALID_SPKI_PIN = Buffer.alloc(32, 1).toString('base64url');
@@ -9,6 +10,7 @@ await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
 await testCommitRouteUsesNormalizedPlanNamespace();
+await testFileRouteRejectsMalformedPlanDownloads();
 console.log('ok - routes validate account pairing URI inputs');
 
 async function testAccountPairingUriRejectsUnsupportedEndpointScheme() {
@@ -124,6 +126,30 @@ async function testCommitRouteUsesNormalizedPlanNamespace() {
     });
     assert.equal(response.statusCode, 200);
     assert.equal(JSON.parse(response.body).namespace, 'default');
+}
+
+async function testFileRouteRejectsMalformedPlanDownloads() {
+    const response = await dispatch({
+        body: {},
+        headers: { authorization: 'Bearer token' },
+        method: 'GET',
+        storage: {
+            async readPlan() {
+                return {
+                    downloads: {},
+                    id: 'plan-1',
+                    namespace: 'default',
+                    uploads: [],
+                };
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: `/v2/plans/plan-1/files/${encodePath('default-user/chats/example.jsonl')}`,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(JSON.parse(response.body).error, /Invalid plan downloads/);
 }
 
 async function dispatch(options) {
