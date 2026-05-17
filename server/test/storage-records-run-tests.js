@@ -16,6 +16,7 @@ const SERVER_ID = '550e8400-e29b-41d4-a716-446655440000';
 testStorageRecordHelpers();
 testStorageRecordHelpersRejectMalformedArrays();
 testStorageRecordHelpersRejectMalformedPlanPaths();
+testStorageRecordHelpersRejectMalformedPlanDeviceIds();
 testDeviceHelpersRejectMalformedDevices();
 testDeviceHelpersRejectMalformedNames();
 testDeviceHelpersRejectMalformedReferences();
@@ -94,6 +95,13 @@ function testStorageRecordHelpersRejectMalformedPlanPaths() {
     assert.throws(
         () => historyEntry({ ...planFixture(), remoteDeletes: [''] }),
         /Invalid plan remoteDeletes path/,
+    );
+}
+
+function testStorageRecordHelpersRejectMalformedPlanDeviceIds() {
+    assert.throws(
+        () => historyEntry({ ...planFixture(), deviceId: { value: 'device-1' } }),
+        /Invalid plan deviceId/,
     );
 }
 

@@ -73,7 +73,7 @@ export function historyEntry(plan) {
     return {
         committedAt: plan.committedAt,
         conflicts: fields.conflicts.length,
-        deviceId: plan.deviceId,
+        deviceId: historyDeviceId(plan.deviceId),
         downloads: fields.downloads.length,
         kind: plan.kind,
         planId: plan.id,
@@ -112,6 +112,16 @@ function planArrayFields(plan) {
 
 function namespaceDevices(record) {
     return arrayField(record.devices, 'namespace devices');
+}
+
+function historyDeviceId(value) {
+    if (value === undefined || value === null || value === '') {
+        return value;
+    }
+    if (typeof value !== 'string') {
+        throw new Error('Invalid plan deviceId');
+    }
+    return value;
 }
 
 function deviceNameField(value) {
