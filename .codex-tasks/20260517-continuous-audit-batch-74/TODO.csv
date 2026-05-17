@@ -1,0 +1,6 @@
+id,task,status,completed_at,notes
+1,Record audit finding and scope,DONE,2026-05-17,Finding recorded in SPEC.md
+2,Add focused failing test for malformed download item,DONE,2026-05-17,Focused test fails before implementation with unrelated localStorage error
+3,Implement queue item shape validation,DONE,2026-05-17,Download boundary validates item shape before config or network access
+4,Run focused and full validation,DONE,2026-05-17,Focused test npm run check npm test and git diff --check pass
+5,Commit batch changes,IN_PROGRESS,,

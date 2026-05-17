@@ -69,6 +69,7 @@ export async function compatUploadArchive(file, context) {
 }
 
 export async function compatDownloadAndImport(item, context) {
+    validateQueueItem(item);
     const connection = requireCompatConnection();
     const expectedBytes = Number(item.manifest.sizeBytes || 0);
     const blob = await downloadWebDavBlobWithProgress({ connection, context, key: item.zipKey, totalBytes: expectedBytes });
@@ -77,6 +78,19 @@ export async function compatDownloadAndImport(item, context) {
     context.setStatus('匯入資料封存...');
     await importArchiveBlob(blob, item.manifest.file, context);
     await compatDeleteRemotePair(connection, item);
+}
+
+function validateQueueItem(item) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        throw new Error('WebDAV 佇列項目格式不正確');
+    }
+    if (!item.manifest || typeof item.manifest !== 'object' || Array.isArray(item.manifest)) {
+        throw new Error('WebDAV 佇列項目格式不正確');
+    }
+    if (typeof item.zipKey !== 'string' || item.zipKey.trim() === '') {
+        throw new Error('WebDAV 佇列項目格式不正確');
+    }
+    validateManifest(item.manifest);
 }
 
 export async function compatDeleteRemoteItem(fileName) {
