@@ -18,6 +18,7 @@ await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloadPathsBeforeRead();
 await testFileRouteRejectsMalformedPlanModifiedMsBeforeStat();
+await testBundleRouteRejectsMalformedPlanSizeBytesBeforeRead();
 await testPairCompleteRejectsUnsafePairingUriEndpoints();
 await testPairCompleteRejectsUnsafeDirectEndpoints();
 await testTauriSessionRejectsMalformedDevices();
@@ -297,6 +298,37 @@ async function testFileRouteRejectsMalformedPlanModifiedMsBeforeStat() {
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid plan downloads modifiedMs/);
+}
+
+async function testBundleRouteRejectsMalformedPlanSizeBytesBeforeRead() {
+    const response = await dispatch({
+        body: {},
+        headers: { authorization: 'Bearer token' },
+        method: 'GET',
+        storage: {
+            async readPlan() {
+                return {
+                    downloads: [{
+                        modifiedMs: 1,
+                        path: 'default-user/chats/example.jsonl',
+                        sizeBytes: '0x10',
+                    }],
+                    id: 'plan-1',
+                    namespace: 'default',
+                    uploads: [],
+                };
+            },
+            async readRemoteFile() {
+                throw new Error('readRemoteFile must not be called for malformed sizeBytes');
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: '/v2/plans/plan-1/bundle',
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(JSON.parse(response.body).error, /Invalid plan downloads sizeBytes/);
 }
 
 async function testPairCompleteRejectsUnsafePairingUriEndpoints() {

@@ -452,6 +452,7 @@ function planEntries(entries, label) {
     return entries.map(entry => {
         assertPlanEntryPath(entry?.path, label);
         assertPlanEntryModifiedMs(entry?.modifiedMs, label);
+        assertPlanEntrySizeBytes(entry?.sizeBytes, label);
         return entry;
     });
 }
@@ -465,6 +466,12 @@ function assertPlanEntryPath(value, label) {
 function assertPlanEntryModifiedMs(value, label) {
     if (!isNonNegativeIntegerInput(value)) {
         throw new Error(`Invalid plan ${label} modifiedMs`);
+    }
+}
+
+function assertPlanEntrySizeBytes(value, label) {
+    if (!isNonNegativeIntegerInput(value)) {
+        throw new Error(`Invalid plan ${label} sizeBytes`);
     }
 }
 
