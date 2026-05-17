@@ -312,7 +312,13 @@ function conflictListFrom(payload) {
 }
 
 function isConflictItem(value) {
-    return isRecordObject(value);
+    return isRecordObject(value)
+        && isConflictEntry(value.local)
+        && isConflictEntry(value.remote);
+}
+
+function isConflictEntry(value) {
+    return value === undefined || value === null || isRecordObject(value);
 }
 
 function isRecordObject(value) {

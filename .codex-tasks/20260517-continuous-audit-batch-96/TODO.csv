@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed conflict entry regression test,DONE,Test fails before fix because primitive local entry renders,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,Failed before fix with generic button render TypeError
+2,Validate conflict local/remote entry shape,DONE,Malformed entries throw conflict list format error,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

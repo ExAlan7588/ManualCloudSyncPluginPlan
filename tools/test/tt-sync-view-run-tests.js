@@ -15,6 +15,7 @@ testServerStatusRejectsMalformedPermissionText();
 testServerDisplayTextFiltersMalformedValues();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListRejectsMalformedConflictItems();
+testRenderConflictListRejectsMalformedConflictEntries();
 testRenderConflictListKeepsMissingConflictPayloadBehavior();
 console.log('ok - TT-Sync view validates conflict payloads');
 
@@ -91,6 +92,21 @@ function testRenderConflictListRejectsMalformedConflictItems() {
     try {
         assert.throws(
             () => renderConflictList(stateFixture(), { conflicts: [null] }),
+            /TT-Sync 衝突列表格式不正確/,
+        );
+        assert.equal(elements.mcs_tts_conflicts.children.length, 0);
+    } finally {
+        restore();
+    }
+}
+
+function testRenderConflictListRejectsMalformedConflictEntries() {
+    const { elements, restore } = installDocumentFixture();
+    try {
+        assert.throws(
+            () => renderConflictList(stateFixture(), {
+                conflicts: [{ local: 'bad', path: 'save.json', remote: { sizeBytes: 1 } }],
+            }),
             /TT-Sync 衝突列表格式不正確/,
         );
         assert.equal(elements.mcs_tts_conflicts.children.length, 0);
