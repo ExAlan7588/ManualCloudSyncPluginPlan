@@ -11,6 +11,7 @@ await testNamespaceListMethodsRejectMalformedArrays();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedKindBeforeCommit();
 await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
+await testCommitPlanRejectsMalformedConflictDecisionsBeforeCommit();
 await testStageFileRejectsMalformedStagedBeforeWritingFile();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
 await testCommittedPlanRejectsLateUploads();
@@ -143,6 +144,25 @@ async function testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation() {
             storage.commitPlan(await storage.readPlan(plan.id), {}),
             /Invalid namespace syncHistory/,
         );
+        await assert.rejects(
+            readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
+            error => error.code === 'ENOENT',
+        );
+    });
+}
+
+async function testCommitPlanRejectsMalformedConflictDecisionsBeforeCommit() {
+    await withStorage(async storage => {
+        const plan = pushPlan();
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, await storage.createNamespace(plan.namespace));
+        await storage.stageFile(plan, plan.uploads[0], Buffer.from('data'));
+
+        await assert.rejects(
+            storage.commitPlan(await storage.readPlan(plan.id), { conflictDecisions: 'bad' }),
+            /Invalid conflict decisions/,
+        );
+        assert.equal((await storage.readPlan(plan.id)).committedAt, '');
         await assert.rejects(
             readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
             error => error.code === 'ENOENT',

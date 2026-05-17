@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 60 audit finding,done,commitPlan silently accepts malformed conflictDecisions on no-conflict plans
+2,Add regression coverage,done,Assert malformed conflictDecisions is rejected before commit
+3,Implement conflict decision shape validation,done,Validate optional object before push commit handling
+4,Run focused and full validation,done,Focused storage unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 60 files and related code changes

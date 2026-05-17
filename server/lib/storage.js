@@ -247,8 +247,9 @@ export class TtSyncStorage {
             await this.assertNamespaceCommitShape(latest);
             let rollbackPoint = null;
             if (latest.kind === 'push') {
+                const decisions = conflictDecisions(body);
                 rollbackPoint = await this.createRollbackPoint(latest);
-                await this.commitPushPlan(latest, body.conflictDecisions || {});
+                await this.commitPushPlan(latest, decisions);
             }
             const committed = { ...latest, committedAt: new Date().toISOString() };
             await this.writePlan(committed);
@@ -488,6 +489,17 @@ function assertConflictDecisions(plan, decisions) {
             throw forbidden(`Missing conflict decision for ${item.path}`);
         }
     }
+}
+
+function conflictDecisions(body) {
+    const value = body?.conflictDecisions;
+    if (value === undefined || value === null) {
+        return {};
+    }
+    if (Array.isArray(value) || typeof value !== 'object') {
+        throw badRequest('Invalid conflict decisions');
+    }
+    return value;
 }
 
 function assertPlanOpen(plan) {
