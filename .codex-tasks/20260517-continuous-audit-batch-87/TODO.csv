@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed account list text regression test,DONE,Test fails before fix with object/boolean text leakage,node tools/test/tt-sync-account-run-tests.js,2026-05-17,0,Failed before fix because malformed device text leaked
+2,Filter account list display text values,DONE,Malformed list text fields do not render as object/boolean strings,node tools/test/tt-sync-account-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

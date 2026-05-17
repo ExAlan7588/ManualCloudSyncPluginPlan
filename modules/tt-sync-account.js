@@ -196,8 +196,8 @@ function emptyInfo() {
 
 function deviceText(device) {
     return [
-        device.deviceName || device.device_name || device.deviceId,
-        device.deviceId,
+        itemText(device.deviceName || device.device_name || device.deviceId),
+        itemText(device.deviceId),
         timePart('seen', device.lastSeenAt),
         timePart('sync', device.lastSyncAt),
     ].filter(Boolean).join(' | ');
@@ -205,8 +205,8 @@ function deviceText(device) {
 
 function historyText(item) {
     return [
-        item.kind || 'sync',
-        item.planId,
+        itemText(item.kind) || 'sync',
+        itemText(item.planId),
         `up=${historyCountText(item.uploads)}`,
         `down=${historyCountText(item.downloads)}`,
         timePart('at', item.committedAt),
@@ -281,6 +281,13 @@ function responseText(value) {
     return typeof value === 'string' ? value : '';
 }
 
+function itemText(value) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? String(value) : '';
+    }
+    return typeof value === 'string' ? value : '';
+}
+
 function sessionNamespace(response) {
     if (!hasSessionField(response, 'namespace') || response.namespace === null || response.namespace === '') {
         return accountNamespace();
@@ -301,5 +308,6 @@ function expiryText(response) {
 }
 
 function timePart(label, value) {
-    return value ? `${label}=${value}` : '';
+    const text = itemText(value);
+    return text ? `${label}=${text}` : '';
 }

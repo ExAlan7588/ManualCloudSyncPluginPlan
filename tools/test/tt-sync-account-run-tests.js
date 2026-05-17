@@ -26,6 +26,7 @@ await testAccountRejectsMalformedSessionToken();
 await testAccountRejectsMalformedSessionNamespace();
 await testAccountRejectsMalformedPairingUri();
 await testAccountIgnoresMalformedPairingExpiry();
+await testAccountListFiltersMalformedTextFields();
 console.log('ok - TT-Sync account validates session payloads');
 
 async function testAccountRejectsMalformedSessionToken() {
@@ -43,6 +44,43 @@ async function testAccountRejectsMalformedSessionToken() {
             /帳號登入回應缺少 token/,
         );
         assert.equal(elements.mcs_tts_account_status.textContent, '尚未登入');
+    } finally {
+        restore();
+    }
+}
+
+async function testAccountListFiltersMalformedTextFields() {
+    const { elements, fetch, restore } = installAccountPanelFixture(ACCOUNT_PANEL_IDS, {}, {
+        devices: {
+            devices: [{
+                deviceId: { value: 'device-1' },
+                deviceName: { value: 'laptop' },
+                lastSeenAt: true,
+                lastSyncAt: '2026-05-17T00:00:00Z',
+            }],
+        },
+        history: {
+            history: [{
+                committedAt: { value: '2026-05-17T00:00:00Z' },
+                downloads: 1,
+                kind: false,
+                planId: { value: 'plan-1' },
+                uploads: 2,
+            }],
+        },
+    });
+    try {
+        bindTtSyncAccountPanel({ fetch, runAction: runAccountPanelAction });
+        await elements.mcs_tts_account_login.handlers.click();
+        const deviceText = elements.mcs_tts_account_devices.children[0].textContent;
+        const historyText = elements.mcs_tts_account_history.children[0].textContent;
+        assert.equal(deviceText.includes('[object Object]'), false);
+        assert.equal(deviceText.includes('true'), false);
+        assert.ok(deviceText.includes('sync=2026-05-17T00:00:00Z'));
+        assert.equal(historyText.includes('[object Object]'), false);
+        assert.equal(historyText.includes('false'), false);
+        assert.ok(historyText.includes('up=2'));
+        assert.ok(historyText.includes('down=1'));
     } finally {
         restore();
     }
