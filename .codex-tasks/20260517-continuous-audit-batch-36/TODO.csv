@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 36 audit finding,done,Data migration success JSON parse failures lack operation context
+2,Add regression coverage,done,Focused frontend test fails before fix because malformed import JSON lacks operation context
+3,Implement contextual JSON parsing,done,Data migration JSON parse errors include operation labels
+4,Run focused and full validation,done,Focused frontend test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 36 files and related code changes

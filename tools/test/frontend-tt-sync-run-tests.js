@@ -4,6 +4,7 @@ import {
     installAccountPanelFixture,
     runAccountPanelAction,
 } from './frontend-account-panel-fixture.js';
+import { importArchiveBlob } from '../../modules/data-migration.js';
 import {
     createProgressTracker,
     progressRows,
@@ -74,6 +75,7 @@ const tests = [
     ['TT-Sync account panel uses server account API', testAccountPanelApi],
     ['TT-Sync account endpoint URL errors include context', testAccountEndpointUrlErrors],
     ['TT-Sync account history marks malformed counts unavailable', testAccountHistoryMalformedCounts],
+    ['data migration import labels malformed JSON responses', testDataMigrationImportMalformedJsonContext],
     ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['TT-Sync progress UI ignores malformed numeric payloads', testProgressIgnoresMalformedNumericPayloads],
@@ -184,6 +186,19 @@ async function testAccountHistoryMalformedCounts() {
         assert.equal(historyText.includes('true'), false);
     } finally {
         restore();
+    }
+}
+
+async function testDataMigrationImportMalformedJsonContext() {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response('{ broken', { status: 200 });
+    try {
+        await assert.rejects(
+            importArchiveBlob(new Blob(['zip']), 'sync.zip', { setStatus() {} }),
+            /資料匯入啟動回應 JSON 無法解析/,
+        );
+    } finally {
+        restoreGlobal('fetch', previousFetch);
     }
 }
 

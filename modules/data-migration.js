@@ -30,7 +30,7 @@ export async function importArchiveBlob(blob, fileName, context) {
         throw new Error(await readFailureMessage(response));
     }
 
-    const jobId = requireJobId(await response.json(), '資料匯入 job id 缺失');
+    const jobId = requireJobId(await readJsonResponse(response, '資料匯入啟動'), '資料匯入 job id 缺失');
     const finalStatus = await pollDataArchiveJob({ jobId, setStatus: context.setStatus });
     if (finalStatus.state !== 'completed') {
         throw new Error(finalStatus.error || `資料匯入未完成：${finalStatus.state}`);
@@ -43,7 +43,7 @@ async function startDataArchiveExportJob() {
         throw new Error(await readFailureMessage(response));
     }
 
-    return requireJobId(await response.json(), '資料匯出 job id 缺失');
+    return requireJobId(await readJsonResponse(response, '資料匯出啟動'), '資料匯出 job id 缺失');
 }
 
 async function saveDataArchiveExport(jobId) {
@@ -91,12 +91,12 @@ function requireRuntimeFunction(module, name) {
 }
 
 async function postDataArchiveSave(url, jobId) {
-    const payload = await postJson(url, { job_id: jobId });
+    const payload = await postJson(url, { job_id: jobId }, '資料匯出儲存');
     return { savedTarget: String(payload?.saved_target || '') };
 }
 
 async function shareIosDataArchive(jobId) {
-    const payload = await postJson('/api/extensions/data-migration/export/ios/share', { job_id: jobId });
+    const payload = await postJson('/api/extensions/data-migration/export/ios/share', { job_id: jobId }, 'iOS 分享');
     if (!payload?.completed) {
         throw new Error('iOS 分享已取消，沒有匯出檔案');
     }
@@ -124,7 +124,7 @@ async function fetchDataArchiveJob(jobId) {
         throw new Error(await readFailureMessage(response));
     }
 
-    return response.json();
+    return readJsonResponse(response, '資料遷移 job 狀態');
 }
 
 function updateStatusFromDataArchiveJob(status, setStatus) {
@@ -136,7 +136,7 @@ function updateStatusFromDataArchiveJob(status, setStatus) {
     }
 }
 
-async function postJson(url, body) {
+async function postJson(url, body, label = '資料遷移 API') {
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': JSON_CONTENT_TYPE },
@@ -146,7 +146,15 @@ async function postJson(url, body) {
         throw new Error(await readFailureMessage(response));
     }
 
-    return response.json();
+    return readJsonResponse(response, label);
+}
+
+async function readJsonResponse(response, label) {
+    try {
+        return await response.json();
+    } catch (error) {
+        throw new Error(`${label}回應 JSON 無法解析：${normalizeError(error)}`);
+    }
 }
 
 function requireJobId(payload, message) {
