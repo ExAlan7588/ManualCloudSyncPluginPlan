@@ -15,6 +15,10 @@ import {
     compatListQueue,
     hrefFileName,
 } from '../../modules/webdav-compat.js';
+import {
+    diffSummaryRows,
+    transferSummaryRows,
+} from '../../modules/tt-sync-view.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 
 const SETTINGS_HTML = new URL('../../settings.html', import.meta.url);
@@ -65,6 +69,7 @@ const tests = [
     ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['TT-Sync progress UI ignores malformed numeric payloads', testProgressIgnoresMalformedNumericPayloads],
+    ['TT-Sync summary UI ignores malformed numeric payloads', testSummaryIgnoresMalformedNumericPayloads],
     ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
     ['WebDAV manifest rejects uppercase SHA-256', testWebDavManifestRejectsUppercaseSha256],
     ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
@@ -198,6 +203,29 @@ function testProgressIgnoresMalformedNumericPayloads() {
     assertProgressRow(rows, 'bytes', '未回傳');
     assertProgressRow(rows, 'files', '未回傳');
     assertProgressRow(rows, '完成度', '未回傳');
+}
+
+function testSummaryIgnoresMalformedNumericPayloads() {
+    const transferRows = transferSummaryRows({
+        bytes_total: '0x10',
+        direction: 'push',
+        files_deleted: false,
+        files_total: true,
+    });
+    assertProgressRow(transferRows, '檔案數', '未回傳');
+    assertProgressRow(transferRows, '大小', '未回傳');
+    assertProgressRow(transferRows, '刪除檔案', '未回傳');
+
+    const diffRows = diffSummaryRows({
+        summary: {
+            conflictFiles: true,
+            uploadBytes: '0x10',
+            uploadFiles: '1e2',
+        },
+    });
+    assertProgressRow(diffRows, '上傳檔案', '未回傳');
+    assertProgressRow(diffRows, '上傳大小', '未回傳');
+    assertProgressRow(diffRows, '衝突檔案', '未回傳');
 }
 
 function assertProgressRow(rows, label, expected) {

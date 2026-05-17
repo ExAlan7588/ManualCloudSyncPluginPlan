@@ -234,13 +234,24 @@ export function firstObject(object, keys) {
 }
 
 export function formatOptionalCount(value) {
-    const number = Number(value);
+    const number = nonNegativeIntegerValue(value);
     return Number.isFinite(number) ? String(number) : EMPTY_VALUE;
 }
 
 export function formatOptionalBytes(value) {
-    const number = Number(value);
+    const number = nonNegativeIntegerValue(value);
     return Number.isFinite(number) ? formatBytes(number) : EMPTY_VALUE;
+}
+
+function nonNegativeIntegerValue(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0 ? value : null;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return null;
+    }
+    const number = Number(value);
+    return Number.isSafeInteger(number) ? number : null;
 }
 
 function diffSummaryFrom(payload) {
@@ -262,7 +273,7 @@ function hasVisibleRows(rows) {
 
 function hasConflictCount(payload) {
     const summary = diffSummaryFrom(payload);
-    const count = Number(firstValue(summary, ['conflictFiles', 'conflict_files']));
+    const count = nonNegativeIntegerValue(firstValue(summary, ['conflictFiles', 'conflict_files']));
     return Number.isFinite(count) && count > 0;
 }
 
