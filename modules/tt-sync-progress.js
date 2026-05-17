@@ -49,14 +49,17 @@ function progressSnapshot(progress, tracker, now) {
         timestamp: now,
     };
     snapshot.speedBytesPerSecond = speedFrom(snapshot, tracker.lastSnapshot);
-    if (hasValidSnapshotBytes(snapshot)) {
+    if (canStoreSnapshot(snapshot, tracker.lastSnapshot)) {
         tracker.lastSnapshot = snapshot;
     }
     return snapshot;
 }
 
-function hasValidSnapshotBytes(snapshot) {
-    return Number.isFinite(snapshot.bytesDone);
+function canStoreSnapshot(snapshot, previous) {
+    if (!Number.isFinite(snapshot.bytesDone)) {
+        return false;
+    }
+    return !previous || !Number.isFinite(previous.bytesDone) || snapshot.bytesDone >= previous.bytesDone;
 }
 
 function elapsedSecondsFrom(tracker, now) {
