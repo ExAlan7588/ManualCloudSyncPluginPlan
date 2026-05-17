@@ -1,10 +1,12 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { safeName } from './encoding.js';
 import { serverError, unauthorized } from './http-error.js';
 
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const PAIRING_TOKEN_TTL_MS = 10 * 60 * 1000;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function consumePairingToken(record, actual) {
     const token = String(actual || '');
@@ -80,10 +82,10 @@ export function sessionResponse(record, session) {
     return {
         accessToken: sessionToken(session.accessToken, 'accessToken'),
         expiresAt: sessionTimestamp(session.expiresAt, 'expiresAt'),
-        namespace: record.namespace,
+        namespace: safeName(record.namespace, 'namespace'),
         refreshExpiresAt: sessionTimestamp(session.refreshExpiresAt, 'refreshExpiresAt'),
         refreshToken: sessionToken(session.refreshToken, 'refreshToken'),
-        serverId: record.serverId,
+        serverId: sessionServerId(record.serverId),
     };
 }
 
@@ -157,6 +159,13 @@ function sessionTimestamp(value, label) {
         throw new Error(`Invalid session ${label}`);
     }
     return value;
+}
+
+function sessionServerId(value) {
+    if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
+        throw new Error('Invalid session serverId');
+    }
+    return value.toLowerCase();
 }
 
 function optionalRecordArray(value, label) {

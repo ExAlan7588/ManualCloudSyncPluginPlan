@@ -96,6 +96,14 @@ async function testSessionResponseRejectsMalformedFields() {
         () => sessionResponse(record, { ...session, expiresAt: '9999' }),
         /Invalid session expiresAt/,
     );
+    assert.throws(
+        () => sessionResponse({ ...record, namespace: '../default' }, session),
+        /namespace must use A-Z/,
+    );
+    assert.throws(
+        () => sessionResponse({ ...record, serverId: 'not-a-uuid' }, session),
+        /Invalid session serverId/,
+    );
 }
 
 function validSession() {
