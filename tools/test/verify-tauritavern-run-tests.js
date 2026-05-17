@@ -45,6 +45,7 @@ const tests = [
     ['TauriTavern command verifier passes when commands exist', testVerifierFindsCommands],
     ['TauriTavern command verifier scans compressed zip artifacts', testVerifierScansCompressedZip],
     ['TauriTavern command verifier rejects corrupt zip-like artifacts', testVerifierRejectsCorruptZipLikeArtifact],
+    ['TauriTavern command verifier rejects mismatched zip central directory size', testVerifierRejectsMismatchedZipCentralDirectorySize],
     ['TauriTavern command verifier ignores zip metadata command strings', testVerifierIgnoresZipMetadataCommands],
     ['TauriTavern command verifier rejects unregistered source commands', testVerifierRejectsUnregisteredSourceCommands],
     ['TauriTavern command verifier rejects docs-only command strings', testVerifierRejectsDocsOnly],
@@ -105,6 +106,22 @@ async function testVerifierRejectsCorruptZipLikeArtifact() {
         await assert.rejects(
             verifyTauriTavernCommands({ source: artifactPath }),
             /ZIP end of central directory not found/,
+        );
+    });
+}
+
+async function testVerifierRejectsMismatchedZipCentralDirectorySize() {
+    await withVerifierFixture(async root => {
+        const artifactPath = path.join(root, 'bad-central-size.apk');
+        const artifact = zipArtifactFor({ content: verifierSourceFor(REQUIRED_TT_SYNC_COMMANDS), name: 'classes.dex' });
+        artifact.writeUInt32LE(
+            artifact.readUInt32LE(artifact.length - ZIP_EOCD_FIXED_BYTES + ZIP_EOCD_CENTRAL_SIZE_OFFSET) - 1,
+            artifact.length - ZIP_EOCD_FIXED_BYTES + ZIP_EOCD_CENTRAL_SIZE_OFFSET,
+        );
+        await writeFile(artifactPath, artifact);
+        await assert.rejects(
+            verifyTauriTavernCommands({ source: artifactPath }),
+            /Invalid ZIP central directory size/,
         );
     });
 }

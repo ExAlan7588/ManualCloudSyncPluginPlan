@@ -57,6 +57,9 @@ function readZipEntries(options) {
         entries.push(zipEntryContent({ entry, ...options }));
         cursor += entry.headerSize;
     }
+    if (cursor !== endOffset) {
+        throw new Error(`Invalid ZIP central directory size in ${options.label}`);
+    }
     return entries;
 }
 

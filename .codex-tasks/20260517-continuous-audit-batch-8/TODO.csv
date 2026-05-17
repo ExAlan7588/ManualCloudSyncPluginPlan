@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit ZIP central directory parsing,DONE,Concrete malformed ZIP diagnostic gap is identified,source inspection,2026-05-17T21:19:00+08:00,0,Central directory cursor was not checked against EOCD-declared end offset after reading entries.
+2,Implement explicit central directory size validation,DONE,Malformed central directory size raises specific error,git diff --check,2026-05-17T21:18:32+08:00,0,zipEntriesFrom now checks cursor equals EOCD central directory end.
+3,Add focused verifier coverage,DONE,Corrupt central directory size is rejected with clear message,timeout 60s node tools/test/verify-tauritavern-run-tests.js,2026-05-17T21:18:32+08:00,0,Added mismatched central directory size artifact test.
+4,Run full validation,DONE,Focused test plus check/test pass within 60 seconds,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:19:13+08:00,0,Focused verifier test check and full npm test passed.
+5,Commit batch and report hash,IN_PROGRESS,Only batch changes are committed with hash reported,git status --short && git rev-parse HEAD,,0,
