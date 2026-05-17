@@ -1,0 +1,6 @@
+id,task,status,completed_at,notes
+1,Record audit finding and scope,DONE,2026-05-17,Finding recorded in SPEC.md
+2,Add focused failing tests for malformed endpoint,DONE,2026-05-17,Focused test fails before implementation with generic Invalid URL
+3,Implement WebDAV endpoint diagnostics,DONE,2026-05-17,URL helper wraps missing and invalid endpoints in contextual errors
+4,Run focused and full validation,DONE,2026-05-17,Focused test npm run check npm test and git diff --check pass
+5,Commit batch changes,IN_PROGRESS,,

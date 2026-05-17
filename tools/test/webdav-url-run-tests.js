@@ -5,6 +5,8 @@ testWebDavAuthRejectsMalformedConnection();
 testWebDavAuthRejectsMalformedBasicCredentials();
 testWebDavAuthRejectsMalformedBearerToken();
 testWebDavAuthBuildsBasicHeader();
+testWebDavUrlRejectsMissingEndpoint();
+testWebDavUrlRejectsInvalidEndpoint();
 testWebDavUrlRejectsMalformedKey();
 testWebDavUrlEncodesValidKey();
 console.log('ok - WebDAV URL helpers validate keys');
@@ -42,6 +44,20 @@ function testWebDavAuthBuildsBasicHeader() {
         secrets: { webdavPassword: 'pass' },
     });
     assert.equal(headers.Authorization, `Basic ${btoa('user:pass')}`);
+}
+
+function testWebDavUrlRejectsMissingEndpoint() {
+    assert.throws(
+        () => webDavUrlForKey({}, 'cloud-sync/file.zip'),
+        /WebDAV endpoint 格式不正確/,
+    );
+}
+
+function testWebDavUrlRejectsInvalidEndpoint() {
+    assert.throws(
+        () => webDavUrlForKey({ endpoint: 'not a url' }, 'cloud-sync/file.zip'),
+        /WebDAV endpoint 格式不正確/,
+    );
 }
 
 function testWebDavUrlRejectsMalformedKey() {

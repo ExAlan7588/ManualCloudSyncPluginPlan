@@ -43,11 +43,22 @@ export function webDavUrlForKey(config, key) {
     if (typeof key !== 'string' || key.trim() === '') {
         throw new Error('WebDAV key 必須是非空文字');
     }
-    const url = new URL(config.endpoint);
+    const url = webDavEndpointUrl(config?.endpoint);
     const basePath = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
     const suffix = key.split('/').filter(Boolean).map(encodeURIComponent).join('/');
     url.pathname = `${basePath}${suffix}`.replace(/\/{2,}/g, '/');
     return url.toString();
+}
+
+function webDavEndpointUrl(endpoint) {
+    if (typeof endpoint !== 'string' || endpoint.trim() === '') {
+        throw new Error('WebDAV endpoint 格式不正確');
+    }
+    try {
+        return new URL(endpoint);
+    } catch {
+        throw new Error('WebDAV endpoint 格式不正確');
+    }
 }
 
 function base64Utf8(value) {
