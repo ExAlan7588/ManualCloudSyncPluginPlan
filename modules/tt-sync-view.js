@@ -180,9 +180,10 @@ export function serverLabel(server) {
 
 export function serverStatus(server) {
     const baseUrl = serverBaseUrl(server);
+    const lastSyncText = serverTimestampText(server?.last_sync_ms);
     return [
         baseUrl ? `端點：${baseUrl}` : '',
-        server?.last_sync_ms ? `最後同步：${timestampText(server.last_sync_ms)}` : '',
+        lastSyncText ? `最後同步：${lastSyncText}` : '',
         permissionsText(server?.permissions),
     ].filter(Boolean).join(' | ') || '已選擇服務端';
 }
@@ -441,6 +442,10 @@ function timestampText(value) {
     }
     const date = new Date(number);
     return Number.isNaN(date.getTime()) ? stringValue(value) : date.toISOString();
+}
+
+function serverTimestampText(value) {
+    return isTextScalar(value) ? timestampText(value) : '';
 }
 
 function permissionsText(permissions) {

@@ -13,6 +13,7 @@ testServerListFromKeepsMissingServersBehavior();
 testHasObjectPayloadRejectsArrays();
 testServerStatusRejectsMalformedPermissionText();
 testServerDisplayTextFiltersMalformedValues();
+testServerStatusTimestampBoundaryValues();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListRejectsMalformedConflictItems();
 testRenderConflictListRejectsMalformedConflictEntries();
@@ -73,6 +74,13 @@ function testServerDisplayTextFiltersMalformedValues() {
     assert.equal(label, 'server-1');
     assert.equal(status.includes('[object Object]'), false);
     assert.equal(status, '已選擇服務端');
+}
+
+function testServerStatusTimestampBoundaryValues() {
+    const zeroStatus = serverStatus({ last_sync_ms: 0 });
+    const malformedStatus = serverStatus({ last_sync_ms: { value: 0 } });
+    assert.ok(zeroStatus.includes('最後同步：1970-01-01T00:00:00.000Z'));
+    assert.equal(malformedStatus.includes('最後同步：'), false);
 }
 
 function testRenderConflictListRejectsMalformedConflicts() {
