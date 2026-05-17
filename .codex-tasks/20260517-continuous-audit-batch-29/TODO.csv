@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 29 audit finding,done,Evidence timestamp validation accepts non-ISO strings
+2,Add regression coverage,done,Reject numeric-looking timestamp strings
+3,Implement strict ISO timestamp validation,done,Require T plus timezone marker
+4,Run focused and full validation,done,Focused final evidence test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 29 files and related code changes

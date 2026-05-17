@@ -46,6 +46,7 @@ const TRUSTED_COMMAND_EVIDENCE_KINDS = new Set([
 const COMMAND_SOURCE_KINDS = new Set(['build-artifact', 'source-file', 'source-tree']);
 const FINAL_EVENT_SOURCE_KIND = 'source-tree';
 const FINAL_COMMAND_SOURCE_KIND = 'build-artifact';
+const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 export async function verifyIncrementalCloudSyncEvidence(options = {}) {
     const evidence = await loadEvidence(options);
@@ -439,7 +440,8 @@ function hasText(value) {
 }
 
 function isTimestamp(value) {
-    return hasText(value) && Number.isFinite(Date.parse(value));
+    const text = hasText(value) ? value.trim() : '';
+    return ISO_TIMESTAMP_PATTERN.test(text) && Number.isFinite(Date.parse(text));
 }
 
 function hasPositiveInteger(value) {

@@ -7,6 +7,7 @@ import {
 const PLACEHOLDER_HOSTS = new Set(['example.com', 'example.net', 'example.org']);
 const RESERVED_HOST_SUFFIXES = new Set(['invalid', 'local', 'localhost', 'test']);
 const REPORT_SCHEMA_VERSION = 1;
+const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 export function deployChecks(report) {
     const names = passedCheckNames(report);
@@ -134,7 +135,8 @@ function hasText(value) {
 }
 
 function isTimestamp(value) {
-    return hasText(value) && Number.isFinite(Date.parse(value));
+    const text = hasText(value) ? value.trim() : '';
+    return ISO_TIMESTAMP_PATTERN.test(text) && Number.isFinite(Date.parse(text));
 }
 
 function hasPositiveInteger(value) {

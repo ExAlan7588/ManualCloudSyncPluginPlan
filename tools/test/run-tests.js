@@ -252,14 +252,19 @@ async function testFailedExtraReportCheck() {
 
 async function testInvalidEvidenceTimestamp() {
     const evidence = completeEvidence();
-    evidence.mobileCommandReport.scannedAt = 'not-a-date';
-    evidence.deviceEvidence.checks.commandContractVerified.mobileCommandReport.scannedAt = 'not-a-date';
-    evidence.deviceEvidence.checks.androidWeakNetworkErrorVisible.android.capturedAt = 'not-a-date';
-    evidence.deviceEvidence.testedAt = 'not-a-date';
-    evidence.smokeReport.completedAt = 'not-a-date';
+    evidence.mobileCommandReport.scannedAt = '0';
+    evidence.deviceEvidence.checks.commandContractVerified.mobileCommandReport.scannedAt = '0';
+    evidence.eventReport.scannedAt = '0';
+    evidence.deviceEvidence.checks.commandContractVerified.eventSurfaceReport.scannedAt = '0';
+    evidence.deployReport.verifiedAt = '0';
+    evidence.deviceEvidence.checks.androidWeakNetworkErrorVisible.android.capturedAt = '0';
+    evidence.deviceEvidence.testedAt = '0';
+    evidence.smokeReport.completedAt = '0';
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('mobile command report scannedAt'));
+    assert.ok(report.failed.includes('event surface report scannedAt'));
+    assert.ok(report.failed.includes('deploy report verifiedAt'));
     assert.ok(report.failed.includes('device evidence testedAt'));
     assert.ok(report.failed.includes('smoke report completedAt'));
     assert.ok(report.failed.includes('Android weak-network error is visible'));
