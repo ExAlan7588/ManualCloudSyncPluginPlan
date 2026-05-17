@@ -49,8 +49,14 @@ function progressSnapshot(progress, tracker, now) {
         timestamp: now,
     };
     snapshot.speedBytesPerSecond = speedFrom(snapshot, tracker.lastSnapshot);
-    tracker.lastSnapshot = snapshot;
+    if (hasValidSnapshotBytes(snapshot)) {
+        tracker.lastSnapshot = snapshot;
+    }
     return snapshot;
+}
+
+function hasValidSnapshotBytes(snapshot) {
+    return Number.isFinite(snapshot.bytesDone);
 }
 
 function elapsedSecondsFrom(tracker, now) {

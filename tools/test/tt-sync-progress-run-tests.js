@@ -3,6 +3,7 @@ import { createProgressTracker, progressRows, resetProgressTracker } from '../..
 import { progressStatus } from '../../modules/tt-sync-view.js';
 
 testProgressRowsRejectMalformedTextValues();
+testProgressRowsKeepsLastValidSnapshotAfterMalformedNumericEvent();
 testProgressStatusRejectsMalformedPhase();
 console.log('ok - TT-Sync progress text values reject malformed payloads');
 
@@ -15,6 +16,24 @@ function testProgressRowsRejectMalformedTextValues() {
     }, tracker, 1000);
     assertProgressRow(rows, 'phase', '未回傳');
     assertProgressRow(rows, '目前檔案', '未回傳');
+}
+
+function testProgressRowsKeepsLastValidSnapshotAfterMalformedNumericEvent() {
+    const tracker = createProgressTracker();
+    resetProgressTracker(tracker, 1000);
+    progressRows({
+        bytes_done: 1024,
+        bytes_total: 4096,
+    }, tracker, 1000);
+    progressRows({
+        bytes_done: true,
+        bytes_total: '0x10',
+    }, tracker, 2000);
+    const rows = progressRows({
+        bytes_done: 2048,
+        bytes_total: 4096,
+    }, tracker, 3000);
+    assertProgressRow(rows, '速度', '512 B/s');
 }
 
 function testProgressStatusRejectsMalformedPhase() {
