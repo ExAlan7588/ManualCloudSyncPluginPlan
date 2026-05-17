@@ -313,8 +313,13 @@ function conflictListFrom(payload) {
 
 function isConflictItem(value) {
     return isRecordObject(value)
+        && hasConflictPath(value)
         && isConflictEntry(value.local)
         && isConflictEntry(value.remote);
+}
+
+function hasConflictPath(value) {
+    return stringValue(value.path) !== EMPTY_VALUE;
 }
 
 function isConflictEntry(value) {
