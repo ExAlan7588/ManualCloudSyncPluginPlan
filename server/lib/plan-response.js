@@ -52,7 +52,7 @@ function sumBytes(entries) {
 
 function planFields(plan) {
     return {
-        conflicts: planArray(plan.conflicts, 'conflicts'),
+        conflicts: planConflictArray(plan.conflicts),
         downloads: planEntryArray(plan.downloads, 'downloads'),
         localDeletes: planPathArray(plan.localDeletes, 'localDeletes'),
         remoteDeletes: planPathArray(plan.remoteDeletes, 'remoteDeletes'),
@@ -90,6 +90,24 @@ function planPathArray(value, label) {
         assertPlanPath(path, label);
         return path;
     });
+}
+
+function planConflictArray(value) {
+    return planArray(value, 'conflicts').map(conflict => {
+        assertPlanPath(conflict?.path, 'conflicts');
+        assertConflictEntry(conflict?.local);
+        assertConflictEntry(conflict?.remote);
+        return conflict;
+    });
+}
+
+function assertConflictEntry(value) {
+    if (value === undefined || value === null) {
+        return;
+    }
+    if (Array.isArray(value) || typeof value !== 'object') {
+        throw new Error('Invalid plan conflicts entry');
+    }
 }
 
 function assertPlanPath(value, label) {

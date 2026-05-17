@@ -6,6 +6,7 @@ testCommittedProgressSummary();
 testProgressSummaryIgnoresUnplannedStagedEntries();
 testPlanSummaryRejectsMalformedSizeBytes();
 testPlanSummaryRejectsMalformedEntryPaths();
+testPlanSummaryRejectsMalformedConflicts();
 testPlanSummaryRejectsMalformedArrays();
 testPlanSummaryRejectsMalformedStagedMap();
 console.log('ok - plan response summaries preserve response shapes');
@@ -93,6 +94,17 @@ function testPlanSummaryRejectsMalformedEntryPaths() {
     assert.throws(
         () => planSummary({ ...planFixture(), remoteDeletes: [''] }),
         /Invalid plan remoteDeletes path/,
+    );
+}
+
+function testPlanSummaryRejectsMalformedConflicts() {
+    assert.throws(
+        () => planSummary({ ...planFixture(), conflicts: [{}] }),
+        /Invalid plan conflicts path/,
+    );
+    assert.throws(
+        () => planSummary({ ...planFixture(), conflicts: [{ local: 'bad', path: 'conflict.txt' }] }),
+        /Invalid plan conflicts entry/,
     );
 }
 
