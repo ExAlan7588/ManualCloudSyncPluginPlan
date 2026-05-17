@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 26 audit finding,done,WebDAV manifest accepts non-decimal sizeBytes strings
+2,Add regression coverage,done,Reject WebDAV sizeBytes 0x10
+3,Implement strict WebDAV sizeBytes validation,done,Allow numbers and decimal digit strings only
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 26 files and related code changes

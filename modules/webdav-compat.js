@@ -409,7 +409,7 @@ function isSha256(value) {
 }
 
 function isNonNegativeInteger(value) {
-    if (typeof value !== 'number' && !(typeof value === 'string' && value.trim())) {
+    if (typeof value !== 'number' && !(typeof value === 'string' && /^\d+$/.test(value.trim()))) {
         return false;
     }
     const number = Number(value);
