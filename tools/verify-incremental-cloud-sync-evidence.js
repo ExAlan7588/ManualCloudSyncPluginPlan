@@ -117,7 +117,7 @@ function commandChecks(report, target) {
         check(`${target} command report source`, hasText(report?.source), `${target} command report must include source path or artifact`),
         check(`${target} command report source kind`, COMMAND_SOURCE_KINDS.has(report?.sourceKind), `${target} command report must include sourceKind`),
         check(`${target} command report is build artifact`, report?.sourceKind === FINAL_COMMAND_SOURCE_KIND, `${target} command report must come from an actual build artifact`),
-        check(`${target} command report scanned files`, Number(report?.scannedFiles) > 0, `${target} command report must scan at least one file`),
+        check(`${target} command report scanned files`, hasPositiveInteger(report?.scannedFiles), `${target} command report must scan at least one file`),
         check(`${target} no missing commands`, Array.isArray(report?.missingCommands) && report.missingCommands.length === 0, `${target} missingCommands must be empty`),
         ...REQUIRED_TT_SYNC_COMMANDS.map(command => commandFoundCheck(report, command, target)),
     ];
@@ -144,7 +144,7 @@ function eventChecks(report) {
         check('event surface report source', hasText(report?.source), 'event surface report must include source path or artifact'),
         check('event surface report source kind', COMMAND_SOURCE_KINDS.has(report?.sourceKind), 'event surface report must include sourceKind'),
         check('event surface report is source tree', report?.sourceKind === FINAL_EVENT_SOURCE_KIND, 'final evidence event surface report must scan the TauriTavern source tree'),
-        check('event surface report scanned files', Number(report?.scannedFiles) > 0, 'event surface report must scan at least one file'),
+        check('event surface report scanned files', hasPositiveInteger(report?.scannedFiles), 'event surface report must scan at least one file'),
         check('event surface missing events', Array.isArray(report?.missingEvents) && report.missingEvents.length === 0, 'missingEvents must be empty'),
         check('event surface missing fields', Array.isArray(report?.missingPayloadFields) && report.missingPayloadFields.length === 0, 'missingPayloadFields must be empty'),
         ...REQUIRED_TT_SYNC_EVENTS.map(name => check(`event ${name}`, names.has(name), `${name} event is required`)),

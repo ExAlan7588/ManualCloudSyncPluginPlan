@@ -32,6 +32,7 @@ const tests = [
     ['incremental evidence verifier rejects source-tree command report as final evidence', testSourceTreeCommandReportEvidence],
     ['incremental evidence verifier rejects build-artifact report without build artifact evidence', testBuildArtifactEvidenceKind],
     ['incremental evidence verifier rejects incomplete command contract coverage', testIncompleteCommandContractCoverage],
+    ['incremental evidence verifier rejects non-integer scanned files', testNonIntegerScannedFiles],
     ['incremental evidence verifier rejects missing event surface evidence', testMissingEventSurfaceEvidence],
     ['incremental evidence verifier rejects failed event surface report', testFailedEventSurfaceEvidence],
     ['incremental evidence verifier rejects source-file event surface evidence', testSourceFileEventSurfaceEvidence],
@@ -474,6 +475,16 @@ async function testIncompleteCommandContractCoverage() {
     const report = await verifyIncrementalCloudSyncEvidence(evidence);
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('command contract covers required commands'));
+}
+
+async function testNonIntegerScannedFiles() {
+    const evidence = completeEvidence();
+    evidence.mobileCommandReport.scannedFiles = true;
+    evidence.eventReport.scannedFiles = true;
+    const report = await verifyIncrementalCloudSyncEvidence(evidence);
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('mobile command report scanned files'));
+    assert.ok(report.failed.includes('event surface report scanned files'));
 }
 
 async function testPlaceholderDeployEvidence() {

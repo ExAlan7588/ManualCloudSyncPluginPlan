@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit final evidence scannedFiles validation,DONE,Concrete bug documented in SPEC.md,test -f .codex-tasks/20260517-continuous-audit-batch-14/SPEC.md,2026-05-17T21:40:27+08:00,0,Number coercion accepts booleans and strings for scannedFiles
+2,Add focused regression coverage,DONE,evidence verifier tests cover boolean scannedFiles,timeout 60s node tools/test/run-tests.js,2026-05-17T21:41:50+08:00,0,Regression failed before fix because boolean scannedFiles passed
+3,Implement minimal evidence validation fix,DONE,scannedFiles requires a positive integer value,timeout 60s node tools/test/run-tests.js,2026-05-17T21:41:50+08:00,0,Focused final evidence tests pass
+4,Run full validation,DONE,check and test scripts pass,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:42:22+08:00,0,npm run check and npm test passed
+5,Commit batch changes,IN_PROGRESS,Git commit contains only batch 14 changes,git status --short,,0,Ready to commit after diff review at 2026-05-17T21:42:47+08:00
