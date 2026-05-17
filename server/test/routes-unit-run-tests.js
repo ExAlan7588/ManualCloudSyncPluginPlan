@@ -4,6 +4,7 @@ import { encodePath } from '../lib/encoding.js';
 import { createHandler } from '../lib/routes.js';
 
 const VALID_SPKI_PIN = Buffer.alloc(32, 1).toString('base64url');
+const VALID_TAURI_DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 await testAccountPairingUriRejectsUnsupportedEndpointScheme();
 await testAccountPairingUriRejectsMalformedSpkiPin();
@@ -11,6 +12,7 @@ await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
 await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
+await testTauriSessionRejectsMalformedDevices();
 console.log('ok - routes validate account pairing URI inputs');
 
 async function testAccountPairingUriRejectsUnsupportedEndpointScheme() {
@@ -150,6 +152,28 @@ async function testFileRouteRejectsMalformedPlanDownloads() {
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid plan downloads/);
+}
+
+async function testTauriSessionRejectsMalformedDevices() {
+    const response = await dispatch({
+        body: { device_id: VALID_TAURI_DEVICE_ID },
+        headers: {
+            'tt-device-id': VALID_TAURI_DEVICE_ID,
+            'tt-nonce': 'nonce',
+            'tt-signature': 'signature',
+            'tt-timestamp-ms': String(Date.now()),
+        },
+        method: 'POST',
+        storage: {
+            async readNamespace(namespace) {
+                assert.equal(namespace, 'default');
+                return { devices: 'bad' };
+            },
+        },
+        url: '/v2/session/open',
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(JSON.parse(response.body).error, /Invalid namespace devices/);
 }
 
 async function dispatch(options) {

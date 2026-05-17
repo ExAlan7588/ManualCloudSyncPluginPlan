@@ -380,11 +380,19 @@ function buildPlan(input) {
 }
 
 function pairedDevice(record, deviceId) {
-    const device = (record.devices || []).find(item => item.deviceId === deviceId);
+    const devices = namespaceDevices(record);
+    const device = devices.find(item => item.deviceId === deviceId);
     if (!device?.publicKey) {
         throw badRequest(`Paired Tauri device not found: ${deviceId}`);
     }
     return device;
+}
+
+function namespaceDevices(record) {
+    if (!Array.isArray(record.devices)) {
+        throw new Error('Invalid namespace devices');
+    }
+    return record.devices;
 }
 
 function routeKey(method, pathname) {

@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 54 audit finding,done,Tauri session device lookup assumes namespace devices is an array
+2,Add regression coverage,done,Assert malformed Tauri namespace devices fails explicitly
+3,Implement paired-device array validation,done,Validate namespace devices before pairedDevice lookup
+4,Run focused and full validation,done,Focused routes unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 54 files and related code changes
