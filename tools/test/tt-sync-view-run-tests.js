@@ -9,6 +9,7 @@ import {
 
 testServerListFromRejectsMalformedServers();
 testServerListFromRejectsMalformedServerItems();
+testServerListFromRejectsMalformedServerIds();
 testServerListFromKeepsMissingServersBehavior();
 testHasObjectPayloadRejectsArrays();
 testServerStatusRejectsMalformedPermissionText();
@@ -35,6 +36,17 @@ function testServerListFromRejectsMalformedServerItems() {
     );
     assert.throws(
         () => serverListFrom(['bad']),
+        /TT-Sync 服務端列表格式不正確/,
+    );
+}
+
+function testServerListFromRejectsMalformedServerIds() {
+    assert.throws(
+        () => serverListFrom({ servers: [{ server_device_id: { value: 'server-1' } }] }),
+        /TT-Sync 服務端列表格式不正確/,
+    );
+    assert.throws(
+        () => serverListFrom([{ name: 'Desktop' }]),
         /TT-Sync 服務端列表格式不正確/,
     );
 }

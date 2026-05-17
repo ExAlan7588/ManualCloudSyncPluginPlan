@@ -164,11 +164,11 @@ function validatedServerList(servers) {
 }
 
 function isServerItem(value) {
-    return isRecordObject(value);
+    return isRecordObject(value) && serverIdText(value) !== '';
 }
 
 export function serverIdOf(server) {
-    return String(server?.server_device_id || server?.serverDeviceId || server?.serverId || server?.id || '').trim();
+    return serverIdText(server);
 }
 
 export function serverLabel(server) {
@@ -285,6 +285,12 @@ function serverDisplayText(value) {
         return '';
     }
     return String(value || '').trim();
+}
+
+function serverIdText(server) {
+    return serverDisplayText(
+        server?.server_device_id ?? server?.serverDeviceId ?? server?.serverId ?? server?.id,
+    );
 }
 
 function diffSummaryFrom(payload) {
