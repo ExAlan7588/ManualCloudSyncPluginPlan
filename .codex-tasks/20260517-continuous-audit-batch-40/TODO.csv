@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 40 audit finding,done,Plan response helpers expose low-level errors for malformed array fields
+2,Add regression coverage,done,Focused plan response test fails before fix with low-level TypeError
+3,Implement plan array validation,done,Validate plan array fields before response summaries
+4,Run focused and full validation,done,Focused plan response test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 40 files and related code changes

@@ -1,32 +1,34 @@
 const PLAN_SIZE_BYTES_ERROR = 'Invalid plan sizeBytes';
 
 export function planSummary(plan) {
+    const fields = planFields(plan);
     return {
         id: plan.id,
         kind: plan.kind,
         ok: Boolean(plan.committedAt),
         namespace: plan.namespace,
-        uploads: plan.uploads,
-        downloads: plan.downloads,
-        remoteDeletes: plan.remoteDeletes,
-        localDeletes: plan.localDeletes,
-        conflicts: plan.conflicts,
+        uploads: fields.uploads,
+        downloads: fields.downloads,
+        remoteDeletes: fields.remoteDeletes,
+        localDeletes: fields.localDeletes,
+        conflicts: fields.conflicts,
         committedAt: plan.committedAt,
-        progress: progressSummary(plan),
+        progress: progressSummary({ ...plan, ...fields }),
         summary: {
-            conflictFiles: plan.conflicts.length,
-            deleteFiles: plan.kind === 'push' ? plan.remoteDeletes.length : plan.localDeletes.length,
-            downloadBytes: sumBytes(plan.downloads),
-            downloadFiles: plan.downloads.length,
-            uploadBytes: sumBytes(plan.uploads.filter(entry => !entry.conflict)),
-            uploadFiles: plan.uploads.filter(entry => !entry.conflict).length,
+            conflictFiles: fields.conflicts.length,
+            deleteFiles: plan.kind === 'push' ? fields.remoteDeletes.length : fields.localDeletes.length,
+            downloadBytes: sumBytes(fields.downloads),
+            downloadFiles: fields.downloads.length,
+            uploadBytes: sumBytes(fields.uploads.filter(entry => !entry.conflict)),
+            uploadFiles: fields.uploads.filter(entry => !entry.conflict).length,
         },
     };
 }
 
 export function progressSummary(plan) {
-    const totalFiles = plan.uploads.length + plan.downloads.length;
-    const totalBytes = sumBytes([...plan.uploads, ...plan.downloads]);
+    const fields = planFields(plan);
+    const totalFiles = fields.uploads.length + fields.downloads.length;
+    const totalBytes = sumBytes([...fields.uploads, ...fields.downloads]);
     const staged = Object.values(plan.staged || {});
     const committed = Boolean(plan.committedAt);
     const filesTransferred = committed ? totalFiles : staged.length;
@@ -46,6 +48,23 @@ export function progressSummary(plan) {
 
 function sumBytes(entries) {
     return entries.reduce((total, entry) => total + sizeBytes(entry), 0);
+}
+
+function planFields(plan) {
+    return {
+        conflicts: planArray(plan.conflicts, 'conflicts'),
+        downloads: planArray(plan.downloads, 'downloads'),
+        localDeletes: planArray(plan.localDeletes, 'localDeletes'),
+        remoteDeletes: planArray(plan.remoteDeletes, 'remoteDeletes'),
+        uploads: planArray(plan.uploads, 'uploads'),
+    };
+}
+
+function planArray(value, label) {
+    if (!Array.isArray(value)) {
+        throw new Error(`Invalid plan ${label}`);
+    }
+    return value;
 }
 
 function sizeBytes(entry) {

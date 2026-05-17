@@ -4,6 +4,7 @@ import { planSummary, progressSummary } from '../lib/plan-response.js';
 testPlanSummaryShape();
 testCommittedProgressSummary();
 testPlanSummaryRejectsMalformedSizeBytes();
+testPlanSummaryRejectsMalformedArrays();
 console.log('ok - plan response summaries preserve response shapes');
 
 function testPlanSummaryShape() {
@@ -61,6 +62,17 @@ function testPlanSummaryRejectsMalformedSizeBytes() {
             staged: { 'local.txt': {} },
         }),
         /Invalid plan sizeBytes/,
+    );
+}
+
+function testPlanSummaryRejectsMalformedArrays() {
+    assert.throws(
+        () => planSummary({ ...planFixture(), uploads: {} }),
+        /Invalid plan uploads/,
+    );
+    assert.throws(
+        () => progressSummary({ ...planFixture(), downloads: null }),
+        /Invalid plan downloads/,
     );
 }
 
