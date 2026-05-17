@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
-import { verifyTauriSessionRequest } from '../lib/tauri-contract.js';
+import { normalizeTauriPlanInput, verifyTauriSessionRequest } from '../lib/tauri-contract.js';
 
 const DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 const SESSION_WINDOW_MS = 5 * 60 * 1000;
@@ -9,6 +9,7 @@ const OUTSIDE_WINDOW_MARGIN_MS = 60 * 1000;
 await testCurrentSignedSessionRequestPasses();
 await testStaleSignedSessionRequestFails();
 await testFutureSignedSessionRequestFails();
+await testTauriManifestRejectsNullNumericFields();
 console.log('ok - Tauri session timestamp freshness is enforced');
 
 async function testCurrentSignedSessionRequestPasses() {
@@ -30,6 +31,35 @@ async function testFutureSignedSessionRequestFails() {
         () => verifyTauriSessionRequest(fixture),
         /timestamp is outside the allowed window/,
     );
+}
+
+async function testTauriManifestRejectsNullNumericFields() {
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({ size_bytes: null })),
+        /size_bytes must be a non-negative integer/,
+    );
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({ modified_ms: null })),
+        /modified_ms must be a non-negative integer/,
+    );
+}
+
+function tauriPlanInput(entry) {
+    return {
+        body: {
+            mode: 'Incremental',
+            source_manifest: {
+                entries: [{
+                    modified_ms: 1,
+                    path: 'default-user/chats/example.jsonl',
+                    size_bytes: 1,
+                    ...entry,
+                }],
+            },
+        },
+        deviceId: DEVICE_ID,
+        manifestKey: 'source_manifest',
+    };
 }
 
 function signedSessionFixture(timestampMs) {

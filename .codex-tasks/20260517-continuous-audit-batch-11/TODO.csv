@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit manifest numeric coercion,DONE,Concrete bug documented in SPEC.md,test -f .codex-tasks/20260517-continuous-audit-batch-11/SPEC.md,2026-05-17T21:30:48+08:00,0,Number coercion accepts null/empty/boolean numeric fields
+2,Add focused regression coverage,DONE,manifest and Tauri contract tests cover null numeric fields,timeout 60s node server/test/manifest-run-tests.js && timeout 60s node server/test/tauri-contract-unit-run-tests.js,2026-05-17T21:31:55+08:00,0,Manifest regression failed before fix because null sizeBytes was accepted
+3,Implement minimal numeric validation fix,DONE,Numeric validators reject non-number/string numeric inputs that are blank/null/boolean,timeout 60s node server/test/manifest-run-tests.js && timeout 60s node server/test/tauri-contract-unit-run-tests.js,2026-05-17T21:31:55+08:00,0,Focused tests pass
+4,Run full validation,DONE,check and test scripts pass,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:32:24+08:00,0,npm run check and npm test passed
+5,Commit batch changes,IN_PROGRESS,Git commit contains only batch 11 changes,git status --short,,0,Ready to commit after diff review at 2026-05-17T21:32:44+08:00

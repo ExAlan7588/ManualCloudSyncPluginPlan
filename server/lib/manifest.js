@@ -14,14 +14,8 @@ export function normalizeManifest(input) {
 
 export function normalizeEntry(input) {
     const path = validateSyncPath(input?.path);
-    const sizeBytes = Number(input?.sizeBytes);
-    const modifiedMs = Number(input?.modifiedMs);
-    if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
-        throw badRequest(`Invalid sizeBytes for ${path}`);
-    }
-    if (!Number.isSafeInteger(modifiedMs) || modifiedMs < 0) {
-        throw badRequest(`Invalid modifiedMs for ${path}`);
-    }
+    const sizeBytes = nonNegativeInteger(input?.sizeBytes, `Invalid sizeBytes for ${path}`);
+    const modifiedMs = nonNegativeInteger(input?.modifiedMs, `Invalid modifiedMs for ${path}`);
 
     return {
         path,
@@ -65,6 +59,21 @@ function optionalSha256(value) {
         throw badRequest('sha256 must be a 64-character lowercase hex digest');
     }
     return text;
+}
+
+function nonNegativeInteger(value, message) {
+    if (!isNumericInput(value)) {
+        throw badRequest(message);
+    }
+    const number = Number(value);
+    if (!Number.isSafeInteger(number) || number < 0) {
+        throw badRequest(message);
+    }
+    return number;
+}
+
+function isNumericInput(value) {
+    return typeof value === 'number' || (typeof value === 'string' && value.trim().length > 0);
 }
 
 function assertUniquePaths(entries) {

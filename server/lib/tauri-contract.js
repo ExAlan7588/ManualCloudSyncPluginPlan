@@ -197,11 +197,18 @@ function sumBytes(entries) {
 }
 
 function nonNegativeInteger(value, label) {
+    if (!isNumericInput(value)) {
+        throw badRequest(`${label} must be a non-negative integer`);
+    }
     const number = Number(value);
     if (!Number.isSafeInteger(number) || number < 0) {
         throw badRequest(`${label} must be a non-negative integer`);
     }
     return number;
+}
+
+function isNumericInput(value) {
+    return typeof value === 'number' || (typeof value === 'string' && value.trim().length > 0);
 }
 
 function integerTextField(value, label) {
