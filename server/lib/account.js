@@ -78,11 +78,11 @@ export function prunePairingTokens(tokens) {
 
 export function sessionResponse(record, session) {
     return {
-        accessToken: session.accessToken,
-        expiresAt: session.expiresAt,
+        accessToken: sessionToken(session.accessToken, 'accessToken'),
+        expiresAt: sessionTimestamp(session.expiresAt, 'expiresAt'),
         namespace: record.namespace,
-        refreshExpiresAt: session.refreshExpiresAt,
-        refreshToken: session.refreshToken,
+        refreshExpiresAt: sessionTimestamp(session.refreshExpiresAt, 'refreshExpiresAt'),
+        refreshToken: sessionToken(session.refreshToken, 'refreshToken'),
         serverId: record.serverId,
     };
 }
@@ -143,6 +143,20 @@ function hasFutureIsoTimestamp(value, now) {
         return false;
     }
     return Date.parse(value) > now;
+}
+
+function sessionToken(value, label) {
+    if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`Invalid session ${label}`);
+    }
+    return value;
+}
+
+function sessionTimestamp(value, label) {
+    if (typeof value !== 'string' || !ISO_TIMESTAMP_PATTERN.test(value) || Number.isNaN(Date.parse(value))) {
+        throw new Error(`Invalid session ${label}`);
+    }
+    return value;
 }
 
 function optionalRecordArray(value, label) {

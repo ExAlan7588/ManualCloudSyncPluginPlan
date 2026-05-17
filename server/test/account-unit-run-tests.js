@@ -5,6 +5,7 @@ import {
     assertAccountLogin,
     pruneExpiredSessions,
     prunePairingTokens,
+    sessionResponse,
 } from '../lib/account.js';
 
 const TEST_USERNAME = 'test-user';
@@ -16,6 +17,7 @@ await testAccountLoginRequiresConfiguredCredentials();
 await testAccountSessionsRejectNonIsoFutureExpiry();
 await testAccountPairingTokensRejectNonIsoFutureExpiry();
 await testAccountHelpersRejectMalformedRecordArrays();
+await testSessionResponseRejectsMalformedFields();
 console.log('ok - account credential checks are explicit');
 
 async function testAccountLoginAcceptsValidCredentials() {
@@ -81,6 +83,28 @@ async function testAccountHelpersRejectMalformedRecordArrays() {
         () => prunePairingTokens('bad'),
         /Invalid namespace pairingTokens/,
     );
+}
+
+async function testSessionResponseRejectsMalformedFields() {
+    const record = { namespace: 'default', serverId: 'server-1' };
+    const session = validSession();
+    assert.throws(
+        () => sessionResponse(record, { ...session, accessToken: { value: 'access-token' } }),
+        /Invalid session accessToken/,
+    );
+    assert.throws(
+        () => sessionResponse(record, { ...session, expiresAt: '9999' }),
+        /Invalid session expiresAt/,
+    );
+}
+
+function validSession() {
+    return {
+        accessToken: 'access-token',
+        expiresAt: '2026-05-17T00:00:00.000Z',
+        refreshExpiresAt: '2026-05-18T00:00:00.000Z',
+        refreshToken: 'refresh-token',
+    };
 }
 
 function withAccountEnv(callback) {
