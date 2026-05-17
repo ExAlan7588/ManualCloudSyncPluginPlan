@@ -1,6 +1,4 @@
 import {
-    AUTH_BASIC,
-    AUTH_BEARER,
     CLOUD_SYNC_FORMAT_VERSION,
     JSON_CONTENT_TYPE,
     MODE_COMPAT,
@@ -22,6 +20,11 @@ import { importArchiveBlob, runCompatExportToFile as exportArchiveToFile } from 
 import { normalizeError, readFailureMessage } from './errors.js';
 import { webDavHeaders } from './webdav-headers.js';
 import { webDavXhrTransfer } from './webdav-transfer.js';
+import {
+    webDavAuthHeaders,
+    webDavTransferHeaders,
+    webDavUrlForKey,
+} from './webdav-url.js';
 
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
@@ -278,30 +281,6 @@ async function ensureWebDavResponse(options) {
     throw new Error(`WebDAV ${options.method} ${options.key} 回傳 HTTP ${options.response.status}${detail ? `：${detail}` : ''}`);
 }
 
-function webDavAuthHeaders(connection) {
-    const authMode = connection.config.webdav.authMode || AUTH_BASIC;
-    if (authMode === AUTH_BASIC) {
-        return { Authorization: `Basic ${base64Utf8(`${connection.config.webdav.username}:${connection.secrets.webdavPassword}`)}` };
-    }
-    if (authMode === AUTH_BEARER) {
-        return { Authorization: `Bearer ${connection.secrets.webdavToken}` };
-    }
-
-    throw new Error(`不支援的 WebDAV 驗證方式：${authMode}`);
-}
-
-function webDavTransferHeaders(connection, extraHeaders = {}) {
-    return { ...webDavAuthHeaders(connection), ...extraHeaders };
-}
-
-function webDavUrlForKey(config, key) {
-    const url = new URL(config.endpoint);
-    const basePath = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
-    const suffix = key.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-    url.pathname = `${basePath}${suffix}`.replace(/\/{2,}/g, '/');
-    return url.toString();
-}
-
 function parseManifestKeys(prefix, xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length > 0) {
@@ -471,13 +450,4 @@ function nextSyncFileName() {
         now.getSeconds(),
     ].map(value => String(value).padStart(2, '0'));
     return `${SYNC_FILE_PREFIX}${parts.join('')}${SYNC_ZIP_EXTENSION}`;
-}
-
-function base64Utf8(value) {
-    const bytes = new TextEncoder().encode(value);
-    let binary = '';
-    for (const byte of bytes) {
-        binary += String.fromCharCode(byte);
-    }
-    return btoa(binary);
 }

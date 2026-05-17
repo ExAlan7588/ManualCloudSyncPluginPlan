@@ -1,0 +1,5 @@
+id,task,status,completed_at,notes
+1,Record audit finding and scope,DONE,2026-05-17,Finding recorded in SPEC.md
+2,Split WebDAV transport helpers into dedicated module,DONE,2026-05-17,Moved auth header transfer header URL and base64 helpers to modules/webdav-url.js
+3,Run focused and full validation,DONE,2026-05-17,Focused tests npm run check npm test and git diff --check pass
+4,Commit batch changes,IN_PROGRESS,,
