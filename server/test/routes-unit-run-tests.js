@@ -17,6 +17,7 @@ await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloadPathsBeforeRead();
+await testFileRouteRejectsMalformedPlanModifiedMsBeforeStat();
 await testPairCompleteRejectsUnsafePairingUriEndpoints();
 await testPairCompleteRejectsUnsafeDirectEndpoints();
 await testTauriSessionRejectsMalformedDevices();
@@ -265,6 +266,37 @@ async function testBundleRouteRejectsMalformedPlanDownloadPathsBeforeRead() {
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid plan downloads path/);
+}
+
+async function testFileRouteRejectsMalformedPlanModifiedMsBeforeStat() {
+    const syncPath = 'default-user/chats/example.jsonl';
+    const response = await dispatch({
+        body: {},
+        headers: { authorization: 'Bearer token' },
+        method: 'GET',
+        storage: {
+            async readPlan() {
+                return {
+                    downloads: [{ modifiedMs: '0x10', path: syncPath }],
+                    id: 'plan-1',
+                    namespace: 'default',
+                    uploads: [],
+                };
+            },
+            async remoteFilePath() {
+                return '/tmp/unreachable';
+            },
+            async remoteFileStat() {
+                throw new Error('remoteFileStat must not be called for malformed modifiedMs');
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: `/v2/plans/plan-1/files/${encodePath(syncPath)}`,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(JSON.parse(response.body).error, /Invalid plan downloads modifiedMs/);
 }
 
 async function testPairCompleteRejectsUnsafePairingUriEndpoints() {

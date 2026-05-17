@@ -451,6 +451,7 @@ function planEntries(entries, label) {
     }
     return entries.map(entry => {
         assertPlanEntryPath(entry?.path, label);
+        assertPlanEntryModifiedMs(entry?.modifiedMs, label);
         return entry;
     });
 }
@@ -459,6 +460,22 @@ function assertPlanEntryPath(value, label) {
     if (typeof value !== 'string' || value.trim() === '') {
         throw new Error(`Invalid plan ${label} path`);
     }
+}
+
+function assertPlanEntryModifiedMs(value, label) {
+    if (!isNonNegativeIntegerInput(value)) {
+        throw new Error(`Invalid plan ${label} modifiedMs`);
+    }
+}
+
+function isNonNegativeIntegerInput(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return false;
+    }
+    return Number.isSafeInteger(Number(value));
 }
 
 async function writeProgressEvent(context, planId) {
