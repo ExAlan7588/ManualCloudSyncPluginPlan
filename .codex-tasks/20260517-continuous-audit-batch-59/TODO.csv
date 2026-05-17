@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 59 audit finding,done,regular HTTP sync plans accept arbitrary mode strings
+2,Add regression coverage,done,Assert malformed HTTP sync mode returns 400
+3,Implement planner mode validation,done,Validate Incremental or Mirror while preserving default behavior
+4,Run focused and full validation,done,Focused routes unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 59 files and related code changes

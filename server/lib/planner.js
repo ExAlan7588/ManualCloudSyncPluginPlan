@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
+import { badRequest } from './http-error.js';
 import { entriesEqual, manifestMap, normalizeManifest } from './manifest.js';
+
+const DEFAULT_SYNC_MODE = 'Incremental';
+const MIRROR_SYNC_MODE = 'Mirror';
 
 export function buildPushPlan(input) {
     const local = normalizeManifest(input.localManifest);
@@ -8,8 +12,8 @@ export function buildPushPlan(input) {
     const localMap = manifestMap(local);
     const remoteMap = manifestMap(remote);
     const baseMap = base ? manifestMap(base) : null;
-    const mode = input.mode || 'Incremental';
-    const changes = collectPushChanges({ baseMap, includeDeletes: mode === 'Mirror', localMap, remoteMap });
+    const mode = syncMode(input.mode);
+    const changes = collectPushChanges({ baseMap, includeDeletes: mode === MIRROR_SYNC_MODE, localMap, remoteMap });
     return planEnvelope({ ...input, kind: 'push', local, mode, remote, ...changes });
 }
 
@@ -20,8 +24,8 @@ export function buildPullPlan(input) {
     const localMap = manifestMap(local);
     const remoteMap = manifestMap(remote);
     const baseMap = base ? manifestMap(base) : null;
-    const mode = input.mode || 'Incremental';
-    const changes = collectPullChanges({ baseMap, includeDeletes: mode === 'Mirror', localMap, remoteMap });
+    const mode = syncMode(input.mode);
+    const changes = collectPullChanges({ baseMap, includeDeletes: mode === MIRROR_SYNC_MODE, localMap, remoteMap });
     return planEnvelope({ ...input, kind: 'pull', local, mode, remote, ...changes });
 }
 
@@ -29,7 +33,7 @@ function planEnvelope(input) {
     return {
         id: randomUUID(),
         kind: input.kind,
-        mode: input.mode || 'Incremental',
+        mode: input.mode || DEFAULT_SYNC_MODE,
         namespace: input.namespace,
         deviceId: input.deviceId,
         createdAt: new Date().toISOString(),
@@ -43,6 +47,14 @@ function planEnvelope(input) {
         conflicts: input.conflicts || [],
         staged: {},
     };
+}
+
+function syncMode(value) {
+    const text = String(value || DEFAULT_SYNC_MODE).trim();
+    if (text !== DEFAULT_SYNC_MODE && text !== MIRROR_SYNC_MODE) {
+        throw badRequest('mode must be Incremental or Mirror');
+    }
+    return text;
 }
 
 function collectPushChanges(options) {

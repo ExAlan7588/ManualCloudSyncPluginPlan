@@ -11,6 +11,7 @@ await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
 await testPlanRouteIgnoresInjectedOppositeArrays();
+await testPlanRouteRejectsMalformedMode();
 await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
@@ -107,6 +108,29 @@ async function testPlanRouteIgnoresInjectedOppositeArrays() {
     const pull = await planWithInjectedArrays('pull');
     assert.deepEqual(pull.uploads, []);
     assert.deepEqual(pull.remoteDeletes, []);
+}
+
+async function testPlanRouteRejectsMalformedMode() {
+    const response = await dispatch({
+        body: { deviceId: 'device-1', localManifest: [], mode: 'Mirorr', namespace: 'default' },
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async readManifest(namespace) {
+                assert.equal(namespace, 'default');
+                return [];
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+            async savePlan() {
+                throw new Error('savePlan must not be called for malformed mode');
+            },
+        },
+        url: '/v2/sync/push-plan',
+    });
+    assert.equal(response.statusCode, 400);
+    assert.match(JSON.parse(response.body).error, /mode must be Incremental or Mirror/);
 }
 
 async function testCommitRouteUsesNormalizedPlanNamespace() {
