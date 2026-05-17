@@ -297,6 +297,9 @@ function collectHrefTexts(doc) {
 }
 
 export function hrefFileName(href) {
+    if (typeof href !== 'string') {
+        throw new Error('WebDAV PROPFIND href 必須是文字');
+    }
     const normalized = href.trim().replace(/\/+$/, '');
     const segment = normalized.split('/').filter(Boolean).pop() || '';
     if (!segment) {
