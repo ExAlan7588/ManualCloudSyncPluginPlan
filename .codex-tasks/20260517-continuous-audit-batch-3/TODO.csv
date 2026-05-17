@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit encoded path input validation,DONE,Concrete malformed input gap is identified from source and tests,source inspection,2026-05-17T21:03:00+08:00,0,decodePath accepted base64url bytes decoded with UTF-8 replacement characters.
+2,Implement explicit UTF-8 validation,DONE,Invalid UTF-8 encoded path bytes raise bad request,git diff --check,2026-05-17T21:03:21+08:00,0,decodePath now uses fatal TextDecoder.
+3,Add focused regression coverage,DONE,Invalid UTF-8 base64url path is rejected,timeout 60s node server/test/encoding-run-tests.js,2026-05-17T21:03:21+08:00,0,Added invalid UTF-8 base64url regression.
+4,Run full validation,DONE,Focused test plus check/test pass within 60 seconds,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:03:48+08:00,0,Focused encoding test check and full npm test passed.
+5,Commit batch and report hash,IN_PROGRESS,Only batch changes are committed with hash reported,git status --short && git rev-parse HEAD,,0,

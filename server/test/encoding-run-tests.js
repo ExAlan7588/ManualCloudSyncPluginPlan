@@ -9,6 +9,7 @@ import {
 testEncodingRoundTrip();
 testSyncPathValidation();
 testEncodedPathRejectsInvalidBase64Url();
+testEncodedPathRejectsInvalidUtf8();
 testSafeNameValidation();
 console.log('ok - encoding helpers reject malformed path inputs');
 
@@ -27,6 +28,10 @@ function testEncodedPathRejectsInvalidBase64Url() {
     const encoded = encodePath('default-user/chats/example.jsonl');
     assert.throws(() => decodePath(`!${encoded}`), /Invalid encoded sync path/);
     assert.throws(() => decodePath(`${encoded}!`), /Invalid encoded sync path/);
+}
+
+function testEncodedPathRejectsInvalidUtf8() {
+    assert.throws(() => decodePath('__4'), /Invalid encoded sync path/);
 }
 
 function testSafeNameValidation() {
