@@ -332,6 +332,9 @@ function parseHttpUrl(value, label) {
         if (url.protocol !== 'https:' && url.protocol !== 'http:') {
             throw badRequest(`${label} must use http or https`);
         }
+        if (url.username || url.password || url.hash) {
+            throw badRequest(`${label} must not include credentials or fragments`);
+        }
         return url;
     } catch (error) {
         if (error instanceof HttpError) {

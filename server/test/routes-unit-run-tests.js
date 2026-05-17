@@ -7,6 +7,7 @@ const VALID_SPKI_PIN = Buffer.alloc(32, 1).toString('base64url');
 const VALID_TAURI_DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 await testAccountPairingUriRejectsUnsupportedEndpointScheme();
+await testAccountPairingUriRejectsEndpointCredentialsAndFragments();
 await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
@@ -36,6 +37,28 @@ async function testAccountPairingUriRejectsUnsupportedEndpointScheme() {
     });
     assert.equal(response.statusCode, 400);
     assert.match(JSON.parse(response.body).error, /endpoint must use http or https/);
+}
+
+async function testAccountPairingUriRejectsEndpointCredentialsAndFragments() {
+    for (const endpoint of ['https://user:pass@sync.example.test', 'https://sync.example.test/#token']) {
+        const response = await dispatch({
+            body: {
+                endpoint,
+                namespace: 'default',
+                spki: VALID_SPKI_PIN,
+            },
+            headers: { authorization: 'Bearer token' },
+            method: 'POST',
+            storage: {
+                async createAccountPairing() {
+                    throw new Error('createAccountPairing must not be called for unsafe endpoint');
+                },
+            },
+            url: '/v2/account/pairing-uri',
+        });
+        assert.equal(response.statusCode, 400);
+        assert.match(JSON.parse(response.body).error, /endpoint must not include credentials or fragments/);
+    }
 }
 
 async function testAccountPairingUriRejectsMalformedSpkiPin() {
