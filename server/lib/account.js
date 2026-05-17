@@ -90,10 +90,11 @@ export function sessionResponse(record, session) {
 }
 
 export function accountPairingResponse(options) {
+    const expiresAt = pairingTimestamp(options.token.expiresAt);
     return {
-        expiresAt: options.token.expiresAt,
+        expiresAt,
         namespace: options.namespace,
-        pairingUri: tauriPairingUri(options),
+        pairingUri: tauriPairingUri({ ...options, token: { ...options.token, expiresAt } }),
     };
 }
 
@@ -168,6 +169,20 @@ function sessionServerId(value) {
     return value.toLowerCase();
 }
 
+function pairingToken(value) {
+    if (typeof value !== 'string' || !value.trim()) {
+        throw new Error('Invalid pairing token');
+    }
+    return value;
+}
+
+function pairingTimestamp(value) {
+    if (typeof value !== 'string' || !ISO_TIMESTAMP_PATTERN.test(value) || Number.isNaN(Date.parse(value))) {
+        throw new Error('Invalid pairing expiresAt');
+    }
+    return value;
+}
+
 function optionalRecordArray(value, label) {
     if (value === undefined || value === null) {
         return [];
@@ -186,7 +201,7 @@ function tauriPairingUri(options) {
     const uri = new URL('tauritavern://tt-sync/pair');
     uri.searchParams.set('v', '2');
     uri.searchParams.set('url', options.endpoint);
-    uri.searchParams.set('token', options.token.token);
+    uri.searchParams.set('token', pairingToken(options.token.token));
     uri.searchParams.set('exp', String(Date.parse(options.token.expiresAt)));
     uri.searchParams.set('spki', options.spki);
     return uri.toString();

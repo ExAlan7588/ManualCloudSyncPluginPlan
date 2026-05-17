@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
     activeAccessToken,
     activeRefreshSession,
+    accountPairingResponse,
     assertAccountLogin,
     pruneExpiredSessions,
     prunePairingTokens,
@@ -18,6 +19,7 @@ await testAccountSessionsRejectNonIsoFutureExpiry();
 await testAccountPairingTokensRejectNonIsoFutureExpiry();
 await testAccountHelpersRejectMalformedRecordArrays();
 await testSessionResponseRejectsMalformedFields();
+await testAccountPairingResponseRejectsMalformedTokenFields();
 console.log('ok - account credential checks are explicit');
 
 async function testAccountLoginAcceptsValidCredentials() {
@@ -112,6 +114,30 @@ function validSession() {
         expiresAt: '2026-05-17T00:00:00.000Z',
         refreshExpiresAt: '2026-05-18T00:00:00.000Z',
         refreshToken: 'refresh-token',
+    };
+}
+
+async function testAccountPairingResponseRejectsMalformedTokenFields() {
+    const options = accountPairingOptions();
+    assert.throws(
+        () => accountPairingResponse({ ...options, token: { ...options.token, token: { value: 'pairing-token' } } }),
+        /Invalid pairing token/,
+    );
+    assert.throws(
+        () => accountPairingResponse({ ...options, token: { ...options.token, expiresAt: '9999' } }),
+        /Invalid pairing expiresAt/,
+    );
+}
+
+function accountPairingOptions() {
+    return {
+        endpoint: 'https://sync.example.test',
+        namespace: 'default',
+        spki: Buffer.alloc(32, 1).toString('base64url'),
+        token: {
+            expiresAt: '2026-05-18T00:00:00.000Z',
+            token: 'pairing-token',
+        },
     };
 }
 
