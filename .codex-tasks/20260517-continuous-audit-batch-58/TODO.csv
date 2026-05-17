@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 58 audit finding,done,planEnvelope preserves client-provided opposite-direction arrays
+2,Add regression coverage,done,Assert push and pull plans ignore opposite-direction injected arrays
+3,Implement planner direction ownership,done,Set opposite transfer and delete arrays to empty arrays by plan kind
+4,Run focused and full validation,done,Focused routes unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 58 files and related code changes

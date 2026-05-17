@@ -10,6 +10,7 @@ await testAccountPairingUriRejectsUnsupportedEndpointScheme();
 await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
+await testPlanRouteIgnoresInjectedOppositeArrays();
 await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
@@ -96,6 +97,16 @@ async function testPlanRouteUsesNormalizedNamespace() {
     });
     assert.equal(response.statusCode, 200);
     assert.equal(JSON.parse(response.body).namespace, 'default');
+}
+
+async function testPlanRouteIgnoresInjectedOppositeArrays() {
+    const push = await planWithInjectedArrays('push');
+    assert.deepEqual(push.downloads, []);
+    assert.deepEqual(push.localDeletes, []);
+
+    const pull = await planWithInjectedArrays('pull');
+    assert.deepEqual(pull.uploads, []);
+    assert.deepEqual(pull.remoteDeletes, []);
 }
 
 async function testCommitRouteUsesNormalizedPlanNamespace() {
@@ -199,6 +210,37 @@ async function testTauriSessionRejectsMalformedDevices() {
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid namespace devices/);
+}
+
+async function planWithInjectedArrays(kind) {
+    const response = await dispatch({
+        body: {
+            deviceId: 'device-1',
+            downloads: [{ path: 'default-user/chats/injected-download.jsonl', sizeBytes: 1 }],
+            localDeletes: ['default-user/chats/injected-local-delete.jsonl'],
+            localManifest: [],
+            namespace: 'default',
+            remoteDeletes: ['default-user/chats/injected-remote-delete.jsonl'],
+            uploads: [{ path: 'default-user/chats/injected-upload.jsonl', sizeBytes: 1 }],
+        },
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async readManifest(namespace) {
+                assert.equal(namespace, 'default');
+                return [];
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+            async savePlan(plan) {
+                return plan;
+            },
+        },
+        url: `/v2/sync/${kind}-plan`,
+    });
+    assert.equal(response.statusCode, 200);
+    return JSON.parse(response.body);
 }
 
 async function dispatch(options) {
