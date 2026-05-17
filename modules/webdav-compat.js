@@ -22,6 +22,8 @@ import { importArchiveBlob, runCompatExportToFile as exportArchiveToFile } from 
 import { normalizeError, readFailureMessage } from './errors.js';
 import { webDavXhrTransfer } from './webdav-transfer.js';
 
+const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
 export { exportArchiveToFile as runCompatExportToFile };
 
 export async function compatListQueue() {
@@ -332,7 +334,7 @@ function validateManifest(manifest) {
     if (!isNonNegativeInteger(manifest.sizeBytes)) {
         throw new Error('同步 manifest 的檔案大小不正確');
     }
-    if (Number.isNaN(Date.parse(manifest.createdAt))) {
+    if (!isIsoTimestamp(manifest.createdAt)) {
         throw new Error('同步 manifest 的建立時間不正確');
     }
 }
@@ -414,6 +416,11 @@ function isNonNegativeInteger(value) {
     }
     const number = Number(value);
     return Number.isSafeInteger(number) && number >= 0;
+}
+
+function isIsoTimestamp(value) {
+    const text = String(value || '').trim();
+    return ISO_TIMESTAMP_PATTERN.test(text) && !Number.isNaN(Date.parse(text));
 }
 
 function isManifestName(name) {

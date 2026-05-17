@@ -79,6 +79,7 @@ const tests = [
     ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
     ['WebDAV manifest rejects fractional sizeBytes', testWebDavManifestRejectsFractionalSizeBytes],
     ['WebDAV manifest rejects non-decimal sizeBytes', testWebDavManifestRejectsNonDecimalSizeBytes],
+    ['WebDAV manifest rejects non-ISO createdAt', testWebDavManifestRejectsNonIsoCreatedAt],
     ['queue renderer shows malformed sizeBytes as unavailable', testQueueRendererMalformedSizeBytes],
     ['formatProgress ignores malformed percent values', testFormatProgressMalformedValues],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
@@ -320,6 +321,20 @@ async function testWebDavManifestRejectsNonDecimalSizeBytes() {
         await assert.rejects(
             compatListQueue(),
             /同步 manifest 的檔案大小不正確/,
+        );
+    } finally {
+        restoreGlobals();
+    }
+}
+
+async function testWebDavManifestRejectsNonIsoCreatedAt() {
+    const restoreGlobals = installWebDavQueueFixture({
+        manifest: validWebDavManifest({ createdAt: '0' }),
+    });
+    try {
+        await assert.rejects(
+            compatListQueue(),
+            /同步 manifest 的建立時間不正確/,
         );
     } finally {
         restoreGlobals();

@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 30 audit finding,done,WebDAV manifest createdAt accepts non-ISO strings
+2,Add regression coverage,done,Reject WebDAV createdAt 0
+3,Implement strict WebDAV createdAt validation,done,Require T plus timezone marker
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 30 files and related code changes
