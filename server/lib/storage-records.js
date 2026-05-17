@@ -36,16 +36,17 @@ export function upsertDevice(record, input) {
 }
 
 export function touchDevice(record, deviceId, patch) {
-    if (!deviceId) {
+    const normalizedDeviceId = deviceReferenceField(deviceId);
+    if (!normalizedDeviceId) {
         return;
     }
     const devices = namespaceDevices(record);
-    const existing = devices.find(device => device.deviceId === deviceId);
+    const existing = devices.find(device => device.deviceId === normalizedDeviceId);
     if (existing) {
         Object.assign(existing, patch);
         return;
     }
-    devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
+    devices.push({ deviceId: normalizedDeviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
 }
 
 export function affectedPaths(plan) {
@@ -119,6 +120,16 @@ function deviceNameField(value) {
     }
     if (typeof value !== 'string') {
         throw new Error('Invalid device name');
+    }
+    return value.trim();
+}
+
+function deviceReferenceField(value) {
+    if (value === undefined || value === null || value === '') {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        throw new Error('Invalid device reference');
     }
     return value.trim();
 }

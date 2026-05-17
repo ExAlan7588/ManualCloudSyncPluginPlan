@@ -8,6 +8,7 @@ await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
 await testWriteNamespaceRejectsMalformedAccountArrays();
 await testNamespaceListMethodsRejectMalformedArrays();
+await testOpenSessionRejectsMalformedDeviceId();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedKindBeforeCommit();
 await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
@@ -95,6 +96,20 @@ async function testNamespaceListMethodsRejectMalformedArrays() {
             /Invalid namespace rollbackPoints/,
         );
         assert.deepEqual(await storage.listHistory('default'), []);
+    });
+}
+
+async function testOpenSessionRejectsMalformedDeviceId() {
+    await withStorage(async storage => {
+        await storage.writeNamespace('default', await storage.createNamespace('default'));
+
+        await assert.rejects(
+            storage.openSession('default', { value: 'device-1' }),
+            /deviceId must be a string/,
+        );
+        const record = await storage.readNamespace('default');
+        assert.deepEqual(record.devices, []);
+        assert.deepEqual(record.sessions, []);
     });
 }
 

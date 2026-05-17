@@ -10,6 +10,7 @@ await testAccountPairingUriRejectsUnsupportedEndpointScheme();
 await testAccountPairingUriRejectsEndpointCredentialsAndFragments();
 await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
+await testSessionOpenRejectsMalformedDeviceId();
 await testPlanRouteUsesNormalizedNamespace();
 await testPlanRouteIgnoresInjectedOppositeArrays();
 await testPlanRouteRejectsMalformedMode();
@@ -104,6 +105,25 @@ async function testSessionOpenUsesNormalizedNamespace() {
     });
     assert.equal(response.statusCode, 200);
     assert.equal(JSON.parse(response.body).namespace, 'default');
+}
+
+async function testSessionOpenRejectsMalformedDeviceId() {
+    const response = await dispatch({
+        body: { deviceId: { value: 'device-1' }, namespace: 'default' },
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async openSession() {
+                throw new Error('openSession must not be called for malformed deviceId');
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: '/v2/session/open',
+    });
+    assert.equal(response.statusCode, 400);
+    assert.match(JSON.parse(response.body).error, /deviceId must be a string/);
 }
 
 async function testPlanRouteUsesNormalizedNamespace() {

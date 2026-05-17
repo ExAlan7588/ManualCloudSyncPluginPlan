@@ -135,12 +135,13 @@ export class TtSyncStorage {
 
     async openSession(namespace, deviceId) {
         const record = await this.readNamespace(namespace);
-        touchDevice(record, String(deviceId || '').trim(), { lastSeenAt: new Date().toISOString() });
-        const session = addSession(record, String(deviceId || '').trim());
+        const normalizedDeviceId = sessionDeviceId(deviceId);
+        touchDevice(record, normalizedDeviceId, { lastSeenAt: new Date().toISOString() });
+        const session = addSession(record, normalizedDeviceId);
         await this.writeNamespace(namespace, record);
         return {
             namespace,
-            deviceId: String(deviceId || '').trim(),
+            deviceId: normalizedDeviceId,
             openedAt: new Date().toISOString(),
             session,
             serverId: record.serverId,
@@ -500,6 +501,16 @@ function conflictDecisions(body) {
         throw badRequest('Invalid conflict decisions');
     }
     return value;
+}
+
+function sessionDeviceId(value) {
+    if (value === undefined || value === null || value === '') {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        throw badRequest('deviceId must be a string');
+    }
+    return value.trim();
 }
 
 function assertPlanOpen(plan) {

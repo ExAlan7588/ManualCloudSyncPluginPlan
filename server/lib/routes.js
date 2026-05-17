@@ -142,7 +142,7 @@ async function handleSession(context) {
     }
     const namespace = safeName(body.namespace || 'default', 'namespace');
     await authenticate(context, namespace);
-    return sendJson(context.response, await context.storage.openSession(namespace, body.deviceId));
+    return sendJson(context.response, await context.storage.openSession(namespace, sessionDeviceId(body.deviceId)));
 }
 
 async function handleDevices(context, url) {
@@ -382,6 +382,16 @@ function pairingDeviceName(body) {
     }
     if (typeof value !== 'string') {
         throw badRequest('deviceName must be a string');
+    }
+    return value.trim();
+}
+
+function sessionDeviceId(value) {
+    if (value === undefined || value === null || value === '') {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        throw badRequest('deviceId must be a string');
     }
     return value.trim();
 }
