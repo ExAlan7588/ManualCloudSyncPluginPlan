@@ -75,6 +75,7 @@ const tests = [
     ['TT-Sync account panel uses server account API', testAccountPanelApi],
     ['TT-Sync account endpoint URL errors include context', testAccountEndpointUrlErrors],
     ['TT-Sync account history marks malformed counts unavailable', testAccountHistoryMalformedCounts],
+    ['TT-Sync account panel rejects malformed list payloads', testAccountPanelMalformedListPayloads],
     ['TT-Sync account panel labels malformed JSON responses', testAccountPanelMalformedJsonContext],
     ['data migration import labels malformed JSON responses', testDataMigrationImportMalformedJsonContext],
     ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
@@ -185,6 +186,23 @@ async function testAccountHistoryMalformedCounts() {
         assert.ok(historyText.includes('down=未回傳'));
         assert.equal(historyText.includes('0x10'), false);
         assert.equal(historyText.includes('true'), false);
+    } finally {
+        restore();
+    }
+}
+
+async function testAccountPanelMalformedListPayloads() {
+    const { elements, fetch, restore } = installAccountPanelFixture(REQUIRED_TT_SYNC_IDS, {}, {
+        devices: { devices: 'bad' },
+        history: { history: {} },
+    });
+    try {
+        const { bindTtSyncAccountPanel } = await import(TT_SYNC_ACCOUNT_MODULE);
+        bindTtSyncAccountPanel({ fetch, runAction: runAccountPanelAction });
+        await assert.rejects(
+            elements.mcs_tts_account_login.handlers.click(),
+            /帳號裝置列表格式不正確/,
+        );
     } finally {
         restore();
     }

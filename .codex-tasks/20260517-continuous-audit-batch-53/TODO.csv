@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 53 audit finding,done,Account panel renders malformed devices/history lists
+2,Add regression coverage,done,Assert malformed account list payloads fail explicitly
+3,Implement account list validation,done,Validate devices and history arrays before rendering
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 53 files and related code changes

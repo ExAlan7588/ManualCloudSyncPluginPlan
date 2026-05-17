@@ -76,8 +76,8 @@ async function loadAccountData(deps, state) {
         accountRequest(deps, { route: `${ACCOUNT_ROUTES.devices}${query}`, token: state.accessToken }),
         accountRequest(deps, { route: `${ACCOUNT_ROUTES.history}${query}`, token: state.accessToken }),
     ]);
-    renderDevices(devices.devices || []);
-    renderHistory(history.history || []);
+    renderDevices(accountList(devices.devices, '帳號裝置列表格式不正確'));
+    renderHistory(accountList(history.history, '帳號同步歷史格式不正確'));
 }
 
 async function accountRequest(deps, options) {
@@ -153,6 +153,16 @@ function renderDevices(devices) {
 
 function renderHistory(history) {
     renderList('#mcs_tts_account_history', history, historyText);
+}
+
+function accountList(value, message) {
+    if (value === undefined || value === null) {
+        return [];
+    }
+    if (!Array.isArray(value)) {
+        throw new Error(message);
+    }
+    return value;
 }
 
 function renderList(selector, items, formatter) {

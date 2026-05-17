@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-export function installAccountPanelFixture(ids, historyItem) {
+export function installAccountPanelFixture(ids, historyItem, overrides = {}) {
     const previousDocument = globalThis.document;
     const previousDollar = globalThis.$;
     const elements = accountPanelElements(ids);
@@ -8,7 +8,7 @@ export function installAccountPanelFixture(ids, historyItem) {
     globalThis.$ = selector => jqueryElement(elements[selector.replace(/^#/, '')]);
     return {
         elements,
-        fetch: accountPanelFetch(historyItem),
+        fetch: accountPanelFetch(historyItem, overrides),
         restore() {
             restoreGlobal('document', previousDocument);
             restoreGlobal('$', previousDollar);
@@ -59,21 +59,27 @@ function jqueryElement(element) {
     };
 }
 
-function accountPanelFetch(historyItem) {
+function accountPanelFetch(historyItem, overrides) {
     return async input => {
         const url = new URL(input);
-        return jsonResponse(accountPanelPayload(url.pathname, historyItem));
+        return jsonResponse(accountPanelPayload(url.pathname, historyItem, overrides));
     };
 }
 
-function accountPanelPayload(pathname, historyItem) {
+function accountPanelPayload(pathname, historyItem, overrides) {
     if (pathname === '/v2/account/login') {
         return { accessToken: 'access-token', namespace: 'default', refreshToken: 'refresh-token' };
     }
     if (pathname === '/v2/devices') {
+        if (Object.hasOwn(overrides, 'devices')) {
+            return overrides.devices;
+        }
         return { devices: [] };
     }
     if (pathname === '/v2/history') {
+        if (Object.hasOwn(overrides, 'history')) {
+            return overrides.history;
+        }
         return { history: [{ kind: 'sync', planId: 'plan-1', ...historyItem }] };
     }
     throw new Error(`Unexpected account panel route: ${pathname}`);
