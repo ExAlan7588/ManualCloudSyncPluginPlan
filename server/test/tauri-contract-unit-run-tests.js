@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
-import { normalizeTauriPlanInput, verifyTauriSessionRequest } from '../lib/tauri-contract.js';
+import { normalizeTauriPlanInput, tauriPlanResponse, verifyTauriSessionRequest } from '../lib/tauri-contract.js';
 
 const DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 const SESSION_WINDOW_MS = 5 * 60 * 1000;
@@ -11,6 +11,7 @@ await testStaleSignedSessionRequestFails();
 await testFutureSignedSessionRequestFails();
 await testTauriManifestRejectsNullNumericFields();
 await testTauriManifestRejectsNonDecimalNumericStrings();
+await testTauriPlanResponseRejectsMalformedSizeBytes();
 console.log('ok - Tauri session timestamp freshness is enforced');
 
 async function testCurrentSignedSessionRequestPasses() {
@@ -53,6 +54,21 @@ async function testTauriManifestRejectsNonDecimalNumericStrings() {
     assert.throws(
         () => normalizeTauriPlanInput(tauriPlanInput({ modified_ms: '0x10' })),
         /modified_ms must be a non-negative integer/,
+    );
+}
+
+async function testTauriPlanResponseRejectsMalformedSizeBytes() {
+    assert.throws(
+        () => tauriPlanResponse({
+            downloads: [],
+            id: 'plan-1',
+            kind: 'push',
+            localDeletes: [],
+            mode: 'Incremental',
+            remoteDeletes: [],
+            uploads: [{ modifiedMs: 1, path: 'default-user/chats/example.jsonl', sizeBytes: '0x10' }],
+        }),
+        /Invalid Tauri plan sizeBytes/,
     );
 }
 

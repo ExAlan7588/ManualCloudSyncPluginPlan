@@ -7,6 +7,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const ED25519_SPKI_PREFIX = Buffer.from('302a300506032b6570032100', 'hex');
 const SESSION_TIMESTAMP_WINDOW_MS = 5 * 60 * 1000;
+const TAURI_PLAN_SIZE_BYTES_ERROR = 'Invalid Tauri plan sizeBytes';
 const TAURI_SESSION_HEADERS = Object.freeze([
     'tt-device-id',
     'tt-timestamp-ms',
@@ -193,7 +194,19 @@ function syncMode(value) {
 }
 
 function sumBytes(entries) {
-    return entries.reduce((total, entry) => total + Number(entry.sizeBytes || 0), 0);
+    return entries.reduce((total, entry) => total + planSizeBytes(entry), 0);
+}
+
+function planSizeBytes(entry) {
+    const value = entry?.sizeBytes;
+    if (!isNumericInput(value)) {
+        throw new Error(TAURI_PLAN_SIZE_BYTES_ERROR);
+    }
+    const number = Number(value);
+    if (!Number.isSafeInteger(number) || number < 0) {
+        throw new Error(TAURI_PLAN_SIZE_BYTES_ERROR);
+    }
+    return number;
 }
 
 function nonNegativeInteger(value, label) {

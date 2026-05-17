@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 21 audit finding,done,Tauri bytes_total aggregation masks malformed sizeBytes
+2,Add regression coverage,done,Reject malformed transfer sizeBytes in Tauri plan response
+3,Implement explicit sizeBytes validation,done,Allow numbers and decimal digit strings only
+4,Run focused and full validation,done,Focused Tauri contract unit test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 21 files and related code changes
