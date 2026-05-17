@@ -176,6 +176,7 @@ export class TtSyncStorage {
     async stageFile(plan, entry, buffer) {
         return this.withPlanLock(plan.id, async () => {
             const latest = await this.readPlan(plan.id);
+            assertPlanOpen(latest);
             const latestEntry = uploadEntry(latest, entry.path);
             validateStagedBuffer(latestEntry, buffer);
             await writeFileAtomic(this.stagedFilePath(latest.id, latestEntry.path), buffer);
@@ -189,17 +190,23 @@ export class TtSyncStorage {
 
     async stageFileStream(plan, entry, stream, maxBytes) {
         const latest = await this.readPlan(plan.id);
+        assertPlanOpen(latest);
         const latestEntry = uploadEntry(latest, entry.path);
+        const stagedPath = this.stagedFilePath(latest.id, latestEntry.path);
         const result = await writeRequestStreamAtomic({
             expectedBytes: latestEntry.sizeBytes,
             expectedSha256: latestEntry.sha256 || '',
-            filePath: this.stagedFilePath(latest.id, latestEntry.path),
+            filePath: stagedPath,
             maxBytes,
             stream,
             syncPath: latestEntry.path,
         });
         return this.withPlanLock(plan.id, async () => {
             const locked = await this.readPlan(plan.id);
+            if (locked.committedAt) {
+                await rm(stagedPath, { force: true });
+                assertPlanOpen(locked);
+            }
             const lockedEntry = uploadEntry(locked, latestEntry.path);
             const staged = { ...(locked.staged || {}) };
             staged[lockedEntry.path] = result;
@@ -463,5 +470,11 @@ function assertConflictDecisions(plan, decisions) {
         if (decisions[item.path] !== 'local' && decisions[item.path] !== 'remote') {
             throw forbidden(`Missing conflict decision for ${item.path}`);
         }
+    }
+}
+
+function assertPlanOpen(plan) {
+    if (plan.committedAt) {
+        throw forbidden(`Plan already committed: ${plan.id}`);
     }
 }

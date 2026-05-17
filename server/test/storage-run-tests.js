@@ -7,6 +7,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
+await testCommittedPlanRejectsLateUploads();
 console.log('ok - storage commit rejects stale snapshots and surfaces malformed manifests');
 
 async function testCommitPlanRejectsStaleSnapshot() {
@@ -62,6 +63,25 @@ async function testCommitPlanSurfacesUnexpectedStagedStatErrors() {
         await assert.rejects(
             storage.commitPlan(await storage.readPlan(plan.id), {}),
             error => error.code === 'ENOTDIR' && !error.message.includes('Missing staged upload'),
+        );
+    });
+}
+
+async function testCommittedPlanRejectsLateUploads() {
+    await withStorage(async storage => {
+        const plan = pushPlan();
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, await storage.createNamespace(plan.namespace));
+        await storage.stageFile(plan, plan.uploads[0], Buffer.from('data'));
+        const committed = await storage.commitPlan(await storage.readPlan(plan.id), {});
+
+        await assert.rejects(
+            storage.stageFile(committed, committed.uploads[0], Buffer.from('late')),
+            /Plan already committed: plan-1/,
+        );
+        await assert.rejects(
+            readFile(storage.stagedFilePath(plan.id, plan.uploads[0].path)),
+            error => error.code === 'ENOENT',
         );
     });
 }

@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 33 audit finding,done,Committed plans still accept late staged uploads
+2,Add regression coverage,done,Focused test fails before fix because late stageFile succeeds after commit
+3,Implement committed-plan staging guard,done,Reject late buffer and stream staging for committed plans
+4,Run focused and full validation,done,Focused storage test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 33 files and related code changes
