@@ -12,6 +12,7 @@ const tests = [
     ['server smoke verifier labels malformed progress SSE', testMalformedProgressSse],
     ['server smoke verifier passes against explicit local server', testLocalSmoke],
     ['server smoke verifier supports bulk fixture', testBulkSmokeFixture],
+    ['server smoke verifier rejects malformed integer options', testRejectsMalformedIntegerOptions],
     ['server smoke verifier requires endpoint or local mode', testRequiresTarget],
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
     ['server smoke verifier rejects non-http endpoint', testRejectsNonHttpEndpoint],
@@ -77,6 +78,17 @@ async function testBulkSmokeFixture() {
     assert.equal(report.fixture.totalBytes, TEST_BULK_FILES * TEST_BULK_FILE_BYTES);
     assert.equal(report.smokePaths.length, TEST_BULK_FILES);
     assertCheckNames(report);
+}
+
+async function testRejectsMalformedIntegerOptions() {
+    await assert.rejects(
+        smokeTtSyncServer({ bulkFiles: '0x10', local: true }),
+        /--bulk-files must be an integer >= 1/,
+    );
+    await assert.rejects(
+        smokeTtSyncServer({ bulkFiles: true, local: true }),
+        /--bulk-files must be an integer >= 1/,
+    );
 }
 
 async function testRequiresTarget() {

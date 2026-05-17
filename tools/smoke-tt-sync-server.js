@@ -99,11 +99,21 @@ function parseIntegerOption(options) {
     if (options.value === undefined || options.value === null) {
         return options.defaultValue;
     }
-    const value = Number(options.value);
+    const value = integerOptionValue(options.value);
     if (!Number.isInteger(value) || value < options.minimum) {
         throw new Error(`${options.label} must be an integer >= ${options.minimum}`);
     }
     return value;
+}
+
+function integerOptionValue(value) {
+    if (typeof value === 'number') {
+        return value;
+    }
+    if (typeof value === 'string' && /^\d+$/.test(value.trim())) {
+        return Number(value);
+    }
+    return Number.NaN;
 }
 
 async function createLocalRuntime(options) {
