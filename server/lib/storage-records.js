@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
+const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
+const DEVICE_PUBLIC_KEY_BYTES = 32;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function addDevice(record, deviceName) {
     const devices = namespaceDevices(record);
     const device = {
@@ -13,16 +17,18 @@ export function addDevice(record, deviceName) {
 
 export function upsertDevice(record, input) {
     const devices = namespaceDevices(record);
-    const existing = devices.find(device => device.deviceId === input.deviceId);
+    const deviceId = deviceIdField(input.deviceId);
+    const publicKey = devicePublicKey(input.publicKey);
+    const existing = devices.find(device => device.deviceId === deviceId);
     if (existing) {
         Object.assign(existing, {
             deviceName: input.deviceName,
-            publicKey: input.publicKey,
+            publicKey,
             pairedAt: existing.pairedAt || new Date().toISOString(),
         });
         return existing;
     }
-    const device = { ...input, pairedAt: new Date().toISOString() };
+    const device = { ...input, deviceId, publicKey, pairedAt: new Date().toISOString() };
     devices.push(device);
     return device;
 }
@@ -103,6 +109,23 @@ function planArrayFields(plan) {
 
 function namespaceDevices(record) {
     return arrayField(record.devices, 'namespace devices');
+}
+
+function deviceIdField(value) {
+    if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
+        throw new Error('Invalid device id');
+    }
+    return value.toLowerCase();
+}
+
+function devicePublicKey(value) {
+    if (typeof value !== 'string' || !BASE64URL_PATTERN.test(value)) {
+        throw new Error('Invalid device publicKey');
+    }
+    if (Buffer.from(value, 'base64url').length !== DEVICE_PUBLIC_KEY_BYTES) {
+        throw new Error('Invalid device publicKey');
+    }
+    return value;
 }
 
 function arrayField(value, label) {

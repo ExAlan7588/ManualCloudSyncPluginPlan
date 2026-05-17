@@ -15,6 +15,7 @@ testStorageRecordHelpers();
 testStorageRecordHelpersRejectMalformedArrays();
 testStorageRecordHelpersRejectMalformedPlanPaths();
 testDeviceHelpersRejectMalformedDevices();
+testUpsertDeviceRejectsMalformedIdentity();
 console.log('ok - storage record helpers preserve response shapes');
 
 function testStorageRecordHelpers() {
@@ -28,9 +29,10 @@ function testStorageRecordHelpers() {
     assert.equal(device.deviceName, 'Phone');
     assert.equal(record.devices.length, 1);
 
-    upsertDevice(record, { deviceId: device.deviceId, deviceName: 'Desktop', publicKey: 'spki' });
+    const publicKey = rawPublicKey();
+    upsertDevice(record, { deviceId: device.deviceId, deviceName: 'Desktop', publicKey });
     assert.equal(record.devices[0].deviceName, 'Desktop');
-    assert.equal(record.devices[0].publicKey, 'spki');
+    assert.equal(record.devices[0].publicKey, publicKey);
 
     touchDevice(record, 'missing-device', { lastSeenAt: '2026-05-14T00:00:00.000Z' });
     assert.equal(record.devices[1].deviceId, 'missing-device');
@@ -103,6 +105,21 @@ function testDeviceHelpersRejectMalformedDevices() {
         () => touchDevice({ devices: {} }, 'device-1', {}),
         /Invalid namespace devices/,
     );
+}
+
+function testUpsertDeviceRejectsMalformedIdentity() {
+    assert.throws(
+        () => upsertDevice({ devices: [] }, { deviceId: 'not-a-uuid', deviceName: 'Phone', publicKey: rawPublicKey() }),
+        /Invalid device id/,
+    );
+    assert.throws(
+        () => upsertDevice({ devices: [] }, { deviceId: '550e8400-e29b-41d4-a716-446655440000', publicKey: 'abcDEF_123' }),
+        /Invalid device publicKey/,
+    );
+}
+
+function rawPublicKey() {
+    return Buffer.alloc(32, 1).toString('base64url');
 }
 
 function planFixture() {
