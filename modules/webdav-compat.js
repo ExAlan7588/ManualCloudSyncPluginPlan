@@ -94,6 +94,14 @@ function validateQueueItem(item) {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
     validateManifest(item.manifest);
+    validateQueueItemKeys(item);
+}
+
+function validateQueueItemKeys(item) {
+    const expectedManifestName = item.manifest.file.replace(/\.zip$/i, SYNC_MANIFEST_EXTENSION);
+    if (!item.manifestKey.endsWith(expectedManifestName) || !item.zipKey.endsWith(item.manifest.file)) {
+        throw new Error('WebDAV 佇列項目路徑不一致');
+    }
 }
 
 export async function compatDeleteRemoteItem(fileName) {
