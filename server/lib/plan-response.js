@@ -29,13 +29,13 @@ export function progressSummary(plan) {
     const fields = planFields(plan);
     const totalFiles = fields.uploads.length + fields.downloads.length;
     const totalBytes = sumBytes([...fields.uploads, ...fields.downloads]);
-    const staged = Object.values(plan.staged || {});
+    const staged = Object.values(fields.staged);
     const committed = Boolean(plan.committedAt);
     const filesTransferred = committed ? totalFiles : staged.length;
     return {
         bytesTransferred: committed ? totalBytes : sumBytes(staged),
         committed,
-        currentPath: currentProgressPath(plan),
+        currentPath: currentProgressPath(fields),
         filesTransferred,
         partial_upload_safe: plan.kind === 'push' && !committed,
         pending_files: Math.max(totalFiles - filesTransferred, 0),
@@ -56,6 +56,7 @@ function planFields(plan) {
         downloads: planArray(plan.downloads, 'downloads'),
         localDeletes: planArray(plan.localDeletes, 'localDeletes'),
         remoteDeletes: planArray(plan.remoteDeletes, 'remoteDeletes'),
+        staged: planStaged(plan.staged),
         uploads: planArray(plan.uploads, 'uploads'),
     };
 }
@@ -63,6 +64,16 @@ function planFields(plan) {
 function planArray(value, label) {
     if (!Array.isArray(value)) {
         throw new Error(`Invalid plan ${label}`);
+    }
+    return value;
+}
+
+function planStaged(value) {
+    if (value === undefined || value === null) {
+        return {};
+    }
+    if (Array.isArray(value) || typeof value !== 'object') {
+        throw new Error('Invalid plan staged');
     }
     return value;
 }
@@ -85,9 +96,9 @@ function hasValidSizeBytes(value) {
     return Number.isSafeInteger(Number(value));
 }
 
-function currentProgressPath(plan) {
-    const staged = new Set(Object.keys(plan.staged || {}));
-    const pending = [...plan.uploads, ...plan.downloads].find(entry => !staged.has(entry.path));
+function currentProgressPath(fields) {
+    const staged = new Set(Object.keys(fields.staged));
+    const pending = [...fields.uploads, ...fields.downloads].find(entry => !staged.has(entry.path));
     return pending?.path || '';
 }
 

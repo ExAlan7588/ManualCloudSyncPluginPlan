@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 41 audit finding,done,Plan progress helpers accept malformed truthy staged values as map-like objects
+2,Add regression coverage,done,Assert malformed staged string or array fails with explicit staged error
+3,Implement staged map validation,done,Validate staged map before Object keys values and progress path lookup
+4,Run focused and full validation,done,Focused plan response test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 41 files and related code changes

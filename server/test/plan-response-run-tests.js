@@ -5,6 +5,7 @@ testPlanSummaryShape();
 testCommittedProgressSummary();
 testPlanSummaryRejectsMalformedSizeBytes();
 testPlanSummaryRejectsMalformedArrays();
+testPlanSummaryRejectsMalformedStagedMap();
 console.log('ok - plan response summaries preserve response shapes');
 
 function testPlanSummaryShape() {
@@ -73,6 +74,17 @@ function testPlanSummaryRejectsMalformedArrays() {
     assert.throws(
         () => progressSummary({ ...planFixture(), downloads: null }),
         /Invalid plan downloads/,
+    );
+}
+
+function testPlanSummaryRejectsMalformedStagedMap() {
+    assert.throws(
+        () => planSummary({ ...planFixture(), staged: 'local.txt' }),
+        /Invalid plan staged/,
+    );
+    assert.throws(
+        () => progressSummary({ ...planFixture(), staged: [] }),
+        /Invalid plan staged/,
     );
 }
 
