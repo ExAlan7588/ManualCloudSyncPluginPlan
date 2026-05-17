@@ -5,6 +5,7 @@ testPlanSummaryShape();
 testCommittedProgressSummary();
 testProgressSummaryIgnoresUnplannedStagedEntries();
 testPlanSummaryRejectsMalformedSizeBytes();
+testPlanSummaryRejectsMalformedEntryPaths();
 testPlanSummaryRejectsMalformedArrays();
 testPlanSummaryRejectsMalformedStagedMap();
 console.log('ok - plan response summaries preserve response shapes');
@@ -78,6 +79,20 @@ function testPlanSummaryRejectsMalformedSizeBytes() {
             staged: { 'local.txt': {} },
         }),
         /Invalid plan sizeBytes/,
+    );
+}
+
+function testPlanSummaryRejectsMalformedEntryPaths() {
+    assert.throws(
+        () => planSummary({
+            ...planFixture(),
+            uploads: [{ path: { value: 'local.txt' }, sizeBytes: 10 }],
+        }),
+        /Invalid plan uploads path/,
+    );
+    assert.throws(
+        () => planSummary({ ...planFixture(), remoteDeletes: [''] }),
+        /Invalid plan remoteDeletes path/,
     );
 }
 

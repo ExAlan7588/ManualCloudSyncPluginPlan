@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed transfer path regression tests,DONE,Tests fail before fix because malformed paths are accepted,node server/test/plan-response-run-tests.js,2026-05-17,0,Initial currentPath hypothesis was invalid; path test failed with missing expected exception
+2,Validate plan response entry paths,DONE,Transfer arrays and delete paths reject non-string or empty paths,node server/test/plan-response-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

@@ -53,11 +53,11 @@ function sumBytes(entries) {
 function planFields(plan) {
     return {
         conflicts: planArray(plan.conflicts, 'conflicts'),
-        downloads: planArray(plan.downloads, 'downloads'),
-        localDeletes: planArray(plan.localDeletes, 'localDeletes'),
-        remoteDeletes: planArray(plan.remoteDeletes, 'remoteDeletes'),
+        downloads: planEntryArray(plan.downloads, 'downloads'),
+        localDeletes: planPathArray(plan.localDeletes, 'localDeletes'),
+        remoteDeletes: planPathArray(plan.remoteDeletes, 'remoteDeletes'),
         staged: planStaged(plan.staged),
-        uploads: planArray(plan.uploads, 'uploads'),
+        uploads: planEntryArray(plan.uploads, 'uploads'),
     };
 }
 
@@ -76,6 +76,26 @@ function planStaged(value) {
         throw new Error('Invalid plan staged');
     }
     return value;
+}
+
+function planEntryArray(value, label) {
+    return planArray(value, label).map(entry => {
+        assertPlanPath(entry?.path, label);
+        return entry;
+    });
+}
+
+function planPathArray(value, label) {
+    return planArray(value, label).map(path => {
+        assertPlanPath(path, label);
+        return path;
+    });
+}
+
+function assertPlanPath(value, label) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        throw new Error(`Invalid plan ${label} path`);
+    }
 }
 
 function sizeBytes(entry) {
