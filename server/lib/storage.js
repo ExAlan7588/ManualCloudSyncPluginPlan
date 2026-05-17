@@ -258,15 +258,15 @@ export class TtSyncStorage {
     }
 
     async listDevices(namespace) {
-        return (await this.readNamespace(namespace)).devices || [];
+        return optionalRecordArray((await this.readNamespace(namespace)).devices, 'namespace devices');
     }
 
     async listHistory(namespace) {
-        return (await this.readNamespace(namespace)).syncHistory || [];
+        return optionalRecordArray((await this.readNamespace(namespace)).syncHistory, 'namespace syncHistory');
     }
 
     async listRollbackPoints(namespace) {
-        return (await this.readNamespace(namespace)).rollbackPoints || [];
+        return optionalRecordArray((await this.readNamespace(namespace)).rollbackPoints, 'namespace rollbackPoints');
     }
 
     async restoreRollbackPoint(namespace, rollbackId) {

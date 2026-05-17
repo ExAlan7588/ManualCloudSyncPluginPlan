@@ -6,6 +6,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
+await testNamespaceListMethodsRejectMalformedArrays();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
 await testStageFileRejectsMalformedStagedBeforeWritingFile();
@@ -54,6 +55,27 @@ async function testWriteNamespaceSurfacesMalformedManifest() {
             /Storage JSON is invalid:/,
         );
         assert.equal(await readFile(manifestPath, 'utf8'), '{ broken');
+    });
+}
+
+async function testNamespaceListMethodsRejectMalformedArrays() {
+    await withStorage(async storage => {
+        await storage.writeNamespace('default', {
+            ...(await storage.createNamespace('default')),
+            devices: 'bad',
+            rollbackPoints: {},
+            syncHistory: null,
+        });
+
+        await assert.rejects(
+            storage.listDevices('default'),
+            /Invalid namespace devices/,
+        );
+        await assert.rejects(
+            storage.listRollbackPoints('default'),
+            /Invalid namespace rollbackPoints/,
+        );
+        assert.deepEqual(await storage.listHistory('default'), []);
     });
 }
 

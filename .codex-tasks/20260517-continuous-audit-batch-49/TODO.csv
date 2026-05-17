@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 49 audit finding,done,Namespace list APIs return malformed persisted arrays directly
+2,Add regression coverage,done,Assert malformed devices history and rollbackPoints fail explicitly
+3,Implement list array validation,done,Validate namespace list fields before returning API payloads
+4,Run focused and full validation,done,Focused storage test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 49 files and related code changes
