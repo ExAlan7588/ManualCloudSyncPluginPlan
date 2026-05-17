@@ -7,6 +7,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
+await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
 await testStageFileRejectsMalformedStagedBeforeWritingFile();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
 await testCommittedPlanRejectsLateUploads();
@@ -68,6 +69,25 @@ async function testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation() {
         await assert.rejects(
             storage.commitPlan(await storage.readPlan(plan.id), {}),
             /Invalid plan downloads/,
+        );
+        await assert.rejects(
+            readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
+            error => error.code === 'ENOENT',
+        );
+    });
+}
+
+async function testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation() {
+    await withStorage(async storage => {
+        const plan = pushPlan();
+        const record = { ...(await storage.createNamespace(plan.namespace)), syncHistory: 'bad' };
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, record);
+        await storage.stageFile(plan, plan.uploads[0], Buffer.from('data'));
+
+        await assert.rejects(
+            storage.commitPlan(await storage.readPlan(plan.id), {}),
+            /Invalid namespace syncHistory/,
         );
         await assert.rejects(
             readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),

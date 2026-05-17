@@ -244,6 +244,7 @@ export class TtSyncStorage {
                 throw forbidden(`Plan already committed: ${latest.id}`);
             }
             assertPlanHistoryShape(latest);
+            await this.assertNamespaceCommitShape(latest);
             let rollbackPoint = null;
             if (latest.kind === 'push') {
                 rollbackPoint = await this.createRollbackPoint(latest);
@@ -464,13 +465,20 @@ export class TtSyncStorage {
 
     async recordCommittedPlan(plan, rollbackPoint) {
         const record = await this.readNamespace(plan.namespace);
+        assertNamespaceCommitRecord(record, rollbackPoint);
         const committedAt = plan.committedAt;
         touchDevice(record, plan.deviceId, { lastSyncAt: committedAt });
-        record.syncHistory = cappedList([historyEntry(plan), ...(record.syncHistory || [])], MAX_HISTORY_ITEMS);
+        record.syncHistory = cappedList([historyEntry(plan), ...optionalRecordArray(record.syncHistory, 'namespace syncHistory')], MAX_HISTORY_ITEMS);
         if (rollbackPoint) {
-            record.rollbackPoints = cappedList([rollbackPoint, ...(record.rollbackPoints || [])], MAX_ROLLBACK_POINTS);
+            const points = optionalRecordArray(record.rollbackPoints, 'namespace rollbackPoints');
+            record.rollbackPoints = cappedList([rollbackPoint, ...points], MAX_ROLLBACK_POINTS);
         }
         await this.writeNamespace(plan.namespace, record);
+    }
+
+    async assertNamespaceCommitShape(plan) {
+        const record = await this.readNamespace(plan.namespace);
+        assertNamespaceCommitRecord(record, plan.kind === 'push');
     }
 }
 
@@ -499,6 +507,28 @@ function assertPlanStaged(plan) {
     if (Array.isArray(plan.staged) || typeof plan.staged !== 'object') {
         throw forbidden('Invalid plan staged');
     }
+}
+
+function assertNamespaceCommitRecord(record, rollbackPoint) {
+    recordArray(record.devices, 'namespace devices');
+    optionalRecordArray(record.syncHistory, 'namespace syncHistory');
+    if (rollbackPoint) {
+        optionalRecordArray(record.rollbackPoints, 'namespace rollbackPoints');
+    }
+}
+
+function optionalRecordArray(value, label) {
+    if (value === undefined || value === null) {
+        return [];
+    }
+    return recordArray(value, label);
+}
+
+function recordArray(value, label) {
+    if (!Array.isArray(value)) {
+        throw new Error(`Invalid ${label}`);
+    }
+    return value;
 }
 
 function normalizeRollbackFile(file) {

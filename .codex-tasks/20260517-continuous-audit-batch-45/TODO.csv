@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 45 audit finding,done,Namespace commit record arrays are validated after push side effects
+2,Add regression coverage,done,Assert malformed namespace syncHistory rejects before remote file mutation
+3,Implement namespace preflight validation,done,Validate commit record shape before rollback and push side effects
+4,Run focused and full validation,done,Focused storage test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 45 files and related code changes
