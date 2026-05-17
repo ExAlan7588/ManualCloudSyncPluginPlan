@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 23 audit finding,done,Progress UI accepts malformed numeric payloads
+2,Add regression coverage,done,Malformed bytes and files render as missing
+3,Implement strict progress number parsing,done,Allow non-negative integers and decimal digit strings only
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 23 files and related code changes

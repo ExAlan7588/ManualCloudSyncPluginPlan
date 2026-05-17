@@ -144,8 +144,14 @@ function formatOptionalBytes(value) {
 }
 
 function numberValue(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0 ? value : null;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return null;
+    }
     const number = Number(value);
-    return Number.isFinite(number) ? number : null;
+    return Number.isSafeInteger(number) ? number : null;
 }
 
 function firstValue(object, keys) {

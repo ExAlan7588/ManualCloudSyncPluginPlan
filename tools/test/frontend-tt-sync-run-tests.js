@@ -64,6 +64,7 @@ const tests = [
     ['TT-Sync account endpoint URL errors include context', testAccountEndpointUrlErrors],
     ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
+    ['TT-Sync progress UI ignores malformed numeric payloads', testProgressIgnoresMalformedNumericPayloads],
     ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
     ['WebDAV manifest rejects uppercase SHA-256', testWebDavManifestRejectsUppercaseSha256],
     ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
@@ -182,6 +183,21 @@ function testProgressMetrics() {
     assertProgressRow(rows, '剩餘', '2s');
     assertProgressRow(rows, '目前檔案', 'default-user/backgrounds/a.jpg');
     assertProgressRow(rows, '部分上傳', '未提交，只暫存，可重試');
+}
+
+function testProgressIgnoresMalformedNumericPayloads() {
+    const tracker = createProgressTracker();
+    resetProgressTracker(tracker, 1000);
+    const rows = progressRows({
+        bytes_done: true,
+        bytes_total: '0x10',
+        files_done: '1e2',
+        files_total: false,
+        phase: 'Downloading',
+    }, tracker, 1000);
+    assertProgressRow(rows, 'bytes', '未回傳');
+    assertProgressRow(rows, 'files', '未回傳');
+    assertProgressRow(rows, '完成度', '未回傳');
 }
 
 function assertProgressRow(rows, label, expected) {
