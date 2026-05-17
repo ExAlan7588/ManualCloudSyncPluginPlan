@@ -162,21 +162,22 @@ export function serverIdOf(server) {
 
 export function serverLabel(server) {
     return [
-        server?.server_device_name || server?.serverDeviceName || server?.name || serverIdOf(server),
-        server?.base_url || server?.baseUrl || server?.endpoint || '',
+        serverDisplayText(server?.server_device_name || server?.serverDeviceName || server?.name) || serverIdOf(server),
+        serverBaseUrl(server),
     ].filter(Boolean).join(' | ');
 }
 
 export function serverStatus(server) {
+    const baseUrl = serverBaseUrl(server);
     return [
-        serverBaseUrl(server) ? `端點：${serverBaseUrl(server)}` : '',
+        baseUrl ? `端點：${baseUrl}` : '',
         server?.last_sync_ms ? `最後同步：${timestampText(server.last_sync_ms)}` : '',
         permissionsText(server?.permissions),
     ].filter(Boolean).join(' | ') || '已選擇服務端';
 }
 
 export function serverBaseUrl(server) {
-    return server?.base_url || server?.baseUrl || server?.endpoint || '';
+    return serverDisplayText(server?.base_url || server?.baseUrl || server?.endpoint);
 }
 
 export function selectedServerId() {
@@ -265,6 +266,13 @@ function isTextScalar(value) {
         return Number.isFinite(value);
     }
     return typeof value === 'bigint' || typeof value === 'string';
+}
+
+function serverDisplayText(value) {
+    if (!isTextScalar(value)) {
+        return '';
+    }
+    return String(value || '').trim();
 }
 
 function diffSummaryFrom(payload) {

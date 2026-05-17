@@ -3,6 +3,7 @@ import {
     hasObjectPayload,
     renderConflictList,
     serverListFrom,
+    serverLabel,
     serverStatus,
 } from '../../modules/tt-sync-view.js';
 
@@ -10,6 +11,7 @@ testServerListFromRejectsMalformedServers();
 testServerListFromKeepsMissingServersBehavior();
 testHasObjectPayloadRejectsArrays();
 testServerStatusRejectsMalformedPermissionText();
+testServerDisplayTextFiltersMalformedValues();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListKeepsMissingConflictPayloadBehavior();
 console.log('ok - TT-Sync view validates conflict payloads');
@@ -41,6 +43,21 @@ function testServerStatusRejectsMalformedPermissionText() {
     assert.ok(status.includes('read=未回傳'));
     assert.ok(status.includes('write=yes'));
     assert.ok(status.includes('mirror_delete=未回傳'));
+}
+
+function testServerDisplayTextFiltersMalformedValues() {
+    const label = serverLabel({
+        base_url: { value: 'https://sync.example.test' },
+        server_device_id: 'server-1',
+        server_device_name: { value: 'Desktop' },
+    });
+    const status = serverStatus({
+        base_url: { value: 'https://sync.example.test' },
+    });
+    assert.equal(label.includes('[object Object]'), false);
+    assert.equal(label, 'server-1');
+    assert.equal(status.includes('[object Object]'), false);
+    assert.equal(status, '已選擇服務端');
 }
 
 function testRenderConflictListRejectsMalformedConflicts() {
