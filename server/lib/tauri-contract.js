@@ -103,6 +103,7 @@ export function normalizeTauriPlanInput(options) {
 }
 
 export function tauriPlanResponse(plan) {
+    const planId = tauriPlanId(plan.id);
     const kind = tauriPlanKind(plan.kind);
     const mode = tauriPlanMode(plan.mode);
     const transferLabel = kind === 'push' ? 'uploads' : 'downloads';
@@ -114,7 +115,7 @@ export function tauriPlanResponse(plan) {
         bytes_total: sumBytes(transfer),
         delete: deletePaths,
         files_total: transfer.length,
-        plan_id: plan.id,
+        plan_id: planId,
         transfer: transfer.map(tauriManifestEntry),
     };
 }
@@ -198,6 +199,13 @@ function tauriManifestEntry(entry) {
 function tauriPlanArray(value, label) {
     if (!Array.isArray(value)) {
         throw new Error(`Invalid Tauri plan ${label}`);
+    }
+    return value;
+}
+
+function tauriPlanId(value) {
+    if (typeof value !== 'string' || !value.trim()) {
+        throw new Error('Invalid Tauri plan id');
     }
     return value;
 }
