@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
-import { normalizeTauriPlanInput, tauriPlanResponse, tauriSessionResponse, verifyTauriSessionRequest } from '../lib/tauri-contract.js';
+import {
+    normalizeTauriPlanInput,
+    tauriPairingResponse,
+    tauriPlanResponse,
+    tauriSessionResponse,
+    verifyTauriSessionRequest,
+} from '../lib/tauri-contract.js';
 
 const DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 const SESSION_WINDOW_MS = 5 * 60 * 1000;
@@ -9,6 +15,7 @@ const OUTSIDE_WINDOW_MARGIN_MS = 60 * 1000;
 await testCurrentSignedSessionRequestPasses();
 await testStaleSignedSessionRequestFails();
 await testFutureSignedSessionRequestFails();
+await testTauriPairingResponseRejectsMalformedServerIds();
 await testTauriSessionResponseRejectsMalformedFields();
 await testTauriManifestRejectsMalformedPaths();
 await testTauriManifestRejectsNullNumericFields();
@@ -38,6 +45,17 @@ async function testFutureSignedSessionRequestFails() {
     assert.throws(
         () => verifyTauriSessionRequest(fixture),
         /timestamp is outside the allowed window/,
+    );
+}
+
+async function testTauriPairingResponseRejectsMalformedServerIds() {
+    assert.throws(
+        () => tauriPairingResponse({ serverId: { value: DEVICE_ID } }),
+        /server_device_id must be a UUID/,
+    );
+    assert.throws(
+        () => tauriPairingResponse({ serverId: 'not-a-uuid' }),
+        /server_device_id must be a UUID/,
     );
 }
 

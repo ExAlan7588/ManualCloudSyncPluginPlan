@@ -41,7 +41,7 @@ export function tauriPairingResponse(record) {
             read: true,
             write: true,
         },
-        server_device_id: record.serverId,
+        server_device_id: uuidField(record.serverId, 'server_device_id'),
         server_device_name: 'Minimal TT-Sync',
     };
 }
