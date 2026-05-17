@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 28 audit finding,done,formatProgress accepts malformed percent values
+2,Add regression coverage,done,Reject boolean and hex percent values
+3,Implement strict progress percent parsing,done,Allow numbers and decimal strings only
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 28 files and related code changes

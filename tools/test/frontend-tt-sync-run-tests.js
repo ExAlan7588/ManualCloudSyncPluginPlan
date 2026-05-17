@@ -5,6 +5,7 @@ import {
     progressRows,
     resetProgressTracker,
 } from '../../modules/tt-sync-progress.js';
+import { formatProgress } from '../../modules/format.js';
 import { BACKEND_WEBDAV } from '../../modules/constants.js';
 import {
     backendCommandMissingMessage,
@@ -79,6 +80,7 @@ const tests = [
     ['WebDAV manifest rejects fractional sizeBytes', testWebDavManifestRejectsFractionalSizeBytes],
     ['WebDAV manifest rejects non-decimal sizeBytes', testWebDavManifestRejectsNonDecimalSizeBytes],
     ['queue renderer shows malformed sizeBytes as unavailable', testQueueRendererMalformedSizeBytes],
+    ['formatProgress ignores malformed percent values', testFormatProgressMalformedValues],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -340,6 +342,13 @@ function testQueueRendererMalformedSizeBytes() {
     } finally {
         restore();
     }
+}
+
+function testFormatProgressMalformedValues() {
+    assert.equal(formatProgress(12.5), '12.5%');
+    assert.equal(formatProgress('12.5'), '12.5%');
+    assert.equal(formatProgress(true), '');
+    assert.equal(formatProgress('0x10'), '');
 }
 
 function validWebDavManifest(overrides = {}) {

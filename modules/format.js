@@ -16,8 +16,18 @@ export function formatBytes(sizeBytes) {
 }
 
 export function formatProgress(value) {
-    const progress = Number(value);
+    const progress = progressPercentValue(value);
     return Number.isFinite(progress) ? `${progress.toFixed(1)}%` : '';
+}
+
+function progressPercentValue(value) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value !== 'string' || !/^\d+(?:\.\d+)?$/.test(value.trim())) {
+        return null;
+    }
+    return Number(value);
 }
 
 export function formatTransferProgress(snapshot) {
