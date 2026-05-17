@@ -12,6 +12,7 @@ await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
 await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
+await testBundleRouteRejectsMalformedPlanDownloads();
 await testTauriSessionRejectsMalformedDevices();
 console.log('ok - routes validate account pairing URI inputs');
 
@@ -149,6 +150,30 @@ async function testFileRouteRejectsMalformedPlanDownloads() {
             },
         },
         url: `/v2/plans/plan-1/files/${encodePath('default-user/chats/example.jsonl')}`,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(JSON.parse(response.body).error, /Invalid plan downloads/);
+}
+
+async function testBundleRouteRejectsMalformedPlanDownloads() {
+    const response = await dispatch({
+        body: {},
+        headers: { authorization: 'Bearer token' },
+        method: 'GET',
+        storage: {
+            async readPlan() {
+                return {
+                    downloads: {},
+                    id: 'plan-1',
+                    namespace: 'default',
+                    uploads: [],
+                };
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: '/v2/plans/plan-1/bundle',
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid plan downloads/);

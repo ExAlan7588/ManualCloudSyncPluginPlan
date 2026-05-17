@@ -251,7 +251,7 @@ async function uploadPlanFile(context, plan, syncPath) {
 
 async function buildDownloadBundle(context, plan) {
     const files = [];
-    for (const entry of plan.downloads) {
+    for (const entry of planEntries(plan.downloads, 'downloads')) {
         const buffer = await context.storage.readRemoteFile(plan.namespace, entry);
         files.push({ contentBase64: buffer.toString('base64'), entry, path: entry.path });
     }
@@ -417,14 +417,18 @@ function parsePlanBundlePath(pathname) {
 }
 
 function findPlanEntry(entries, syncPath, label) {
-    if (!Array.isArray(entries)) {
-        throw new Error(`Invalid plan ${label}`);
-    }
-    const entry = entries.find(item => item.path === syncPath);
+    const entry = planEntries(entries, label).find(item => item.path === syncPath);
     if (!entry) {
         throw notFound(`Path is not part of this plan: ${syncPath}`);
     }
     return entry;
+}
+
+function planEntries(entries, label) {
+    if (!Array.isArray(entries)) {
+        throw new Error(`Invalid plan ${label}`);
+    }
+    return entries;
 }
 
 async function writeProgressEvent(context, planId) {
