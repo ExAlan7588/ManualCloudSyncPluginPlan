@@ -17,9 +17,9 @@ import {
     randomToken,
     sessionResponse,
 } from './account.js';
-import { encodePath, safeName } from './encoding.js';
-import { forbidden, notFound, unauthorized } from './http-error.js';
-import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
+import { encodePath, safeName, validateSyncPath } from './encoding.js';
+import { badRequest, forbidden, notFound, unauthorized } from './http-error.js';
+import { compareEntries, normalizeEntry, normalizeManifest, sha256 } from './manifest.js';
 import { readJson, uploadEntry, validateStagedBuffer, writeFileAtomic, writeJsonAtomic } from './storage-io.js';
 import {
     addDevice,
@@ -442,14 +442,19 @@ export class TtSyncStorage {
     }
 
     async restoreRollbackFiles(namespace, point, manifest) {
+        if (!Array.isArray(point.files)) {
+            throw badRequest('Rollback point files must be an array');
+        }
         for (const file of point.files) {
-            if (!file.entry) {
-                await this.deleteRemote(namespace, file.path, manifest);
+            const rollbackFile = normalizeRollbackFile(file);
+            if (!rollbackFile.entry) {
+                await this.deleteRemote(namespace, rollbackFile.path, manifest);
                 continue;
             }
-            await writeFileAtomic(this.remoteFilePath(namespace, file.path), decodeBase64Content(file.contentBase64, 'Rollback file contentBase64'));
-            await utimes(this.remoteFilePath(namespace, file.path), new Date(), new Date(file.entry.modifiedMs));
-            manifest.set(file.path, file.entry);
+            const content = decodeBase64Content(rollbackFile.contentBase64, 'Rollback file contentBase64');
+            await writeFileAtomic(this.remoteFilePath(namespace, rollbackFile.path), content);
+            await utimes(this.remoteFilePath(namespace, rollbackFile.path), new Date(), new Date(rollbackFile.entry.modifiedMs));
+            manifest.set(rollbackFile.path, rollbackFile.entry);
         }
     }
 
@@ -477,4 +482,20 @@ function assertPlanOpen(plan) {
     if (plan.committedAt) {
         throw forbidden(`Plan already committed: ${plan.id}`);
     }
+}
+
+function normalizeRollbackFile(file) {
+    const syncPath = validateSyncPath(file?.path);
+    if (!file.entry) {
+        return { entry: null, path: syncPath };
+    }
+    const entry = normalizeEntry(file.entry);
+    if (entry.path !== syncPath) {
+        throw badRequest('Rollback file entry path must match rollback file path');
+    }
+    return {
+        contentBase64: file.contentBase64,
+        entry,
+        path: syncPath,
+    };
 }

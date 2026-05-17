@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 34 audit finding,done,Rollback restore writes files before validating rollback entry
+2,Add regression coverage,done,Focused test fails before fix because malformed rollback restore leaves a remote file
+3,Implement rollback restore pre-validation,done,Rollback path entry and content are validated before writes
+4,Run focused and full validation,done,Focused storage test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 34 files and related code changes

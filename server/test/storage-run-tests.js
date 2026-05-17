@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { TtSyncStorage } from '../lib/storage.js';
@@ -8,6 +8,7 @@ await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
 await testCommittedPlanRejectsLateUploads();
+await testRollbackRejectsMalformedEntryBeforeWritingFile();
 console.log('ok - storage commit rejects stale snapshots and surfaces malformed manifests');
 
 async function testCommitPlanRejectsStaleSnapshot() {
@@ -84,6 +85,36 @@ async function testCommittedPlanRejectsLateUploads() {
             error => error.code === 'ENOENT',
         );
     });
+}
+
+async function testRollbackRejectsMalformedEntryBeforeWritingFile() {
+    await withStorage(async storage => {
+        await storage.writeNamespace('default', await storage.createNamespace('default'));
+        const rollbackPath = storage.rollbackPointPath('default', 'rollback-1');
+        await mkdir(path.dirname(rollbackPath), { recursive: true });
+        await writeFile(rollbackPath, JSON.stringify(malformedRollbackPoint()));
+
+        await assert.rejects(
+            storage.restoreRollbackPoint('default', 'rollback-1'),
+            /Invalid modifiedMs/,
+        );
+        await assert.rejects(
+            readFile(storage.remoteFilePath('default', 'file.txt')),
+            error => error.code === 'ENOENT',
+        );
+    });
+}
+
+function malformedRollbackPoint() {
+    return {
+        files: [{
+            contentBase64: Buffer.from('bad').toString('base64'),
+            entry: { modifiedMs: '0x10', path: 'file.txt', sha256: '', sizeBytes: 3 },
+            path: 'file.txt',
+        }],
+        id: 'rollback-1',
+        planId: 'plan-1',
+    };
 }
 
 function pushPlan() {
