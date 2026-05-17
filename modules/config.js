@@ -102,10 +102,17 @@ export function readCompatStore() {
     }
 
     try {
-        return JSON.parse(raw);
+        return compatStore(JSON.parse(raw));
     } catch (error) {
         throw new Error(`相容模式設定 JSON 解析失敗：${normalizeError(error)}`);
     }
+}
+
+function compatStore(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error('相容模式設定必須是物件');
+    }
+    return value;
 }
 
 export function normalizeCompatConfig(config) {

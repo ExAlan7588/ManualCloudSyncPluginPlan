@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { normalizeCompatConfig, normalizeCompatSecrets, validateBeforeSave } from '../../modules/config.js';
+import { normalizeCompatConfig, normalizeCompatSecrets, readCompatStore, validateBeforeSave } from '../../modules/config.js';
 import { BACKEND_WEBDAV, MODE_COMPAT } from '../../modules/constants.js';
 
 testNormalizeCompatConfigRejectsMalformedTextFields();
@@ -8,6 +8,7 @@ testNormalizeCompatConfigTrimsStrings();
 testNormalizeCompatSecretsRejectsMalformedValues();
 testNormalizeCompatSecretsTrimsStrings();
 testValidateBeforeSaveRejectsMalformedSecretFlags();
+testReadCompatStoreRejectsMalformedRoot();
 console.log('ok - config helpers validate compat secrets');
 
 function testNormalizeCompatConfigRejectsMalformedTextFields() {
@@ -75,4 +76,25 @@ function testValidateBeforeSaveRejectsMalformedSecretFlags() {
         ),
         /Invalid saved secret flag hasWebdavPassword/,
     );
+}
+
+function testReadCompatStoreRejectsMalformedRoot() {
+    const previousLocalStorage = globalThis.localStorage;
+    globalThis.localStorage = { getItem: () => '[]' };
+    try {
+        assert.throws(
+            () => readCompatStore(),
+            /相容模式設定必須是物件/,
+        );
+    } finally {
+        restoreGlobal('localStorage', previousLocalStorage);
+    }
+}
+
+function restoreGlobal(name, previous) {
+    if (previous === undefined) {
+        delete globalThis[name];
+        return;
+    }
+    globalThis[name] = previous;
 }
