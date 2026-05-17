@@ -66,6 +66,7 @@ const tests = [
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
     ['WebDAV manifest rejects uppercase SHA-256', testWebDavManifestRejectsUppercaseSha256],
+    ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -215,6 +216,26 @@ async function testWebDavManifestRejectsUppercaseSha256() {
     }
 }
 
+async function testWebDavManifestRejectsNullSizeBytes() {
+    const restoreGlobals = installWebDavQueueFixture({
+        manifest: {
+            createdAt: new Date().toISOString(),
+            file: 'sync-0102030405.zip',
+            formatVersion: 1,
+            sha256: 'a'.repeat(64),
+            sizeBytes: null,
+        },
+    });
+    try {
+        await assert.rejects(
+            compatListQueue(),
+            /同步 manifest 的檔案大小不正確/,
+        );
+    } finally {
+        restoreGlobals();
+    }
+}
+
 function installWebDavQueueFixture(options) {
     const previousDomParser = globalThis.DOMParser;
     const previousFetch = globalThis.fetch;
@@ -241,7 +262,7 @@ function installWebDavQueueFixture(options) {
 
 function webDavFixtureResponse(url, manifest) {
     if (String(url).endsWith('cloud-sync')) {
-        return new Response('<href>/dav/cloud-sync/sync-0102030405.manifest.json</href>', { status: 207 });
+        return new Response('<href>/dav/cloud-sync/sync-0102030405.json</href>', { status: 207 });
     }
     return new Response(JSON.stringify(manifest), { status: 200 });
 }
