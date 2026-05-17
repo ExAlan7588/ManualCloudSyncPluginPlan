@@ -3,6 +3,7 @@ import { compatDownloadAndImport, hrefFileName } from '../../modules/webdav-comp
 
 testHrefFileNameRejectsMalformedInputWithContext();
 await testCompatDownloadRejectsMalformedQueueItem();
+await testCompatDownloadRejectsMissingManifestKey();
 console.log('ok - WebDAV compat helpers validate malformed inputs');
 
 function testHrefFileNameRejectsMalformedInputWithContext() {
@@ -17,4 +18,24 @@ async function testCompatDownloadRejectsMalformedQueueItem() {
         compatDownloadAndImport({}, { setStatus() {} }),
         /WebDAV 佇列項目格式不正確/,
     );
+}
+
+async function testCompatDownloadRejectsMissingManifestKey() {
+    await assert.rejects(
+        compatDownloadAndImport({
+            manifest: validManifest(),
+            zipKey: 'cloud-sync/sync-0102030405.zip',
+        }, { setStatus() {} }),
+        /WebDAV 佇列項目格式不正確/,
+    );
+}
+
+function validManifest() {
+    return {
+        createdAt: '2026-05-17T00:00:00.000Z',
+        file: 'sync-0102030405.zip',
+        formatVersion: 1,
+        sha256: 'a'.repeat(64),
+        sizeBytes: 1,
+    };
 }

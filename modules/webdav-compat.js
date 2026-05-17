@@ -87,6 +87,9 @@ function validateQueueItem(item) {
     if (!item.manifest || typeof item.manifest !== 'object' || Array.isArray(item.manifest)) {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
+    if (typeof item.manifestKey !== 'string' || item.manifestKey.trim() === '') {
+        throw new Error('WebDAV 佇列項目格式不正確');
+    }
     if (typeof item.zipKey !== 'string' || item.zipKey.trim() === '') {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
