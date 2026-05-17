@@ -410,5 +410,8 @@ function permissionsText(permissions) {
 }
 
 function booleanText(value) {
+    if (typeof value !== 'boolean') {
+        return EMPTY_VALUE;
+    }
     return value ? 'yes' : 'no';
 }

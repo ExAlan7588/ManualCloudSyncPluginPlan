@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
-import { hasObjectPayload, renderConflictList, serverListFrom } from '../../modules/tt-sync-view.js';
+import {
+    hasObjectPayload,
+    renderConflictList,
+    serverListFrom,
+    serverStatus,
+} from '../../modules/tt-sync-view.js';
 
 testServerListFromRejectsMalformedServers();
 testServerListFromKeepsMissingServersBehavior();
 testHasObjectPayloadRejectsArrays();
+testServerStatusRejectsMalformedPermissionText();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListKeepsMissingConflictPayloadBehavior();
 console.log('ok - TT-Sync view validates conflict payloads');
@@ -22,6 +28,19 @@ function testServerListFromKeepsMissingServersBehavior() {
 function testHasObjectPayloadRejectsArrays() {
     assert.equal(hasObjectPayload(['unexpected']), false);
     assert.equal(hasObjectPayload({ direction: 'push' }), true);
+}
+
+function testServerStatusRejectsMalformedPermissionText() {
+    const status = serverStatus({
+        permissions: {
+            mirror_delete: { value: true },
+            read: 'false',
+            write: true,
+        },
+    });
+    assert.ok(status.includes('read=未回傳'));
+    assert.ok(status.includes('write=yes'));
+    assert.ok(status.includes('mirror_delete=未回傳'));
 }
 
 function testRenderConflictListRejectsMalformedConflicts() {
