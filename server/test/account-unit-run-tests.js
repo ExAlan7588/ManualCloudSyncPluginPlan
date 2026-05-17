@@ -20,6 +20,7 @@ await testAccountPairingTokensRejectNonIsoFutureExpiry();
 await testAccountHelpersRejectMalformedRecordArrays();
 await testSessionResponseRejectsMalformedFields();
 await testAccountPairingResponseRejectsMalformedTokenFields();
+await testAccountPairingResponseRejectsMalformedFields();
 console.log('ok - account credential checks are explicit');
 
 async function testAccountLoginAcceptsValidCredentials() {
@@ -126,6 +127,22 @@ async function testAccountPairingResponseRejectsMalformedTokenFields() {
     assert.throws(
         () => accountPairingResponse({ ...options, token: { ...options.token, expiresAt: '9999' } }),
         /Invalid pairing expiresAt/,
+    );
+}
+
+async function testAccountPairingResponseRejectsMalformedFields() {
+    const options = accountPairingOptions();
+    assert.throws(
+        () => accountPairingResponse({ ...options, endpoint: 'https://user:pass@sync.example.test' }),
+        /Invalid pairing endpoint/,
+    );
+    assert.throws(
+        () => accountPairingResponse({ ...options, namespace: '../default' }),
+        /namespace must use A-Z/,
+    );
+    assert.throws(
+        () => accountPairingResponse({ ...options, spki: 'abcDEF_123' }),
+        /Invalid pairing spki/,
     );
 }
 

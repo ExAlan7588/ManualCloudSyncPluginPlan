@@ -7,6 +7,8 @@ const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const PAIRING_TOKEN_TTL_MS = 10 * 60 * 1000;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
+const SPKI_SHA256_BYTES = 32;
 
 export function consumePairingToken(record, actual) {
     const token = String(actual || '');
@@ -91,10 +93,11 @@ export function sessionResponse(record, session) {
 
 export function accountPairingResponse(options) {
     const expiresAt = pairingTimestamp(options.token.expiresAt);
+    const namespace = safeName(options.namespace, 'namespace');
     return {
         expiresAt,
-        namespace: options.namespace,
-        pairingUri: tauriPairingUri({ ...options, token: { ...options.token, expiresAt } }),
+        namespace,
+        pairingUri: tauriPairingUri({ ...options, namespace, token: { ...options.token, expiresAt } }),
     };
 }
 
@@ -183,6 +186,31 @@ function pairingTimestamp(value) {
     return value;
 }
 
+function pairingEndpoint(value) {
+    try {
+        const url = new URL(value);
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+            throw new Error('Invalid pairing endpoint');
+        }
+        if (url.username || url.password || url.hash) {
+            throw new Error('Invalid pairing endpoint');
+        }
+        return url.toString().replace(/\/$/, '');
+    } catch {
+        throw new Error('Invalid pairing endpoint');
+    }
+}
+
+function pairingSpki(value) {
+    if (typeof value !== 'string' || !BASE64URL_PATTERN.test(value)) {
+        throw new Error('Invalid pairing spki');
+    }
+    if (Buffer.from(value, 'base64url').length !== SPKI_SHA256_BYTES) {
+        throw new Error('Invalid pairing spki');
+    }
+    return value;
+}
+
 function optionalRecordArray(value, label) {
     if (value === undefined || value === null) {
         return [];
@@ -200,9 +228,9 @@ function recordArray(value, label) {
 function tauriPairingUri(options) {
     const uri = new URL('tauritavern://tt-sync/pair');
     uri.searchParams.set('v', '2');
-    uri.searchParams.set('url', options.endpoint);
+    uri.searchParams.set('url', pairingEndpoint(options.endpoint));
     uri.searchParams.set('token', pairingToken(options.token.token));
     uri.searchParams.set('exp', String(Date.parse(options.token.expiresAt)));
-    uri.searchParams.set('spki', options.spki);
+    uri.searchParams.set('spki', pairingSpki(options.spki));
     return uri.toString();
 }
