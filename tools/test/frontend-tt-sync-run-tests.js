@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+    installAccountPanelFixture,
+    runAccountPanelAction,
+} from './frontend-account-panel-fixture.js';
+import {
     createProgressTracker,
     progressRows,
     resetProgressTracker,
@@ -69,6 +73,7 @@ const tests = [
     ['TT-Sync conflict UI exposes local and remote choices', testConflictChoiceUi],
     ['TT-Sync account panel uses server account API', testAccountPanelApi],
     ['TT-Sync account endpoint URL errors include context', testAccountEndpointUrlErrors],
+    ['TT-Sync account history marks malformed counts unavailable', testAccountHistoryMalformedCounts],
     ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['TT-Sync progress UI ignores malformed numeric payloads', testProgressIgnoresMalformedNumericPayloads],
@@ -161,6 +166,25 @@ async function testAccountEndpointUrlErrors() {
     const accountSource = await readFile(TT_SYNC_ACCOUNT_MODULE, 'utf8');
     assert.ok(accountSource.includes('parseRequiredUrl'), 'account endpoint URL parsing must be isolated for diagnostics');
     assert.ok(accountSource.includes('帳號服務端 URL 格式不正確'), 'invalid account endpoint URLs must include field context');
+}
+
+async function testAccountHistoryMalformedCounts() {
+    const { elements, fetch, restore } = installAccountPanelFixture(REQUIRED_TT_SYNC_IDS, {
+        downloads: true,
+        uploads: '0x10',
+    });
+    try {
+        const { bindTtSyncAccountPanel } = await import(TT_SYNC_ACCOUNT_MODULE);
+        bindTtSyncAccountPanel({ fetch, runAction: runAccountPanelAction });
+        await elements.mcs_tts_account_login.handlers.click();
+        const historyText = elements.mcs_tts_account_history.children[0].textContent;
+        assert.ok(historyText.includes('up=未回傳'));
+        assert.ok(historyText.includes('down=未回傳'));
+        assert.equal(historyText.includes('0x10'), false);
+        assert.equal(historyText.includes('true'), false);
+    } finally {
+        restore();
+    }
 }
 
 async function testModuleNameDecodeErrorContext() {

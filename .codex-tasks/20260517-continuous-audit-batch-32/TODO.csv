@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 32 audit finding,done,Account history counts render malformed truthy values directly
+2,Add regression coverage,done,Focused test fails before fix for malformed account history counts
+3,Implement strict history count rendering,done,Malformed history counts show unavailable while missing counts remain zero
+4,Run focused and full validation,done,Focused frontend test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 32 files and related code changes

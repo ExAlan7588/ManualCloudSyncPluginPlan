@@ -9,6 +9,8 @@ const ACCOUNT_ROUTES = Object.freeze({
 });
 const DEFAULT_NAMESPACE = 'default';
 const EMPTY_TEXT = '尚無資料';
+const UNAVAILABLE_TEXT = '未回傳';
+const DECIMAL_INTEGER_PATTERN = /^\d+$/;
 
 export function bindTtSyncAccountPanel(deps) {
     const state = { accessToken: '', refreshToken: '', namespace: DEFAULT_NAMESPACE };
@@ -184,10 +186,29 @@ function historyText(item) {
     return [
         item.kind || 'sync',
         item.planId,
-        `up=${item.uploads || 0}`,
-        `down=${item.downloads || 0}`,
+        `up=${historyCountText(item.uploads)}`,
+        `down=${historyCountText(item.downloads)}`,
         timePart('at', item.committedAt),
     ].filter(Boolean).join(' | ');
+}
+
+function historyCountText(value) {
+    if (value === undefined || value === null || value === '') {
+        return '0';
+    }
+    const count = nonNegativeIntegerValue(value);
+    return count === null ? UNAVAILABLE_TEXT : String(count);
+}
+
+function nonNegativeIntegerValue(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0 ? value : null;
+    }
+    if (typeof value !== 'string' || !DECIMAL_INTEGER_PATTERN.test(value)) {
+        return null;
+    }
+    const number = Number(value);
+    return Number.isSafeInteger(number) ? number : null;
 }
 
 function accountEndpoint() {
