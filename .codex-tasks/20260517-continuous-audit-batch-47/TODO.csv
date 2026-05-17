@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 47 audit finding,done,Device helpers assume namespace devices is an array
+2,Add regression coverage,done,Assert malformed namespace devices fails explicitly
+3,Implement device array validation,done,Validate namespace devices before add upsert and touch operations
+4,Run focused and full validation,done,Focused storage records test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 47 files and related code changes

@@ -13,6 +13,7 @@ import {
 
 testStorageRecordHelpers();
 testStorageRecordHelpersRejectMalformedArrays();
+testDeviceHelpersRejectMalformedDevices();
 console.log('ok - storage record helpers preserve response shapes');
 
 function testStorageRecordHelpers() {
@@ -74,6 +75,21 @@ function testStorageRecordHelpersRejectMalformedArrays() {
     assert.throws(
         () => rollbackPointSummary({ createdAt: 'now', files: 'bad', id: 'rollback-1', planId: 'plan-1' }),
         /Invalid rollback files/,
+    );
+}
+
+function testDeviceHelpersRejectMalformedDevices() {
+    assert.throws(
+        () => addDevice({ devices: 'bad' }, 'Phone'),
+        /Invalid namespace devices/,
+    );
+    assert.throws(
+        () => upsertDevice({ devices: null }, { deviceId: 'device-1' }),
+        /Invalid namespace devices/,
+    );
+    assert.throws(
+        () => touchDevice({ devices: {} }, 'device-1', {}),
+        /Invalid namespace devices/,
     );
 }
 

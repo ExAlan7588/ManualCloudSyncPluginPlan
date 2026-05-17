@@ -1,17 +1,19 @@
 import { randomUUID } from 'node:crypto';
 
 export function addDevice(record, deviceName) {
+    const devices = namespaceDevices(record);
     const device = {
         deviceId: randomUUID(),
         deviceName: String(deviceName || '').trim(),
         pairedAt: new Date().toISOString(),
     };
-    record.devices.push(device);
+    devices.push(device);
     return device;
 }
 
 export function upsertDevice(record, input) {
-    const existing = record.devices.find(device => device.deviceId === input.deviceId);
+    const devices = namespaceDevices(record);
+    const existing = devices.find(device => device.deviceId === input.deviceId);
     if (existing) {
         Object.assign(existing, {
             deviceName: input.deviceName,
@@ -21,7 +23,7 @@ export function upsertDevice(record, input) {
         return existing;
     }
     const device = { ...input, pairedAt: new Date().toISOString() };
-    record.devices.push(device);
+    devices.push(device);
     return device;
 }
 
@@ -29,12 +31,13 @@ export function touchDevice(record, deviceId, patch) {
     if (!deviceId) {
         return;
     }
-    const existing = record.devices.find(device => device.deviceId === deviceId);
+    const devices = namespaceDevices(record);
+    const existing = devices.find(device => device.deviceId === deviceId);
     if (existing) {
         Object.assign(existing, patch);
         return;
     }
-    record.devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
+    devices.push({ deviceId, deviceName: '', pairedAt: new Date().toISOString(), ...patch });
 }
 
 export function affectedPaths(plan) {
@@ -98,6 +101,10 @@ function planArrayFields(plan) {
         remoteDeletes: arrayField(plan.remoteDeletes, 'plan remoteDeletes'),
         uploads: arrayField(plan.uploads, 'plan uploads'),
     };
+}
+
+function namespaceDevices(record) {
+    return arrayField(record.devices, 'namespace devices');
 }
 
 function arrayField(value, label) {
