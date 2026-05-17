@@ -103,10 +103,12 @@ export function normalizeTauriPlanInput(options) {
 }
 
 export function tauriPlanResponse(plan) {
-    const transferLabel = plan.kind === 'push' ? 'uploads' : 'downloads';
+    const kind = tauriPlanKind(plan.kind);
+    const mode = tauriPlanMode(plan.mode);
+    const transferLabel = kind === 'push' ? 'uploads' : 'downloads';
     const transfer = tauriPlanEntries(plan[transferLabel], transferLabel);
-    const deletePaths = plan.mode === 'Mirror'
-        ? tauriPlanDeletePaths(plan.kind === 'push' ? plan.remoteDeletes : plan.localDeletes, plan.kind === 'push' ? 'remoteDeletes' : 'localDeletes')
+    const deletePaths = mode === 'Mirror'
+        ? tauriPlanDeletePaths(kind === 'push' ? plan.remoteDeletes : plan.localDeletes, kind === 'push' ? 'remoteDeletes' : 'localDeletes')
         : [];
     return {
         bytes_total: sumBytes(transfer),
@@ -196,6 +198,20 @@ function tauriManifestEntry(entry) {
 function tauriPlanArray(value, label) {
     if (!Array.isArray(value)) {
         throw new Error(`Invalid Tauri plan ${label}`);
+    }
+    return value;
+}
+
+function tauriPlanKind(value) {
+    if (value !== 'push' && value !== 'pull') {
+        throw new Error('Invalid Tauri plan kind');
+    }
+    return value;
+}
+
+function tauriPlanMode(value) {
+    if (value !== 'Incremental' && value !== 'Mirror') {
+        throw new Error('Invalid Tauri plan mode');
     }
     return value;
 }
