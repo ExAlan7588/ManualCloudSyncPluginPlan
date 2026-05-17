@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 65 audit finding,done,compat config pathStyle accepts non-boolean values
+2,Add focused config coverage,done,Assert malformed pathStyle fails explicitly
+3,Implement boolean field validation,done,Normalize optional booleans and reject non-boolean values
+4,Run focused and full validation,done,Focused config test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 65 files and related code changes

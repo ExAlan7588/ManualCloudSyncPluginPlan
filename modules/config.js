@@ -122,7 +122,7 @@ export function normalizeCompatConfig(config) {
         s3: {
             bucket: compatString(config?.s3?.bucket, 's3.bucket', ''),
             region: compatString(config?.s3?.region, 's3.region', DEFAULT_S3_REGION),
-            pathStyle: config?.s3?.pathStyle ?? true,
+            pathStyle: compatBoolean(config?.s3?.pathStyle, 's3.pathStyle', true),
         },
     };
 }
@@ -217,6 +217,16 @@ function compatSecret(value, label) {
         throw new Error(`Invalid compat secret ${label}`);
     }
     return value.trim() || null;
+}
+
+function compatBoolean(value, label, fallback) {
+    if (value === undefined || value === null) {
+        return fallback;
+    }
+    if (typeof value !== 'boolean') {
+        throw new Error(`Invalid compat config ${label}`);
+    }
+    return value;
 }
 
 function mergeCompatSecrets(storedSecrets, secretInputs) {

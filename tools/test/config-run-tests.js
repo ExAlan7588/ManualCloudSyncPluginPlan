@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { normalizeCompatConfig, normalizeCompatSecrets } from '../../modules/config.js';
 
 testNormalizeCompatConfigRejectsMalformedTextFields();
+testNormalizeCompatConfigRejectsMalformedBooleanFields();
 testNormalizeCompatConfigTrimsStrings();
 testNormalizeCompatSecretsRejectsMalformedValues();
 testNormalizeCompatSecretsTrimsStrings();
@@ -11,6 +12,13 @@ function testNormalizeCompatConfigRejectsMalformedTextFields() {
     assert.throws(
         () => normalizeCompatConfig({ remotePrefix: { prefix: 'cloud-sync' } }),
         /Invalid compat config remotePrefix/,
+    );
+}
+
+function testNormalizeCompatConfigRejectsMalformedBooleanFields() {
+    assert.throws(
+        () => normalizeCompatConfig({ s3: { pathStyle: 'false' } }),
+        /Invalid compat config s3.pathStyle/,
     );
 }
 
@@ -24,6 +32,7 @@ function testNormalizeCompatConfigTrimsStrings() {
     assert.equal(config.remotePrefix, 'cloud-sync');
     assert.equal(config.webdav.authMode, 'basic');
     assert.equal(config.webdav.username, 'user');
+    assert.equal(config.s3.pathStyle, true);
 }
 
 function testNormalizeCompatSecretsRejectsMalformedValues() {
