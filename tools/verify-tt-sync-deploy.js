@@ -170,8 +170,12 @@ function isHttpUrl(value) {
 }
 
 function isValidPort(value) {
-    const port = Number(value);
-    return Number.isInteger(port) && port > 0 && port <= 65535;
+    const text = String(value ?? '').trim();
+    if (!/^\d+$/.test(text)) {
+        return false;
+    }
+    const port = Number(text);
+    return Number.isSafeInteger(port) && port > 0 && port <= 65535;
 }
 
 function tlsChecks(tls, publicUrl) {

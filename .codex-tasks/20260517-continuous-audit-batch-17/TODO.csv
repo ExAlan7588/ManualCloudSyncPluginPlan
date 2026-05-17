@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 17 audit finding,done,Deploy verifier accepts non-decimal TT_SYNC_PORT syntax
+2,Add regression coverage,done,Reject non-decimal TT_SYNC_PORT env values
+3,Implement strict port validation,done,Require decimal TCP port string
+4,Run focused and full validation,done,Focused deploy verifier test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 17 files and related code changes

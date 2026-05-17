@@ -5,6 +5,7 @@ const tests = [
     ['deploy verifier accepts repo template placeholders explicitly', testDeployVerifierTemplate],
     ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
     ['deploy verifier checks effective duplicate env value', testDeployVerifierChecksEffectiveDuplicateEnvValue],
+    ['deploy verifier rejects non-decimal port env value', testDeployVerifierRejectsNonDecimalPort],
     ['deploy verifier rejects malformed env quotes', testDeployVerifierRejectsMalformedQuotes],
     ['deploy verifier accepts paired TLS env', testDeployVerifierAcceptsPairedTlsEnv],
     ['deploy verifier rejects incomplete TLS env', testDeployVerifierRejectsIncompleteTlsEnv],
@@ -48,6 +49,16 @@ async function testDeployVerifierChecksEffectiveDuplicateEnvValue() {
     });
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('env pairing token is not placeholder'));
+}
+
+async function testDeployVerifierRejectsNonDecimalPort() {
+    const report = await verifyTtSyncDeploy({
+        allowPlaceholders: true,
+        envText: envText(['TT_SYNC_PORT=0x2500']),
+        serviceText: serviceText(),
+    });
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('env port'));
 }
 
 async function testDeployVerifierRejectsMalformedQuotes() {
