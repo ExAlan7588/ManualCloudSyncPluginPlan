@@ -245,6 +245,7 @@ export class TtSyncStorage {
                 throw forbidden(`Plan already committed: ${latest.id}`);
             }
             assertPlanHistoryShape(latest);
+            assertPushUploadMetadata(latest);
             await this.assertNamespaceCommitShape(latest);
             let rollbackPoint = null;
             if (latest.kind === 'push') {
@@ -501,6 +502,22 @@ function conflictDecisions(body) {
         throw badRequest('Invalid conflict decisions');
     }
     return value;
+}
+
+function assertPushUploadMetadata(plan) {
+    if (plan.kind !== 'push') {
+        return;
+    }
+    for (const entry of plan.uploads) {
+        assertCommitModifiedMs(entry);
+    }
+}
+
+function assertCommitModifiedMs(entry) {
+    const value = entry?.modifiedMs;
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+        throw badRequest(`Invalid modifiedMs for ${entry?.path}`);
+    }
 }
 
 function sessionDeviceId(value) {

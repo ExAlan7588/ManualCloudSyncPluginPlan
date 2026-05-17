@@ -12,6 +12,7 @@ await testOpenSessionRejectsMalformedDeviceId();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedKindBeforeCommit();
 await testCommitPlanRejectsMalformedDeviceIdBeforeRemoteMutation();
+await testCommitPlanRejectsMalformedUploadModifiedMsBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedConflictDecisionsBeforeCommit();
 await testStageFileRejectsMalformedStagedBeforeWritingFile();
@@ -158,6 +159,30 @@ async function testCommitPlanRejectsMalformedDeviceIdBeforeRemoteMutation() {
         await assert.rejects(
             storage.commitPlan(await storage.readPlan(plan.id), {}),
             /Invalid plan deviceId/,
+        );
+        await assert.rejects(
+            readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
+            error => error.code === 'ENOENT',
+        );
+        assert.equal((await storage.readPlan(plan.id)).committedAt, '');
+    });
+}
+
+async function testCommitPlanRejectsMalformedUploadModifiedMsBeforeRemoteMutation() {
+    await withStorage(async storage => {
+        const plan = pushPlan();
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, await storage.createNamespace(plan.namespace));
+        await storage.stageFile(plan, plan.uploads[0], Buffer.from('data'));
+        const malformedPlan = {
+            ...(await storage.readPlan(plan.id)),
+            uploads: [{ ...plan.uploads[0], modifiedMs: 'not-a-date' }],
+        };
+        await storage.writePlan(malformedPlan);
+
+        await assert.rejects(
+            storage.commitPlan(await storage.readPlan(plan.id), {}),
+            /Invalid modifiedMs for file.txt/,
         );
         await assert.rejects(
             readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
