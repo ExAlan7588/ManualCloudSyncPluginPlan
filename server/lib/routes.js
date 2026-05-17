@@ -298,10 +298,18 @@ function normalizePairingBody(body) {
     }
     return {
         deviceName: body.deviceName,
-        endpoint: body.endpoint,
+        endpoint: directPairingEndpoint(body),
         namespace: safeName(body.namespace || 'default', 'namespace'),
         token: body.token,
     };
+}
+
+function directPairingEndpoint(body) {
+    const value = String(body.endpoint || '').trim();
+    if (!value) {
+        return '';
+    }
+    return parseHttpUrl(value, 'endpoint').toString().replace(/\/$/, '');
 }
 
 function pairingEndpoint(body) {

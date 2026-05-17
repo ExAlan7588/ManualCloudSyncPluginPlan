@@ -17,6 +17,7 @@ await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
 await testPairCompleteRejectsUnsafePairingUriEndpoints();
+await testPairCompleteRejectsUnsafeDirectEndpoints();
 await testTauriSessionRejectsMalformedDevices();
 console.log('ok - routes validate account pairing URI inputs');
 
@@ -253,6 +254,28 @@ async function testPairCompleteRejectsUnsafePairingUriEndpoints() {
         });
         assert.equal(response.statusCode, 400);
         assert.match(JSON.parse(response.body).error, /endpoint must not include credentials or fragments/);
+    }
+}
+
+async function testPairCompleteRejectsUnsafeDirectEndpoints() {
+    for (const endpoint of ['ftp://sync.example.test', 'https://user:pass@sync.example.test']) {
+        const response = await dispatch({
+            body: {
+                deviceName: 'device-1',
+                endpoint,
+                namespace: 'default',
+                token: 'token',
+            },
+            method: 'POST',
+            storage: {
+                async completePairing() {
+                    throw new Error('completePairing must not be called for unsafe direct endpoint');
+                },
+            },
+            url: '/v2/pair/complete',
+        });
+        assert.equal(response.statusCode, 400);
+        assert.match(JSON.parse(response.body).error, /endpoint must/);
     }
 }
 
