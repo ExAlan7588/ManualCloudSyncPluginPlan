@@ -13,6 +13,7 @@ testServerListFromRejectsMalformedServerIds();
 testServerListFromKeepsMissingServersBehavior();
 testHasObjectPayloadRejectsArrays();
 testServerStatusRejectsMalformedPermissionText();
+testServerStatusRejectsMalformedPermissionContainers();
 testServerDisplayTextFiltersMalformedValues();
 testServerStatusTimestampBoundaryValues();
 testRenderConflictListRejectsMalformedConflicts();
@@ -72,6 +73,10 @@ function testServerStatusRejectsMalformedPermissionText() {
     assert.ok(status.includes('read=未回傳'));
     assert.ok(status.includes('write=yes'));
     assert.ok(status.includes('mirror_delete=未回傳'));
+}
+
+function testServerStatusRejectsMalformedPermissionContainers() {
+    assert.equal(serverStatus({ permissions: [] }), '權限：未回傳');
 }
 
 function testServerDisplayTextFiltersMalformedValues() {

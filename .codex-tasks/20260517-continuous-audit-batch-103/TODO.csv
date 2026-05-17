@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed permissions container test,DONE,Test fails before fix because arrays render as field-level permission details,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,Failed before fix with expanded permission fields
+2,Validate permissions container shape,DONE,Malformed permission containers render as unavailable without field details,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

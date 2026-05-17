@@ -458,6 +458,9 @@ function permissionsText(permissions) {
     if (!permissions) {
         return '';
     }
+    if (!isRecordObject(permissions)) {
+        return `權限：${EMPTY_VALUE}`;
+    }
     return `權限：read=${booleanText(permissions.read)}, write=${booleanText(permissions.write)}, mirror_delete=${booleanText(permissions.mirror_delete)}`;
 }
 
