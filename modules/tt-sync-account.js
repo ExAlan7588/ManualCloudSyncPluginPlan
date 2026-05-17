@@ -82,10 +82,25 @@ async function loadAccountData(deps, state) {
 
 async function accountRequest(deps, options) {
     const response = await deps.fetch(`${accountEndpoint()}${options.route}`, requestInit(options));
+    requireAccountResponse(response, options.route);
     if (!response.ok) {
         throw new Error(await readFailureMessage(response) || `HTTP ${response.status}`);
     }
     return readAccountJson(response, options.route);
+}
+
+function requireAccountResponse(response, route) {
+    if (!isAccountResponse(response)) {
+        throw new Error(`TT-Sync 帳號 ${route} 回應格式不正確`);
+    }
+}
+
+function isAccountResponse(response) {
+    return response !== null
+        && typeof response === 'object'
+        && typeof response.ok === 'boolean'
+        && typeof response.json === 'function'
+        && typeof response.text === 'function';
 }
 
 async function readAccountJson(response, route) {
