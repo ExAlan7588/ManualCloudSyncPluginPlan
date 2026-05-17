@@ -4,10 +4,13 @@ export function webDavAuthHeaders(connection) {
     validateWebDavConnection(connection);
     const authMode = connection.config.webdav.authMode || AUTH_BASIC;
     if (authMode === AUTH_BASIC) {
-        return { Authorization: `Basic ${base64Utf8(`${connection.config.webdav.username}:${connection.secrets.webdavPassword}`)}` };
+        const username = requiredAuthText(connection.config.webdav.username, 'WebDAV Basic credentials 格式不正確');
+        const password = requiredAuthText(connection.secrets.webdavPassword, 'WebDAV Basic credentials 格式不正確');
+        return { Authorization: `Basic ${base64Utf8(`${username}:${password}`)}` };
     }
     if (authMode === AUTH_BEARER) {
-        return { Authorization: `Bearer ${connection.secrets.webdavToken}` };
+        const token = requiredAuthText(connection.secrets.webdavToken, 'WebDAV Bearer token 格式不正確');
+        return { Authorization: `Bearer ${token}` };
     }
 
     throw new Error(`不支援的 WebDAV 驗證方式：${authMode}`);
@@ -23,6 +26,13 @@ function validateWebDavConnection(connection) {
     if (!connection.secrets || typeof connection.secrets !== 'object') {
         throw new Error('WebDAV connection 格式不正確');
     }
+}
+
+function requiredAuthText(value, message) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        throw new Error(message);
+    }
+    return value;
 }
 
 export function webDavTransferHeaders(connection, extraHeaders = {}) {

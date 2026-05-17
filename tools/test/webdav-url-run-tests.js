@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { webDavAuthHeaders, webDavUrlForKey } from '../../modules/webdav-url.js';
 
 testWebDavAuthRejectsMalformedConnection();
+testWebDavAuthRejectsMalformedBasicCredentials();
+testWebDavAuthRejectsMalformedBearerToken();
 testWebDavAuthBuildsBasicHeader();
 testWebDavUrlRejectsMalformedKey();
 testWebDavUrlEncodesValidKey();
@@ -11,6 +13,26 @@ function testWebDavAuthRejectsMalformedConnection() {
     assert.throws(
         () => webDavAuthHeaders({ config: {} }),
         /WebDAV connection 格式不正確/,
+    );
+}
+
+function testWebDavAuthRejectsMalformedBasicCredentials() {
+    assert.throws(
+        () => webDavAuthHeaders({
+            config: { webdav: { authMode: 'basic', username: 'user' } },
+            secrets: {},
+        }),
+        /WebDAV Basic credentials 格式不正確/,
+    );
+}
+
+function testWebDavAuthRejectsMalformedBearerToken() {
+    assert.throws(
+        () => webDavAuthHeaders({
+            config: { webdav: { authMode: 'bearer' } },
+            secrets: { webdavToken: { value: 'token' } },
+        }),
+        /WebDAV Bearer token 格式不正確/,
     );
 }
 

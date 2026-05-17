@@ -1,0 +1,6 @@
+id,task,status,completed_at,notes
+1,Record audit finding and scope,DONE,2026-05-17,Finding recorded in SPEC.md
+2,Add focused failing tests for malformed auth secrets,DONE,2026-05-17,Focused test fails before implementation because missing password is stringified
+3,Implement auth secret text validation,DONE,2026-05-17,Basic and Bearer auth values must be non-empty strings before header construction
+4,Run focused and full validation,DONE,2026-05-17,Focused test npm run check npm test and git diff --check pass
+5,Commit batch changes,IN_PROGRESS,,
