@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add control character error tests,DONE,Tests fail before fix because HTTP error messages preserve control whitespace,node server/test/http-helpers-run-tests.js,2026-05-17,0,Failed before fix with raw newline/tab in error response
+2,Normalize public HTTP error messages,DONE,Control whitespace is collapsed while error details remain visible,node server/test/http-helpers-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

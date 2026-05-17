@@ -1,19 +1,33 @@
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
-import { readJsonRequest } from '../lib/http-helpers.js';
+import { readJsonRequest, sendError } from '../lib/http-helpers.js';
+import { badRequest } from '../lib/http-error.js';
 
 await testReadJsonRequestIncludesParserDetail();
+await testReadJsonRequestNormalizesParserDetailWhitespace();
 await testReadJsonRequestUsesFallbackForEmptyBody();
 await testReadJsonRequestReturnsBodyAndBuffer();
 await testReadJsonRequestRejectsNonObjectBody();
 await testReadJsonRequestRejectsOversizedBody();
 await testReadJsonRequestRejectsMalformedMaxBodyEnv();
+await testSendErrorNormalizesControlWhitespace();
 console.log('ok - HTTP JSON helpers expose parser details');
 
 async function testReadJsonRequestIncludesParserDetail() {
     await assert.rejects(
         readJsonRequest(requestFrom('{ broken')),
         /Request body must be valid JSON: Expected property name/,
+    );
+}
+
+async function testReadJsonRequestNormalizesParserDetailWhitespace() {
+    await assert.rejects(
+        readJsonRequest(requestFrom('{\n')),
+        error => {
+            assert.equal(error.message.includes('\n'), false);
+            assert.match(error.message, /Request body must be valid JSON:/);
+            return true;
+        },
     );
 }
 
@@ -67,8 +81,29 @@ async function testReadJsonRequestRejectsMalformedMaxBodyEnv() {
     }
 }
 
+async function testSendErrorNormalizesControlWhitespace() {
+    const response = recordingResponse();
+    sendError(response, badRequest('bad\n\tinput'));
+    const payload = JSON.parse(response.body);
+    assert.equal(response.statusCode, 400);
+    assert.equal(payload.error, 'bad input');
+}
+
 function requestFrom(text) {
     return Readable.from([Buffer.from(text)]);
+}
+
+function recordingResponse() {
+    return {
+        body: '',
+        statusCode: 200,
+        end(chunk = '') {
+            this.body += chunk;
+        },
+        writeHead(statusCode) {
+            this.statusCode = statusCode;
+        },
+    };
 }
 
 function restoreEnv(name, value) {

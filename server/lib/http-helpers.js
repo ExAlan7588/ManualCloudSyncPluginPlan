@@ -3,6 +3,7 @@ import { badRequest, HttpError } from './http-error.js';
 const JSON_TYPE = 'application/json; charset=utf-8';
 const SSE_TYPE = 'text/event-stream; charset=utf-8';
 const DEFAULT_MAX_BODY_BYTES = 512 * 1024 * 1024;
+const CONTROL_WHITESPACE_PATTERN = /[\t\n\r]+/g;
 const CORS_HEADERS = Object.freeze({
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
@@ -27,7 +28,7 @@ export async function readJsonRequest(request, fallback) {
         if (error instanceof HttpError) {
             throw error;
         }
-        throw badRequest(`Request body must be valid JSON: ${error.message}`);
+        throw badRequest(`Request body must be valid JSON: ${publicErrorMessage(error)}`);
     }
 }
 
@@ -48,7 +49,7 @@ export function sendOptions(response) {
 
 export function sendError(response, error) {
     const status = error instanceof HttpError ? error.status : 500;
-    const message = error instanceof Error ? error.message : String(error || 'Unknown error');
+    const message = publicErrorMessage(error);
     sendJson(response, { error: message }, status);
 }
 
@@ -120,4 +121,9 @@ function assertJsonObject(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         throw badRequest('Request body must be a JSON object');
     }
+}
+
+function publicErrorMessage(error) {
+    const message = error instanceof Error ? error.message : String(error || 'Unknown error');
+    return message.replace(CONTROL_WHITESPACE_PATTERN, ' ').trim();
 }
