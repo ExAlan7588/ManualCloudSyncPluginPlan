@@ -11,11 +11,14 @@ import {
     withoutConflictFlag,
 } from '../lib/storage-records.js';
 
+const SERVER_ID = '550e8400-e29b-41d4-a716-446655440000';
+
 testStorageRecordHelpers();
 testStorageRecordHelpersRejectMalformedArrays();
 testStorageRecordHelpersRejectMalformedPlanPaths();
 testDeviceHelpersRejectMalformedDevices();
 testUpsertDeviceRejectsMalformedIdentity();
+testPairingResponseRejectsMalformedFields();
 console.log('ok - storage record helpers preserve response shapes');
 
 function testStorageRecordHelpers() {
@@ -23,7 +26,7 @@ function testStorageRecordHelpers() {
         authToken: 'auth-token',
         devices: [],
         namespace: 'default',
-        serverId: 'server-id',
+        serverId: SERVER_ID,
     };
     const device = addDevice(record, ' Phone ');
     assert.equal(device.deviceName, 'Phone');
@@ -61,7 +64,7 @@ function testStorageRecordHelpers() {
         deviceId: device.deviceId,
         endpoint: 'https://sync.example.com',
         namespace: 'default',
-        serverId: 'server-id',
+        serverId: SERVER_ID,
     });
     assert.deepEqual(withoutConflictFlag({ conflict: true, path: 'a.txt', sizeBytes: 1 }), { path: 'a.txt', sizeBytes: 1 });
 }
@@ -115,6 +118,27 @@ function testUpsertDeviceRejectsMalformedIdentity() {
     assert.throws(
         () => upsertDevice({ devices: [] }, { deviceId: '550e8400-e29b-41d4-a716-446655440000', publicKey: 'abcDEF_123' }),
         /Invalid device publicKey/,
+    );
+}
+
+function testPairingResponseRejectsMalformedFields() {
+    const record = { authToken: 'auth-token', namespace: 'default', serverId: SERVER_ID };
+    const device = { deviceId: SERVER_ID };
+    assert.throws(
+        () => pairingResponse({ ...record, authToken: { value: 'auth-token' } }, device, ''),
+        /Invalid pairing authToken/,
+    );
+    assert.throws(
+        () => pairingResponse(record, { deviceId: 'not-a-uuid' }, ''),
+        /Invalid device id/,
+    );
+    assert.throws(
+        () => pairingResponse({ ...record, namespace: '../default' }, device, ''),
+        /namespace must use A-Z/,
+    );
+    assert.throws(
+        () => pairingResponse({ ...record, serverId: 'not-a-uuid' }, device, ''),
+        /Invalid pairing serverId/,
     );
 }
 

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { safeName } from './encoding.js';
 
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const DEVICE_PUBLIC_KEY_BYTES = 32;
@@ -85,11 +86,11 @@ export function cappedList(items, limit) {
 
 export function pairingResponse(record, device, endpoint) {
     return {
-        authToken: record.authToken,
-        deviceId: device.deviceId,
-        endpoint: String(endpoint || ''),
-        namespace: record.namespace,
-        serverId: record.serverId,
+        authToken: pairingToken(record.authToken, 'authToken'),
+        deviceId: deviceIdField(device.deviceId),
+        endpoint: pairingEndpoint(endpoint),
+        namespace: safeName(record.namespace, 'namespace'),
+        serverId: pairingServerId(record.serverId),
     };
 }
 
@@ -126,6 +127,39 @@ function devicePublicKey(value) {
         throw new Error('Invalid device publicKey');
     }
     return value;
+}
+
+function pairingToken(value, label) {
+    if (typeof value !== 'string' || !value.trim() || !BASE64URL_PATTERN.test(value)) {
+        throw new Error(`Invalid pairing ${label}`);
+    }
+    return value;
+}
+
+function pairingServerId(value) {
+    if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
+        throw new Error('Invalid pairing serverId');
+    }
+    return value.toLowerCase();
+}
+
+function pairingEndpoint(value) {
+    const text = String(value || '').trim();
+    if (!text) {
+        return '';
+    }
+    try {
+        const url = new URL(text);
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+            throw new Error('Invalid pairing endpoint');
+        }
+        if (url.username || url.password || url.hash) {
+            throw new Error('Invalid pairing endpoint');
+        }
+        return url.toString().replace(/\/$/, '');
+    } catch {
+        throw new Error('Invalid pairing endpoint');
+    }
 }
 
 function arrayField(value, label) {
