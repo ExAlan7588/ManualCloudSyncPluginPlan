@@ -4,6 +4,7 @@ import { serverError, unauthorized } from './http-error.js';
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const PAIRING_TOKEN_TTL_MS = 10 * 60 * 1000;
+const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 export function consumePairingToken(record, actual) {
     const token = String(actual || '');
@@ -50,25 +51,29 @@ export function activeAccessToken(record, token) {
 export function activeAccessSession(record, token) {
     const now = Date.now();
     return (record.sessions || []).find(session => {
-        return Date.parse(session.expiresAt) > now && constantTimeEqual(token, session.accessToken);
+        return hasFutureIsoTimestamp(session.expiresAt, now) && constantTimeEqual(token, session.accessToken);
     });
 }
 
 export function activeRefreshSession(record, refreshToken) {
     const now = Date.now();
     return (record.sessions || []).find(session => {
-        return Date.parse(session.refreshExpiresAt) > now && constantTimeEqual(String(refreshToken || ''), session.refreshToken);
+        return hasFutureIsoTimestamp(session.refreshExpiresAt, now)
+            && constantTimeEqual(String(refreshToken || ''), session.refreshToken);
     });
 }
 
 export function pruneExpiredSessions(sessions) {
     const now = Date.now();
-    return sessions.filter(session => Date.parse(session.expiresAt) > now || Date.parse(session.refreshExpiresAt) > now);
+    return sessions.filter(session => {
+        return hasFutureIsoTimestamp(session.expiresAt, now)
+            || hasFutureIsoTimestamp(session.refreshExpiresAt, now);
+    });
 }
 
 export function prunePairingTokens(tokens) {
     const now = Date.now();
-    return tokens.filter(token => Date.parse(token.expiresAt) > now);
+    return tokens.filter(token => hasFutureIsoTimestamp(token.expiresAt, now));
 }
 
 export function sessionResponse(record, session) {
@@ -115,7 +120,7 @@ export function constantTimeEqual(left, right) {
 function activePairingToken(record, token) {
     const now = Date.now();
     return (record.pairingTokens || []).find(item => {
-        return Date.parse(item.expiresAt) > now && constantTimeEqual(token, item.token);
+        return hasFutureIsoTimestamp(item.expiresAt, now) && constantTimeEqual(token, item.token);
     });
 }
 
@@ -130,6 +135,13 @@ function assertPairingToken(actual, expected) {
     if (!constantTimeEqual(String(actual || ''), expected)) {
         throw unauthorized('Invalid pairing token');
     }
+}
+
+function hasFutureIsoTimestamp(value, now) {
+    if (typeof value !== 'string' || !ISO_TIMESTAMP_PATTERN.test(value)) {
+        return false;
+    }
+    return Date.parse(value) > now;
 }
 
 function tauriPairingUri(options) {

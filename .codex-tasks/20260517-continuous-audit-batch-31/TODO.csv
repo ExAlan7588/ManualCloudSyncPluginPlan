@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 31 audit finding,done,Account expiry Date.parse accepts non-ISO future strings
+2,Add regression coverage,done,Focused test fails before fix for non-ISO future account expiry strings
+3,Implement strict account expiry validation,done,Account expiry checks require ISO datetime shape before Date.parse
+4,Run focused and full validation,done,Focused account test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 31 files and related code changes

@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
-import { assertAccountLogin } from '../lib/account.js';
+import {
+    activeAccessToken,
+    activeRefreshSession,
+    assertAccountLogin,
+    pruneExpiredSessions,
+    prunePairingTokens,
+} from '../lib/account.js';
 
 const TEST_USERNAME = 'test-user';
 const TEST_PASSWORD = 'test-password';
@@ -7,6 +13,8 @@ const TEST_PASSWORD = 'test-password';
 await testAccountLoginAcceptsValidCredentials();
 await testAccountLoginRejectsInvalidCredentials();
 await testAccountLoginRequiresConfiguredCredentials();
+await testAccountSessionsRejectNonIsoFutureExpiry();
+await testAccountPairingTokensRejectNonIsoFutureExpiry();
 console.log('ok - account credential checks are explicit');
 
 async function testAccountLoginAcceptsValidCredentials() {
@@ -42,6 +50,25 @@ async function testAccountLoginRequiresConfiguredCredentials() {
         restoreEnv('TT_SYNC_ACCOUNT_USERNAME', previousUsername);
         restoreEnv('TT_SYNC_ACCOUNT_PASSWORD', previousPassword);
     }
+}
+
+async function testAccountSessionsRejectNonIsoFutureExpiry() {
+    const record = {
+        sessions: [{
+            accessToken: 'access-token',
+            expiresAt: '9999',
+            refreshExpiresAt: '9999',
+            refreshToken: 'refresh-token',
+        }],
+    };
+    assert.equal(activeAccessToken(record, 'access-token'), false);
+    assert.equal(activeRefreshSession(record, 'refresh-token'), undefined);
+    assert.deepEqual(pruneExpiredSessions(record.sessions), []);
+}
+
+async function testAccountPairingTokensRejectNonIsoFutureExpiry() {
+    const tokens = [{ expiresAt: '9999', token: 'pairing-token' }];
+    assert.deepEqual(prunePairingTokens(tokens), []);
 }
 
 function withAccountEnv(callback) {
