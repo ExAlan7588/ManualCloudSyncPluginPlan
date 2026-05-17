@@ -10,6 +10,7 @@ await testCurrentSignedSessionRequestPasses();
 await testStaleSignedSessionRequestFails();
 await testFutureSignedSessionRequestFails();
 await testTauriManifestRejectsNullNumericFields();
+await testTauriManifestRejectsNonDecimalNumericStrings();
 console.log('ok - Tauri session timestamp freshness is enforced');
 
 async function testCurrentSignedSessionRequestPasses() {
@@ -40,6 +41,17 @@ async function testTauriManifestRejectsNullNumericFields() {
     );
     assert.throws(
         () => normalizeTauriPlanInput(tauriPlanInput({ modified_ms: null })),
+        /modified_ms must be a non-negative integer/,
+    );
+}
+
+async function testTauriManifestRejectsNonDecimalNumericStrings() {
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({ size_bytes: '0x10' })),
+        /size_bytes must be a non-negative integer/,
+    );
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({ modified_ms: '0x10' })),
         /modified_ms must be a non-negative integer/,
     );
 }

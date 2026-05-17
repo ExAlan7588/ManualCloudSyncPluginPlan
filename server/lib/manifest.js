@@ -73,7 +73,7 @@ function nonNegativeInteger(value, message) {
 }
 
 function isNumericInput(value) {
-    return typeof value === 'number' || (typeof value === 'string' && value.trim().length > 0);
+    return typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value.trim()));
 }
 
 function assertUniquePaths(entries) {

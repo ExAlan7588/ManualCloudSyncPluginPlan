@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 19 audit finding,done,Manifest numeric helpers accept non-decimal strings
+2,Add regression coverage,done,Generic and Tauri manifests reject hex numeric strings
+3,Implement strict numeric string validation,done,Allow numbers and decimal digit strings only
+4,Run focused and full validation,done,Focused manifest tests npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 19 files and related code changes

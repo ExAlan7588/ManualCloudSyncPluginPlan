@@ -208,7 +208,7 @@ function nonNegativeInteger(value, label) {
 }
 
 function isNumericInput(value) {
-    return typeof value === 'number' || (typeof value === 'string' && value.trim().length > 0);
+    return typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value.trim()));
 }
 
 function integerTextField(value, label) {
