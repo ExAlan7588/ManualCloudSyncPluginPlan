@@ -382,8 +382,11 @@ export class TtSyncStorage {
 
     async commitUpload(plan, entry, manifest) {
         const stagedPath = this.stagedFilePath(plan.id, entry.path);
-        await stat(stagedPath).catch(() => {
-            throw forbidden(`Missing staged upload for ${entry.path}`);
+        await stat(stagedPath).catch(error => {
+            if (error.code === 'ENOENT') {
+                throw forbidden(`Missing staged upload for ${entry.path}`);
+            }
+            throw error;
         });
         await mkdir(path.dirname(this.remoteFilePath(plan.namespace, entry.path)), { recursive: true });
         await rename(stagedPath, this.remoteFilePath(plan.namespace, entry.path));

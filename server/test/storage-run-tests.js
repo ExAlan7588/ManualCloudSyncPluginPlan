@@ -6,6 +6,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
+await testCommitPlanSurfacesUnexpectedStagedStatErrors();
 console.log('ok - storage commit rejects stale snapshots and surfaces malformed manifests');
 
 async function testCommitPlanRejectsStaleSnapshot() {
@@ -49,6 +50,43 @@ async function testWriteNamespaceSurfacesMalformedManifest() {
         );
         assert.equal(await readFile(manifestPath, 'utf8'), '{ broken');
     });
+}
+
+async function testCommitPlanSurfacesUnexpectedStagedStatErrors() {
+    await withStorage(async storage => {
+        const plan = pushPlan();
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, await storage.createNamespace(plan.namespace));
+        await writeFile(path.join(storage.planDir(plan.id), 'staged'), 'not a directory');
+
+        await assert.rejects(
+            storage.commitPlan(await storage.readPlan(plan.id), {}),
+            error => error.code === 'ENOTDIR' && !error.message.includes('Missing staged upload'),
+        );
+    });
+}
+
+function pushPlan() {
+    return {
+        committedAt: '',
+        conflicts: [],
+        deviceId: 'device-1',
+        downloads: [],
+        id: 'plan-1',
+        kind: 'push',
+        localDeletes: [],
+        namespace: 'default',
+        remoteDeletes: [],
+        staged: {},
+        uploads: [
+            {
+                modifiedMs: 1_700_000_000_000,
+                path: 'file.txt',
+                sha256: '',
+                sizeBytes: 4,
+            },
+        ],
+    };
 }
 
 async function withStorage(callback) {
