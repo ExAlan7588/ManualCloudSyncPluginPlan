@@ -3,6 +3,7 @@ import { planSummary, progressSummary } from '../lib/plan-response.js';
 
 testPlanSummaryShape();
 testCommittedProgressSummary();
+testProgressSummaryIgnoresUnplannedStagedEntries();
 testPlanSummaryRejectsMalformedSizeBytes();
 testPlanSummaryRejectsMalformedArrays();
 testPlanSummaryRejectsMalformedStagedMap();
@@ -47,6 +48,20 @@ function testCommittedProgressSummary() {
         totalBytes: 22,
         totalFiles: 3,
     });
+}
+
+function testProgressSummaryIgnoresUnplannedStagedEntries() {
+    const summary = progressSummary({
+        ...planFixture(),
+        staged: {
+            'local.txt': { sizeBytes: 10 },
+            'stale.txt': { sizeBytes: 100 },
+        },
+    });
+    assert.equal(summary.bytesTransferred, 10);
+    assert.equal(summary.filesTransferred, 1);
+    assert.equal(summary.pending_files, 2);
+    assert.equal(summary.staged_files, 1);
 }
 
 function testPlanSummaryRejectsMalformedSizeBytes() {

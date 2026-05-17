@@ -29,7 +29,7 @@ export function progressSummary(plan) {
     const fields = planFields(plan);
     const totalFiles = fields.uploads.length + fields.downloads.length;
     const totalBytes = sumBytes([...fields.uploads, ...fields.downloads]);
-    const staged = Object.values(fields.staged);
+    const staged = currentStagedEntries(fields);
     const committed = Boolean(plan.committedAt);
     const filesTransferred = committed ? totalFiles : staged.length;
     return {
@@ -100,6 +100,13 @@ function currentProgressPath(fields) {
     const staged = new Set(Object.keys(fields.staged));
     const pending = [...fields.uploads, ...fields.downloads].find(entry => !staged.has(entry.path));
     return pending?.path || '';
+}
+
+function currentStagedEntries(fields) {
+    const transferPaths = new Set([...fields.uploads, ...fields.downloads].map(entry => entry.path));
+    return Object.entries(fields.staged)
+        .filter(([path]) => transferPaths.has(path))
+        .map(([, entry]) => entry);
 }
 
 function progressPhase(plan, staged) {
