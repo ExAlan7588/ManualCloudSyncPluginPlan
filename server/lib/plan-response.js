@@ -1,3 +1,5 @@
+const PLAN_SIZE_BYTES_ERROR = 'Invalid plan sizeBytes';
+
 export function planSummary(plan) {
     return {
         id: plan.id,
@@ -43,7 +45,25 @@ export function progressSummary(plan) {
 }
 
 function sumBytes(entries) {
-    return entries.reduce((total, entry) => total + Number(entry.sizeBytes || 0), 0);
+    return entries.reduce((total, entry) => total + sizeBytes(entry), 0);
+}
+
+function sizeBytes(entry) {
+    const value = entry?.sizeBytes;
+    if (!hasValidSizeBytes(value)) {
+        throw new Error(PLAN_SIZE_BYTES_ERROR);
+    }
+    return Number(value);
+}
+
+function hasValidSizeBytes(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return false;
+    }
+    return Number.isSafeInteger(Number(value));
 }
 
 function currentProgressPath(plan) {
