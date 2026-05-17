@@ -1,6 +1,8 @@
 import { SHA_PREVIEW_LENGTH } from './constants.js';
 import { formatBytes } from './format.js';
 
+const UNKNOWN_SIZE_TEXT = '大小：未回傳';
+
 export function renderQueue(queue, onDeleteRemoteItem) {
     const container = document.getElementById('mcs_queue');
     container.replaceChildren();
@@ -45,11 +47,27 @@ function queueItemMain(item) {
 function queueItemMeta(item) {
     const manifest = item?.manifest || {};
     return [
-        formatBytes(Number(manifest.sizeBytes || 0)),
+        queueSizeText(manifest.sizeBytes),
         manifest.createdAt || '',
         manifest.deviceId ? `來源：${manifest.deviceId}` : '',
         manifest.sha256 ? `SHA-256：${manifest.sha256.slice(0, SHA_PREVIEW_LENGTH)}` : '',
     ].filter(Boolean).join(' | ');
+}
+
+function queueSizeText(value) {
+    const sizeBytes = nonNegativeIntegerValue(value);
+    return Number.isFinite(sizeBytes) ? formatBytes(sizeBytes) : UNKNOWN_SIZE_TEXT;
+}
+
+function nonNegativeIntegerValue(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0 ? value : null;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return null;
+    }
+    const number = Number(value);
+    return Number.isSafeInteger(number) ? number : null;
 }
 
 function deleteButton(fileName, onDeleteRemoteItem) {

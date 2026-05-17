@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 27 audit finding,done,Queue renderer masks malformed sizeBytes
+2,Add regression coverage,done,Malformed queue size renders as unavailable
+3,Implement strict queue size display,done,Allow numbers and decimal digit strings only
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 27 files and related code changes

@@ -11,6 +11,7 @@ import {
     isTtSyncCommandMissingError,
     normalizeError,
 } from '../../modules/errors.js';
+import { renderQueue } from '../../modules/queue-renderer.js';
 import {
     compatListQueue,
     hrefFileName,
@@ -77,6 +78,7 @@ const tests = [
     ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
     ['WebDAV manifest rejects fractional sizeBytes', testWebDavManifestRejectsFractionalSizeBytes],
     ['WebDAV manifest rejects non-decimal sizeBytes', testWebDavManifestRejectsNonDecimalSizeBytes],
+    ['queue renderer shows malformed sizeBytes as unavailable', testQueueRendererMalformedSizeBytes],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -322,6 +324,24 @@ async function testWebDavManifestRejectsNonDecimalSizeBytes() {
     }
 }
 
+function testQueueRendererMalformedSizeBytes() {
+    const { container, restore } = installQueueRendererDocument();
+    try {
+        renderQueue([{
+            manifest: {
+                createdAt: '2026-05-17T00:00:00.000Z',
+                file: 'sync-0102030405.zip',
+                sizeBytes: '0x10',
+            },
+        }], () => {});
+        const meta = container.children[0].children[0].children[1].textContent;
+        assert.ok(meta.includes('大小：未回傳'));
+        assert.equal(meta.includes('16 B'), false);
+    } finally {
+        restore();
+    }
+}
+
 function validWebDavManifest(overrides = {}) {
     return {
         createdAt: new Date().toISOString(),
@@ -330,6 +350,47 @@ function validWebDavManifest(overrides = {}) {
         sha256: 'a'.repeat(64),
         sizeBytes: TEST_MANIFEST_SIZE_BYTES,
         ...overrides,
+    };
+}
+
+function installQueueRendererDocument() {
+    const previousDocument = globalThis.document;
+    const container = testElement('div');
+    globalThis.document = {
+        createElement: testElement,
+        getElementById(id) {
+            assert.equal(id, 'mcs_queue');
+            return container;
+        },
+    };
+    return {
+        container,
+        restore() {
+            globalThis.document = previousDocument;
+        },
+    };
+}
+
+function testElement(tagName) {
+    return {
+        children: [],
+        className: '',
+        innerHTML: '',
+        tagName,
+        textContent: '',
+        title: '',
+        type: '',
+        addEventListener() {},
+        append(...items) {
+            this.children.push(...items);
+        },
+        appendChild(item) {
+            this.children.push(item);
+            return item;
+        },
+        replaceChildren(...items) {
+            this.children = [...items];
+        },
     };
 }
 
