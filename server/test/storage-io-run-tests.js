@@ -4,11 +4,12 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { writeRequestStreamAtomic } from '../lib/stream-io.js';
-import { readJson, validateStagedBuffer, writeFileAtomic } from '../lib/storage-io.js';
+import { readJson, uploadEntry, validateStagedBuffer, writeFileAtomic } from '../lib/storage-io.js';
 
 await testReadJsonLabelsMalformedStorageFile();
 await testWriteFileAtomicCleansTempFileAfterRenameFailure();
 await testValidateStagedBufferRejectsMalformedSizeBytes();
+await testUploadEntryRejectsMalformedUploads();
 await testWriteRequestStreamRejectsMalformedExpectedBytes();
 console.log('ok - storage IO errors include context and clean temp files');
 
@@ -45,6 +46,13 @@ async function testValidateStagedBufferRejectsMalformedSizeBytes() {
     assert.throws(
         () => validateStagedBuffer({ path: 'default-user/chats/example.jsonl', sizeBytes: '0x10' }, Buffer.alloc(16)),
         /Uploaded size does not match manifest/,
+    );
+}
+
+async function testUploadEntryRejectsMalformedUploads() {
+    assert.throws(
+        () => uploadEntry({ uploads: {} }, 'default-user/chats/example.jsonl'),
+        /Invalid plan uploads/,
     );
 }
 

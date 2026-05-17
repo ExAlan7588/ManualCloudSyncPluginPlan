@@ -62,9 +62,17 @@ function isSizeBytes(value) {
 }
 
 export function uploadEntry(plan, syncPath) {
-    const entry = plan.uploads.find(item => item.path === syncPath);
+    const uploads = planUploads(plan);
+    const entry = uploads.find(item => item.path === syncPath);
     if (!entry) {
         throw notFound(`Path is not part of this plan: ${syncPath}`);
     }
     return entry;
+}
+
+function planUploads(plan) {
+    if (!Array.isArray(plan.uploads)) {
+        throw new Error('Invalid plan uploads');
+    }
+    return plan.uploads;
 }

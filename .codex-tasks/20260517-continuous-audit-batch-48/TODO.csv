@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 48 audit finding,done,uploadEntry assumes plan uploads is an array
+2,Add regression coverage,done,Assert malformed plan uploads fails explicitly
+3,Implement upload array validation,done,Validate plan uploads before upload entry lookup
+4,Run focused and full validation,done,Focused storage io test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 48 files and related code changes
