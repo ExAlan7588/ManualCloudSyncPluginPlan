@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 43 audit finding,done,Commit history validation currently runs after push side effects
+2,Add regression coverage,done,Assert malformed history arrays fail before remote file mutation
+3,Implement commit preflight validation,done,Validate history entry shape before rollback and push side effects
+4,Run focused and full validation,done,Focused storage test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 43 files and related code changes

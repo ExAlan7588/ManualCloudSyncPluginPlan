@@ -240,6 +240,7 @@ export class TtSyncStorage {
             if (latest.committedAt) {
                 throw forbidden(`Plan already committed: ${latest.id}`);
             }
+            assertPlanHistoryShape(latest);
             let rollbackPoint = null;
             if (latest.kind === 'push') {
                 rollbackPoint = await this.createRollbackPoint(latest);
@@ -482,6 +483,10 @@ function assertPlanOpen(plan) {
     if (plan.committedAt) {
         throw forbidden(`Plan already committed: ${plan.id}`);
     }
+}
+
+function assertPlanHistoryShape(plan) {
+    historyEntry(plan);
 }
 
 function normalizeRollbackFile(file) {

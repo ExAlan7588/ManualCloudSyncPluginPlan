@@ -6,6 +6,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
+await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
 await testCommittedPlanRejectsLateUploads();
 await testRollbackRejectsMalformedEntryBeforeWritingFile();
@@ -51,6 +52,26 @@ async function testWriteNamespaceSurfacesMalformedManifest() {
             /Storage JSON is invalid:/,
         );
         assert.equal(await readFile(manifestPath, 'utf8'), '{ broken');
+    });
+}
+
+async function testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation() {
+    await withStorage(async storage => {
+        const plan = pushPlan();
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, await storage.createNamespace(plan.namespace));
+        await storage.stageFile(plan, plan.uploads[0], Buffer.from('data'));
+        const malformedPlan = { ...(await storage.readPlan(plan.id)), downloads: null };
+        await storage.writePlan(malformedPlan);
+
+        await assert.rejects(
+            storage.commitPlan(await storage.readPlan(plan.id), {}),
+            /Invalid plan downloads/,
+        );
+        await assert.rejects(
+            readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
+            error => error.code === 'ENOENT',
+        );
     });
 }
 
