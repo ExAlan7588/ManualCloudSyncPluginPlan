@@ -67,6 +67,7 @@ const tests = [
     ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
     ['WebDAV manifest rejects uppercase SHA-256', testWebDavManifestRejectsUppercaseSha256],
     ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
+    ['WebDAV manifest rejects fractional sizeBytes', testWebDavManifestRejectsFractionalSizeBytes],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -234,6 +235,31 @@ async function testWebDavManifestRejectsNullSizeBytes() {
     } finally {
         restoreGlobals();
     }
+}
+
+async function testWebDavManifestRejectsFractionalSizeBytes() {
+    const restoreGlobals = installWebDavQueueFixture({
+        manifest: validWebDavManifest({ sizeBytes: 1.5 }),
+    });
+    try {
+        await assert.rejects(
+            compatListQueue(),
+            /同步 manifest 的檔案大小不正確/,
+        );
+    } finally {
+        restoreGlobals();
+    }
+}
+
+function validWebDavManifest(overrides = {}) {
+    return {
+        createdAt: new Date().toISOString(),
+        file: 'sync-0102030405.zip',
+        formatVersion: 1,
+        sha256: 'a'.repeat(64),
+        sizeBytes: TEST_MANIFEST_SIZE_BYTES,
+        ...overrides,
+    };
 }
 
 function installWebDavQueueFixture(options) {

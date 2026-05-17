@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit WebDAV fractional sizeBytes validation,DONE,Concrete bug documented in SPEC.md,test -f .codex-tasks/20260517-continuous-audit-batch-15/SPEC.md,2026-05-17T21:44:12+08:00,0,WebDAV manifest accepts fractional byte counts
+2,Add focused regression coverage,DONE,frontend TT-Sync tests cover fractional WebDAV manifest sizeBytes,timeout 60s node tools/test/frontend-tt-sync-run-tests.js,2026-05-17T21:45:32+08:00,0,Regression failed before fix because fractional sizeBytes was accepted
+3,Implement minimal integer validation fix,DONE,WebDAV manifest sizeBytes requires non-negative integer,timeout 60s node tools/test/frontend-tt-sync-run-tests.js,2026-05-17T21:45:32+08:00,0,Focused frontend TT-Sync tests pass
+4,Run full validation,DONE,check and test scripts pass,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:46:13+08:00,0,npm run check and npm test passed
+5,Commit batch changes,IN_PROGRESS,Git commit contains only batch 15 changes,git status --short,,0,Ready to commit after diff review at 2026-05-17T21:46:38+08:00

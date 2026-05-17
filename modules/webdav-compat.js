@@ -329,7 +329,7 @@ function validateManifest(manifest) {
     if (!isSha256(manifest.sha256)) {
         throw new Error('同步 manifest 的 SHA-256 不正確');
     }
-    if (!isNonNegativeNumber(manifest.sizeBytes)) {
+    if (!isNonNegativeInteger(manifest.sizeBytes)) {
         throw new Error('同步 manifest 的檔案大小不正確');
     }
     if (Number.isNaN(Date.parse(manifest.createdAt))) {
@@ -408,12 +408,12 @@ function isSha256(value) {
     return /^[a-f0-9]{64}$/.test(String(value || ''));
 }
 
-function isNonNegativeNumber(value) {
+function isNonNegativeInteger(value) {
     if (typeof value !== 'number' && !(typeof value === 'string' && value.trim())) {
         return false;
     }
     const number = Number(value);
-    return Number.isFinite(number) && number >= 0;
+    return Number.isSafeInteger(number) && number >= 0;
 }
 
 function isManifestName(name) {
