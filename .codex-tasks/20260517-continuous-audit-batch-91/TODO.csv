@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed command payload regression test,DONE,Test fails before fix because non-empty arrays are object payloads,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,Failed before fix because hasObjectPayload(['unexpected']) returned true
+2,Exclude arrays from object payload handling,DONE,Non-empty arrays are not treated as transfer artifact payloads,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

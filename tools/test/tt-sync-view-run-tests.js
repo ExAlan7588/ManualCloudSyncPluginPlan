@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { renderConflictList, serverListFrom } from '../../modules/tt-sync-view.js';
+import { hasObjectPayload, renderConflictList, serverListFrom } from '../../modules/tt-sync-view.js';
 
 testServerListFromRejectsMalformedServers();
 testServerListFromKeepsMissingServersBehavior();
+testHasObjectPayloadRejectsArrays();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListKeepsMissingConflictPayloadBehavior();
 console.log('ok - TT-Sync view validates conflict payloads');
@@ -16,6 +17,11 @@ function testServerListFromRejectsMalformedServers() {
 
 function testServerListFromKeepsMissingServersBehavior() {
     assert.deepEqual(serverListFrom({ ok: true }), []);
+}
+
+function testHasObjectPayloadRejectsArrays() {
+    assert.equal(hasObjectPayload(['unexpected']), false);
+    assert.equal(hasObjectPayload({ direction: 'push' }), true);
 }
 
 function testRenderConflictListRejectsMalformedConflicts() {

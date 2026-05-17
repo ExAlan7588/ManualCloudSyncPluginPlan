@@ -140,7 +140,7 @@ export function progressStatus(progress) {
 }
 
 export function hasObjectPayload(value) {
-    return Boolean(value && typeof value === 'object' && Object.keys(value).length > 0);
+    return Boolean(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0);
 }
 
 export function serverListFrom(result) {
