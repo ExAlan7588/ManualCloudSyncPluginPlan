@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 44 audit finding,done,Upload staging accepts malformed persisted staged state before side effects
+2,Add regression coverage,done,Assert malformed staged state rejects before staged file is written
+3,Implement staged preflight validation,done,Validate staged map before buffer and stream staging writes
+4,Run focused and full validation,done,Focused storage test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 44 files and related code changes

@@ -7,6 +7,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
+await testStageFileRejectsMalformedStagedBeforeWritingFile();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
 await testCommittedPlanRejectsLateUploads();
 await testRollbackRejectsMalformedEntryBeforeWritingFile();
@@ -70,6 +71,22 @@ async function testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation() {
         );
         await assert.rejects(
             readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
+            error => error.code === 'ENOENT',
+        );
+    });
+}
+
+async function testStageFileRejectsMalformedStagedBeforeWritingFile() {
+    await withStorage(async storage => {
+        const plan = { ...pushPlan(), staged: 'bad' };
+        await storage.savePlan(plan);
+
+        await assert.rejects(
+            storage.stageFile(plan, plan.uploads[0], Buffer.from('data')),
+            /Invalid plan staged/,
+        );
+        await assert.rejects(
+            readFile(storage.stagedFilePath(plan.id, plan.uploads[0].path)),
             error => error.code === 'ENOENT',
         );
     });

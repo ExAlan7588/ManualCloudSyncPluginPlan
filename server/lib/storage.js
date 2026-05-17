@@ -177,6 +177,7 @@ export class TtSyncStorage {
         return this.withPlanLock(plan.id, async () => {
             const latest = await this.readPlan(plan.id);
             assertPlanOpen(latest);
+            assertPlanStaged(latest);
             const latestEntry = uploadEntry(latest, entry.path);
             validateStagedBuffer(latestEntry, buffer);
             await writeFileAtomic(this.stagedFilePath(latest.id, latestEntry.path), buffer);
@@ -191,6 +192,7 @@ export class TtSyncStorage {
     async stageFileStream(plan, entry, stream, maxBytes) {
         const latest = await this.readPlan(plan.id);
         assertPlanOpen(latest);
+        assertPlanStaged(latest);
         const latestEntry = uploadEntry(latest, entry.path);
         const stagedPath = this.stagedFilePath(latest.id, latestEntry.path);
         const result = await writeRequestStreamAtomic({
@@ -207,6 +209,7 @@ export class TtSyncStorage {
                 await rm(stagedPath, { force: true });
                 assertPlanOpen(locked);
             }
+            assertPlanStaged(locked);
             const lockedEntry = uploadEntry(locked, latestEntry.path);
             const staged = { ...(locked.staged || {}) };
             staged[lockedEntry.path] = result;
@@ -487,6 +490,15 @@ function assertPlanOpen(plan) {
 
 function assertPlanHistoryShape(plan) {
     historyEntry(plan);
+}
+
+function assertPlanStaged(plan) {
+    if (plan.staged === undefined || plan.staged === null) {
+        return;
+    }
+    if (Array.isArray(plan.staged) || typeof plan.staged !== 'object') {
+        throw forbidden('Invalid plan staged');
+    }
 }
 
 function normalizeRollbackFile(file) {
