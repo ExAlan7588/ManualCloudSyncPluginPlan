@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Inventory project structure and test gates,DONE,Project type scripts and existing git state are documented,git status --short --branch,2026-05-17T00:00:00+08:00,0,Node ESM project with npm check/test scripts; branch ahead 7 and worktree initially clean.
+2,Audit code for concrete low-risk defects,DONE,At least one specific bug or coverage gap is identified from source and tests,rg-based source inspection,2026-05-17T20:55:31+08:00,0,Found SSE progress polling can overlap when async plan reads are slower than interval.
+3,Implement minimal non-functional-change fix,DONE,Patch is scoped to the selected defect and preserves API/user-visible behavior,git diff --check,2026-05-17T20:55:31+08:00,0,Added an in-flight guard for progress event polling and a focused regression test.
+4,Run focused and full validation,DONE,Relevant focused test plus check/test pass within 60 seconds,timeout 60s npm run check && timeout 60s npm test,2026-05-17T20:57:07+08:00,0,Focused SSE and account tests passed; full check and test passed within timeout.
+5,Commit batch and record details,DONE,Only batch changes are committed with hash recorded,git status --short && git rev-parse HEAD,2026-05-17T20:58:53+08:00,0,Final hash is reported after amend to avoid self-referential hash churn.

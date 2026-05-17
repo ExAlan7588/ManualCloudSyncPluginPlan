@@ -14,6 +14,8 @@ const PLAN = Object.freeze({
     staged: {},
     uploads: [],
 });
+const INITIAL_PROGRESS_PLAN_READS = 2;
+const EXPECTED_OVERLAPPING_POLL_READS = 1;
 
 async function testProgressStreamSurfacesPollingError() {
     const intervals = [];
@@ -70,6 +72,61 @@ function failingStorage() {
     };
 }
 
+async function testProgressStreamSkipsOverlappingPolls() {
+    const intervals = [];
+    const originalSetInterval = globalThis.setInterval;
+    const originalClearInterval = globalThis.clearInterval;
+    globalThis.setInterval = callback => {
+        intervals.push(callback);
+        return callback;
+    };
+    globalThis.clearInterval = () => {};
+
+    try {
+        const storage = slowPollingStorage();
+        await dispatchProgressEventsRequest(storage);
+        assert.equal(intervals.length, 1);
+
+        const firstPoll = intervals[0]();
+        const secondPoll = intervals[0]();
+        await secondPoll;
+
+        assert.equal(storage.pollReads(), EXPECTED_OVERLAPPING_POLL_READS);
+        storage.resolvePoll();
+        await firstPoll;
+    } finally {
+        globalThis.setInterval = originalSetInterval;
+        globalThis.clearInterval = originalClearInterval;
+    }
+}
+
+function slowPollingStorage() {
+    let reads = 0;
+    let pollReads = 0;
+    let resolvePoll;
+    return {
+        pollReads: () => pollReads,
+        resolvePoll: () => resolvePoll?.(PLAN),
+        async readPlan(planId) {
+            reads += 1;
+            if (planId !== PLAN.id) {
+                throw new Error(`unexpected plan id: ${planId}`);
+            }
+            if (reads <= INITIAL_PROGRESS_PLAN_READS) {
+                return PLAN;
+            }
+            pollReads += 1;
+            return new Promise(resolve => {
+                resolvePoll = resolve;
+            });
+        },
+        async requireAuth(namespace, authHeader) {
+            assert.equal(namespace, PLAN.namespace);
+            assert.equal(authHeader, 'Bearer test-token');
+        },
+    };
+}
+
 class MockResponse {
     constructor() {
         this.body = '';
@@ -94,4 +151,5 @@ class MockResponse {
 }
 
 await testProgressStreamSurfacesPollingError();
-console.log('ok - progress stream surfaces polling errors');
+await testProgressStreamSkipsOverlappingPolls();
+console.log('ok - progress stream surfaces polling errors and avoids overlapping polls');

@@ -420,10 +420,19 @@ async function writeProgressEvent(context, planId) {
 }
 
 function streamProgressEvents(context, planId) {
+    let polling = false;
     const timer = setInterval(async () => {
-        const plan = await writeProgressEventOrClose(context, planId);
-        if (!plan || plan.committedAt) {
-            closeProgressStream(context.response, timer);
+        if (polling) {
+            return;
+        }
+        polling = true;
+        try {
+            const plan = await writeProgressEventOrClose(context, planId);
+            if (!plan || plan.committedAt) {
+                closeProgressStream(context.response, timer);
+            }
+        } finally {
+            polling = false;
         }
     }, PROGRESS_EVENT_INTERVAL_MS);
     context.request.on('close', () => clearInterval(timer));

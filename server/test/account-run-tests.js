@@ -13,7 +13,7 @@ const TEST_PASSWORD = 'test-password';
 const FILE_PATH = 'default-user/chats/example.jsonl';
 const BASE_MTIME = 1778500000000;
 const TEST_ENDPOINT = 'https://sync.example.test';
-const TEST_SPKI = 'abcDEF_123';
+const TEST_SPKI = 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE';
 const TAURI_DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 await testAccountDeviceHistoryRollback();
