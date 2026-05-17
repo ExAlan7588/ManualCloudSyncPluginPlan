@@ -367,8 +367,8 @@ export class TtSyncStorage {
     }
 
     async writeNamespace(namespace, record) {
-        record.sessions = pruneExpiredSessions(record.sessions || []);
-        record.pairingTokens = prunePairingTokens(record.pairingTokens || []);
+        record.sessions = pruneExpiredSessions(optionalRecordArray(record.sessions, 'namespace sessions'));
+        record.pairingTokens = prunePairingTokens(optionalRecordArray(record.pairingTokens, 'namespace pairingTokens'));
         await mkdir(path.join(this.namespaceDir(namespace), 'files'), { recursive: true });
         await writeJsonAtomic(this.namespacePath(namespace), record);
         await writeJsonAtomic(this.manifestPath(namespace), await this.readManifest(namespace));

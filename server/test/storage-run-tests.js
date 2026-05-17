@@ -6,6 +6,7 @@ import { TtSyncStorage } from '../lib/storage.js';
 
 await testCommitPlanRejectsStaleSnapshot();
 await testWriteNamespaceSurfacesMalformedManifest();
+await testWriteNamespaceRejectsMalformedAccountArrays();
 await testNamespaceListMethodsRejectMalformedArrays();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
 await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
@@ -55,6 +56,22 @@ async function testWriteNamespaceSurfacesMalformedManifest() {
             /Storage JSON is invalid:/,
         );
         assert.equal(await readFile(manifestPath, 'utf8'), '{ broken');
+    });
+}
+
+async function testWriteNamespaceRejectsMalformedAccountArrays() {
+    await withStorage(async storage => {
+        await storage.writeNamespace('default', await storage.createNamespace('default'));
+        const record = await storage.readNamespace('default');
+
+        await assert.rejects(
+            storage.writeNamespace('default', { ...record, sessions: '' }),
+            /Invalid namespace sessions/,
+        );
+        await assert.rejects(
+            storage.writeNamespace('default', { ...record, pairingTokens: '' }),
+            /Invalid namespace pairingTokens/,
+        );
     });
 }
 
