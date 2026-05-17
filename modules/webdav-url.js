@@ -1,6 +1,7 @@
 import { AUTH_BASIC, AUTH_BEARER } from './constants.js';
 
 export function webDavAuthHeaders(connection) {
+    validateWebDavConnection(connection);
     const authMode = connection.config.webdav.authMode || AUTH_BASIC;
     if (authMode === AUTH_BASIC) {
         return { Authorization: `Basic ${base64Utf8(`${connection.config.webdav.username}:${connection.secrets.webdavPassword}`)}` };
@@ -10,6 +11,18 @@ export function webDavAuthHeaders(connection) {
     }
 
     throw new Error(`不支援的 WebDAV 驗證方式：${authMode}`);
+}
+
+function validateWebDavConnection(connection) {
+    if (!connection || typeof connection !== 'object' || Array.isArray(connection)) {
+        throw new Error('WebDAV connection 格式不正確');
+    }
+    if (!connection.config?.webdav || typeof connection.config.webdav !== 'object') {
+        throw new Error('WebDAV connection 格式不正確');
+    }
+    if (!connection.secrets || typeof connection.secrets !== 'object') {
+        throw new Error('WebDAV connection 格式不正確');
+    }
 }
 
 export function webDavTransferHeaders(connection, extraHeaders = {}) {

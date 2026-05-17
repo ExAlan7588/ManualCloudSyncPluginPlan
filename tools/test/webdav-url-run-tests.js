@@ -1,9 +1,26 @@
 import assert from 'node:assert/strict';
-import { webDavUrlForKey } from '../../modules/webdav-url.js';
+import { webDavAuthHeaders, webDavUrlForKey } from '../../modules/webdav-url.js';
 
+testWebDavAuthRejectsMalformedConnection();
+testWebDavAuthBuildsBasicHeader();
 testWebDavUrlRejectsMalformedKey();
 testWebDavUrlEncodesValidKey();
 console.log('ok - WebDAV URL helpers validate keys');
+
+function testWebDavAuthRejectsMalformedConnection() {
+    assert.throws(
+        () => webDavAuthHeaders({ config: {} }),
+        /WebDAV connection 格式不正確/,
+    );
+}
+
+function testWebDavAuthBuildsBasicHeader() {
+    const headers = webDavAuthHeaders({
+        config: { webdav: { authMode: 'basic', username: 'user' } },
+        secrets: { webdavPassword: 'pass' },
+    });
+    assert.equal(headers.Authorization, `Basic ${btoa('user:pass')}`);
+}
 
 function testWebDavUrlRejectsMalformedKey() {
     assert.throws(
