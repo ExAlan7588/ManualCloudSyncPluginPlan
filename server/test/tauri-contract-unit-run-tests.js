@@ -9,6 +9,7 @@ const OUTSIDE_WINDOW_MARGIN_MS = 60 * 1000;
 await testCurrentSignedSessionRequestPasses();
 await testStaleSignedSessionRequestFails();
 await testFutureSignedSessionRequestFails();
+await testTauriManifestRejectsMalformedPaths();
 await testTauriManifestRejectsNullNumericFields();
 await testTauriManifestRejectsNonDecimalNumericStrings();
 await testTauriPlanResponseRejectsMalformedSizeBytes();
@@ -33,6 +34,17 @@ async function testFutureSignedSessionRequestFails() {
     assert.throws(
         () => verifyTauriSessionRequest(fixture),
         /timestamp is outside the allowed window/,
+    );
+}
+
+async function testTauriManifestRejectsMalformedPaths() {
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({ path: { value: 'default-user/chats/example.jsonl' } })),
+        /Tauri manifest path must be a string/,
+    );
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({ path: '../secret.txt' })),
+        /Invalid sync path/,
     );
 }
 

@@ -1,6 +1,6 @@
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import { badRequest, unauthorized } from './http-error.js';
-import { safeName } from './encoding.js';
+import { safeName, validateSyncPath } from './encoding.js';
 
 const DEFAULT_NAMESPACE = 'default';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,9 +173,16 @@ function tauriManifestEntries(manifest) {
     }
     return manifest.entries.map(entry => ({
         modifiedMs: nonNegativeInteger(entry?.modified_ms, 'modified_ms'),
-        path: entry?.path,
+        path: tauriManifestPath(entry),
         sizeBytes: nonNegativeInteger(entry?.size_bytes, 'size_bytes'),
     }));
+}
+
+function tauriManifestPath(entry) {
+    if (typeof entry?.path !== 'string') {
+        throw badRequest('Tauri manifest path must be a string');
+    }
+    return validateSyncPath(entry.path);
 }
 
 function tauriManifestEntry(entry) {
