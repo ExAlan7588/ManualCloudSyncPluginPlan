@@ -349,12 +349,21 @@ function pairingBodyFromUri(body) {
     if (uri.protocol !== 'tt-sync:') {
         throw badRequest('Pairing URI must use tt-sync://');
     }
+    const endpoint = pairingUriEndpoint(uri);
     return {
         deviceName: body.deviceName,
-        endpoint: uri.searchParams.get('endpoint') || '',
+        endpoint,
         namespace: safeName(uri.searchParams.get('namespace') || 'default', 'namespace'),
         token: uri.searchParams.get('token') || '',
     };
+}
+
+function pairingUriEndpoint(uri) {
+    const value = uri.searchParams.get('endpoint') || '';
+    if (!value) {
+        return '';
+    }
+    return parseHttpUrl(value, 'endpoint').toString().replace(/\/$/, '');
 }
 
 function parsePairingUri(value) {

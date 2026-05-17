@@ -16,6 +16,7 @@ await testPlanRouteRejectsMalformedMode();
 await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
+await testPairCompleteRejectsUnsafePairingUriEndpoints();
 await testTauriSessionRejectsMalformedDevices();
 console.log('ok - routes validate account pairing URI inputs');
 
@@ -235,6 +236,24 @@ async function testBundleRouteRejectsMalformedPlanDownloads() {
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid plan downloads/);
+}
+
+async function testPairCompleteRejectsUnsafePairingUriEndpoints() {
+    for (const endpoint of ['https://user:pass@sync.example.test', 'https://sync.example.test/#token']) {
+        const pairingUri = `tt-sync://pair?endpoint=${encodeURIComponent(endpoint)}&namespace=default&token=token`;
+        const response = await dispatch({
+            body: { deviceName: 'device-1', pairingUri },
+            method: 'POST',
+            storage: {
+                async completePairing() {
+                    throw new Error('completePairing must not be called for unsafe endpoint');
+                },
+            },
+            url: '/v2/pair/complete',
+        });
+        assert.equal(response.statusCode, 400);
+        assert.match(JSON.parse(response.body).error, /endpoint must not include credentials or fragments/);
+    }
 }
 
 async function testTauriSessionRejectsMalformedDevices() {
