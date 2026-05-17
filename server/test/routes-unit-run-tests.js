@@ -8,6 +8,7 @@ await testAccountPairingUriRejectsUnsupportedEndpointScheme();
 await testAccountPairingUriRejectsMalformedSpkiPin();
 await testSessionOpenUsesNormalizedNamespace();
 await testPlanRouteUsesNormalizedNamespace();
+await testCommitRouteUsesNormalizedPlanNamespace();
 console.log('ok - routes validate account pairing URI inputs');
 
 async function testAccountPairingUriRejectsUnsupportedEndpointScheme() {
@@ -87,6 +88,39 @@ async function testPlanRouteUsesNormalizedNamespace() {
             },
         },
         url: '/v2/sync/push-plan',
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(JSON.parse(response.body).namespace, 'default');
+}
+
+async function testCommitRouteUsesNormalizedPlanNamespace() {
+    const response = await dispatch({
+        body: {},
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async commitPlan(plan) {
+                return { ...plan, committedAt: '2026-05-17T00:00:00.000Z' };
+            },
+            async readPlan() {
+                return {
+                    committedAt: '',
+                    conflicts: [],
+                    downloads: [],
+                    id: 'plan-1',
+                    kind: 'pull',
+                    localDeletes: [],
+                    namespace: ' default ',
+                    remoteDeletes: [],
+                    staged: {},
+                    uploads: [],
+                };
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: '/v2/plans/plan-1/commit',
     });
     assert.equal(response.statusCode, 200);
     assert.equal(JSON.parse(response.body).namespace, 'default');

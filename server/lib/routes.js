@@ -273,8 +273,9 @@ async function stageUploadBundle(context, plan) {
 
 async function loadAuthedPlan(context, planId) {
     const plan = await context.storage.readPlan(planId);
-    await authenticate(context, plan.namespace);
-    return plan;
+    const namespace = safeName(plan.namespace, 'namespace');
+    await authenticate(context, namespace);
+    return { ...plan, namespace };
 }
 
 async function authenticate(context, namespace) {

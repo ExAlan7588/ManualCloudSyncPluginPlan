@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 39 audit finding,done,Loaded plans authenticate normalized namespace but keep raw namespace afterward
+2,Add regression coverage,done,Focused routes test fails before fix because commit route keeps raw plan namespace
+3,Implement loaded plan namespace normalization,done,loadAuthedPlan returns plan copy with normalized namespace
+4,Run focused and full validation,done,Focused routes test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 39 files and related code changes
