@@ -497,7 +497,14 @@ function assertPlanOpen(plan) {
 }
 
 function assertPlanHistoryShape(plan) {
+    assertPlanKind(plan);
     historyEntry(plan);
+}
+
+function assertPlanKind(plan) {
+    if (plan.kind !== 'push' && plan.kind !== 'pull') {
+        throw new Error('Invalid plan kind');
+    }
 }
 
 function assertPlanStaged(plan) {

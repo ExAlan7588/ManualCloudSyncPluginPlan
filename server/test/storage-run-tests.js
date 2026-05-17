@@ -9,6 +9,7 @@ await testWriteNamespaceSurfacesMalformedManifest();
 await testWriteNamespaceRejectsMalformedAccountArrays();
 await testNamespaceListMethodsRejectMalformedArrays();
 await testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation();
+await testCommitPlanRejectsMalformedKindBeforeCommit();
 await testCommitPlanRejectsMalformedNamespaceBeforeRemoteMutation();
 await testStageFileRejectsMalformedStagedBeforeWritingFile();
 await testCommitPlanSurfacesUnexpectedStagedStatErrors();
@@ -113,6 +114,20 @@ async function testCommitPlanRejectsMalformedHistoryBeforeRemoteMutation() {
             readFile(storage.remoteFilePath(plan.namespace, plan.uploads[0].path)),
             error => error.code === 'ENOENT',
         );
+    });
+}
+
+async function testCommitPlanRejectsMalformedKindBeforeCommit() {
+    await withStorage(async storage => {
+        const plan = { ...pushPlan(), kind: 'sync' };
+        await storage.savePlan(plan);
+        await storage.writeNamespace(plan.namespace, await storage.createNamespace(plan.namespace));
+
+        await assert.rejects(
+            storage.commitPlan(await storage.readPlan(plan.id), {}),
+            /Invalid plan kind/,
+        );
+        assert.equal((await storage.readPlan(plan.id)).committedAt, '');
     });
 }
 

@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 57 audit finding,done,commitPlan does not validate persisted plan kind before branching
+2,Add regression coverage,done,Assert malformed plan kind is rejected before commit side effects
+3,Implement plan kind validation,done,Validate kind during pre-commit history shape check
+4,Run focused and full validation,done,Focused storage unit test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 57 files and related code changes
