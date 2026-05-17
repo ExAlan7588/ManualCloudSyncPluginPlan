@@ -7,12 +7,12 @@ import { pipeline } from 'node:stream/promises';
 import { badRequest, forbidden } from './http-error.js';
 
 export async function writeRequestStreamAtomic(options) {
+    const expectedBytes = expectedSizeBytes(options);
     await mkdir(path.dirname(options.filePath), { recursive: true });
     const tmpPath = `${options.filePath}.${process.pid}.${randomUUID()}.tmp`;
     const digest = createHash('sha256');
     const counter = countBytesTransform({
         digest,
-        expectedBytes: options.expectedBytes,
         maxBytes: options.maxBytes,
         syncPath: options.syncPath,
     });
@@ -22,7 +22,7 @@ export async function writeRequestStreamAtomic(options) {
         validateCompletedStream({
             actualBytes: counter.bytesRead,
             actualSha256,
-            expectedBytes: options.expectedBytes,
+            normalizedExpectedBytes: expectedBytes,
             expectedSha256: options.expectedSha256,
             syncPath: options.syncPath,
         });
@@ -55,7 +55,7 @@ function countBytesTransform(options) {
 }
 
 function validateCompletedStream(options) {
-    if (options.actualBytes !== expectedSizeBytes(options)) {
+    if (options.actualBytes !== options.normalizedExpectedBytes) {
         throw forbidden(`Uploaded size does not match manifest for ${options.syncPath}`);
     }
     if (options.expectedSha256 && options.actualSha256 !== options.expectedSha256) {

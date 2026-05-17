@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Record audit finding,DONE,PROGRESS.md explains late expectedBytes validation risk,test -f .codex-tasks/20260518-continuous-audit-batch-140/PROGRESS.md,2026-05-18T00:00:00Z,0,
+2,Add failing regression coverage,DONE,Malformed expectedBytes does not create upload directory,node server/test/storage-io-run-tests.js,2026-05-18T00:00:00Z,0,Failed before fix because upload directory was created
+3,Apply minimal validation fix,DONE,writeRequestStreamAtomic validates expectedBytes before mkdir/pipeline,node server/test/storage-io-run-tests.js,2026-05-18T00:00:00Z,0,Expected size now validated before filesystem side effects
+4,Run validation and commit,DONE,Check/test/diff validation pass and commit is created,timeout 60s npm test,2026-05-18T00:00:00Z,0,Validation passed and ready to commit

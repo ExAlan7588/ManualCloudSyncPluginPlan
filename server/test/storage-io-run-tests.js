@@ -66,17 +66,22 @@ async function testUploadEntryRejectsMalformedUploadPaths() {
 
 async function testWriteRequestStreamRejectsMalformedExpectedBytes() {
     const rootDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-stream-io-test-'));
+    const uploadDir = path.join(rootDir, 'nested');
     try {
         await assert.rejects(
             writeRequestStreamAtomic({
                 expectedBytes: '0x10',
                 expectedSha256: '',
-                filePath: path.join(rootDir, 'upload.bin'),
+                filePath: path.join(uploadDir, 'upload.bin'),
                 maxBytes: 32,
                 stream: Readable.from([Buffer.alloc(16)]),
                 syncPath: 'default-user/chats/example.jsonl',
             }),
             /Uploaded size does not match manifest/,
+        );
+        await assert.rejects(
+            readdir(uploadDir),
+            error => error.code === 'ENOENT',
         );
     } finally {
         await rm(rootDir, { force: true, recursive: true });
