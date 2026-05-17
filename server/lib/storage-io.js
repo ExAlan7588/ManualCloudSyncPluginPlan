@@ -35,12 +35,30 @@ export async function writeFileAtomic(filePath, value) {
 }
 
 export function validateStagedBuffer(entry, buffer) {
-    if (buffer.length !== Number(entry.sizeBytes)) {
+    if (buffer.length !== expectedSizeBytes(entry)) {
         throw forbidden(`Uploaded size does not match manifest for ${entry.path}`);
     }
     if (entry.sha256 && sha256(buffer) !== entry.sha256) {
         throw forbidden(`Uploaded sha256 does not match manifest for ${entry.path}`);
     }
+}
+
+function expectedSizeBytes(entry) {
+    const value = entry?.sizeBytes;
+    if (!isSizeBytes(value)) {
+        throw forbidden(`Uploaded size does not match manifest for ${entry?.path}`);
+    }
+    return Number(value);
+}
+
+function isSizeBytes(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return false;
+    }
+    return Number.isSafeInteger(Number(value));
 }
 
 export function uploadEntry(plan, syncPath) {

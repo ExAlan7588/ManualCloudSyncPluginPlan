@@ -191,7 +191,7 @@ export class TtSyncStorage {
         const latest = await this.readPlan(plan.id);
         const latestEntry = uploadEntry(latest, entry.path);
         const result = await writeRequestStreamAtomic({
-            expectedBytes: Number(latestEntry.sizeBytes),
+            expectedBytes: latestEntry.sizeBytes,
             expectedSha256: latestEntry.sha256 || '',
             filePath: this.stagedFilePath(latest.id, latestEntry.path),
             maxBytes,

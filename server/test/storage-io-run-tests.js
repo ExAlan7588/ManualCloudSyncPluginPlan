@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { readJson, writeFileAtomic } from '../lib/storage-io.js';
+import { Readable } from 'node:stream';
+import { writeRequestStreamAtomic } from '../lib/stream-io.js';
+import { readJson, validateStagedBuffer, writeFileAtomic } from '../lib/storage-io.js';
 
 await testReadJsonLabelsMalformedStorageFile();
 await testWriteFileAtomicCleansTempFileAfterRenameFailure();
+await testValidateStagedBufferRejectsMalformedSizeBytes();
+await testWriteRequestStreamRejectsMalformedExpectedBytes();
 console.log('ok - storage IO errors include context and clean temp files');
 
 async function testReadJsonLabelsMalformedStorageFile() {
@@ -32,6 +36,32 @@ async function testWriteFileAtomicCleansTempFileAfterRenameFailure() {
         );
         const names = await readdir(path.dirname(rootDir));
         assert.equal(names.some(name => name.startsWith(path.basename(rootDir)) && name.endsWith('.tmp')), false);
+    } finally {
+        await rm(rootDir, { force: true, recursive: true });
+    }
+}
+
+async function testValidateStagedBufferRejectsMalformedSizeBytes() {
+    assert.throws(
+        () => validateStagedBuffer({ path: 'default-user/chats/example.jsonl', sizeBytes: '0x10' }, Buffer.alloc(16)),
+        /Uploaded size does not match manifest/,
+    );
+}
+
+async function testWriteRequestStreamRejectsMalformedExpectedBytes() {
+    const rootDir = await mkdtemp(path.join(tmpdir(), 'tt-sync-stream-io-test-'));
+    try {
+        await assert.rejects(
+            writeRequestStreamAtomic({
+                expectedBytes: '0x10',
+                expectedSha256: '',
+                filePath: path.join(rootDir, 'upload.bin'),
+                maxBytes: 32,
+                stream: Readable.from([Buffer.alloc(16)]),
+                syncPath: 'default-user/chats/example.jsonl',
+            }),
+            /Uploaded size does not match manifest/,
+        );
     } finally {
         await rm(rootDir, { force: true, recursive: true });
     }

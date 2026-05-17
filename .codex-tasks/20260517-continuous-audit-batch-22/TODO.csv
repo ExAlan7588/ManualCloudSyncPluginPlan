@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 22 audit finding,done,Storage upload size validation accepts non-decimal sizeBytes
+2,Add regression coverage,done,Reject malformed buffer and stream expected sizeBytes
+3,Implement strict upload sizeBytes validation,done,Avoid Number coercion in upload size comparisons
+4,Run focused and full validation,done,Focused storage IO test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 22 files and related code changes

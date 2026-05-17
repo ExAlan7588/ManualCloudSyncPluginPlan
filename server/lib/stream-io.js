@@ -55,10 +55,28 @@ function countBytesTransform(options) {
 }
 
 function validateCompletedStream(options) {
-    if (options.actualBytes !== Number(options.expectedBytes)) {
+    if (options.actualBytes !== expectedSizeBytes(options)) {
         throw forbidden(`Uploaded size does not match manifest for ${options.syncPath}`);
     }
     if (options.expectedSha256 && options.actualSha256 !== options.expectedSha256) {
         throw forbidden(`Uploaded sha256 does not match manifest for ${options.syncPath}`);
     }
+}
+
+function expectedSizeBytes(options) {
+    const value = options.expectedBytes;
+    if (!isSizeBytes(value)) {
+        throw forbidden(`Uploaded size does not match manifest for ${options.syncPath}`);
+    }
+    return Number(value);
+}
+
+function isSizeBytes(value) {
+    if (typeof value === 'number') {
+        return Number.isSafeInteger(value) && value >= 0;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
+        return false;
+    }
+    return Number.isSafeInteger(Number(value));
 }
