@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit HTTP body read failure paths,DONE,Concrete oversized-body edge case is identified,source inspection,2026-05-17T21:05:00+08:00,0,readRawBody rejected on limit but left late stream events unguarded and untested.
+2,Harden readRawBody completion handling,DONE,Only the first resolve/reject path settles the body read,git diff --check,2026-05-17T21:05:27+08:00,0,Added settled guard around data/end/error terminal paths.
+3,Add oversized body coverage,DONE,Body limit rejection is tested with env override,timeout 60s node server/test/http-helpers-run-tests.js,2026-05-17T21:05:27+08:00,0,Added TT_SYNC_MAX_BODY_BYTES oversized JSON regression.
+4,Run full validation,DONE,Focused test plus check/test pass within 60 seconds,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:06:06+08:00,0,Focused HTTP helper test check and full npm test passed.
+5,Commit batch and report hash,IN_PROGRESS,Only batch changes are committed with hash reported,git status --short && git rev-parse HEAD,,0,

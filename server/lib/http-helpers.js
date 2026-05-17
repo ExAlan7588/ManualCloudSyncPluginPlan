@@ -68,17 +68,34 @@ export function maxBodyBytes() {
 function readRawBody(request) {
     return new Promise((resolve, reject) => {
         const chunks = [];
+        let settled = false;
         let size = 0;
         request.on('data', chunk => {
+            if (settled) {
+                return;
+            }
             size += chunk.length;
             if (size > maxBodyBytes()) {
+                settled = true;
                 reject(badRequest('Request body is too large'));
                 request.destroy();
                 return;
             }
             chunks.push(chunk);
         });
-        request.on('end', () => resolve(Buffer.concat(chunks)));
-        request.on('error', reject);
+        request.on('end', () => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            resolve(Buffer.concat(chunks));
+        });
+        request.on('error', error => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            reject(error);
+        });
     });
 }
