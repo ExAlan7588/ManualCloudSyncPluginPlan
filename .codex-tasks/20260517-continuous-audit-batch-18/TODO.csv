@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 18 audit finding,done,Runtime server port parsing accepts non-decimal syntax
+2,Add regression coverage,done,Pairing URI rejects malformed port values
+3,Implement strict runtime port parsing,done,Allow decimal integers 0 through 65535 only
+4,Run focused and full validation,done,Focused TT-Sync server entrypoint test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 18 files and related code changes

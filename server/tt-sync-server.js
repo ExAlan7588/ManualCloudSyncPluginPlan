@@ -13,6 +13,9 @@ const DEFAULT_NAMESPACE = 'default';
 const DEFAULT_DATA_DIR = '.tt-sync-data';
 const TLS_CERT_ENV = 'TT_SYNC_TLS_CERT_PATH';
 const TLS_KEY_ENV = 'TT_SYNC_TLS_KEY_PATH';
+const MIN_SERVER_PORT = 0;
+const MAX_TCP_PORT = 65535;
+const SERVER_PORT_ERROR = `server port must be a decimal TCP port number from ${MIN_SERVER_PORT} to ${MAX_TCP_PORT}`;
 
 export function createTtSyncServer(options = {}) {
     const storage = new TtSyncStorage({
@@ -23,7 +26,7 @@ export function createTtSyncServer(options = {}) {
 
 export async function startServer(options = {}) {
     const host = options.host || process.env.TT_SYNC_HOST || DEFAULT_HOST;
-    const port = Number(options.port ?? process.env.TT_SYNC_PORT ?? DEFAULT_PORT);
+    const port = serverPort(options);
     const server = createTtSyncServer(options);
     await new Promise((resolve, reject) => {
         server.once('error', reject);
@@ -65,8 +68,24 @@ async function main() {
 
 function listenerUrl(options) {
     const host = options.host || process.env.TT_SYNC_HOST || DEFAULT_HOST;
-    const port = Number(options.port ?? process.env.TT_SYNC_PORT ?? DEFAULT_PORT);
+    const port = serverPort(options);
     return `${serverProtocol(options)}://${host}:${port}`;
+}
+
+function serverPort(options) {
+    return parseServerPort(options.port ?? process.env.TT_SYNC_PORT ?? DEFAULT_PORT);
+}
+
+function parseServerPort(value) {
+    const text = String(value ?? '').trim();
+    if (!/^\d+$/.test(text)) {
+        throw new Error(SERVER_PORT_ERROR);
+    }
+    const port = Number(text);
+    if (!Number.isSafeInteger(port) || port < MIN_SERVER_PORT || port > MAX_TCP_PORT) {
+        throw new Error(SERVER_PORT_ERROR);
+    }
+    return port;
 }
 
 function createListener(handler, options) {

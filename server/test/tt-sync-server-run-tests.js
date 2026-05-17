@@ -5,6 +5,7 @@ const TEST_TOKEN = 'test-pairing-token';
 
 await testPairingUriUsesHttpsWhenTlsIsConfigured();
 await testPairingUriRejectsIncompleteTlsConfig();
+await testPairingUriRejectsNonDecimalPort();
 console.log('ok - TT-Sync server TLS entrypoint config');
 
 async function testPairingUriUsesHttpsWhenTlsIsConfigured() {
@@ -22,5 +23,12 @@ async function testPairingUriRejectsIncompleteTlsConfig() {
     assert.throws(
         () => buildPairingUri({ tlsCertPath: '/tmp/cert.pem', token: TEST_TOKEN }),
         /TT_SYNC_TLS_CERT_PATH and TT_SYNC_TLS_KEY_PATH must be set together/,
+    );
+}
+
+async function testPairingUriRejectsNonDecimalPort() {
+    assert.throws(
+        () => buildPairingUri({ port: '0x2500', token: TEST_TOKEN }),
+        /server port must be a decimal TCP port number/,
     );
 }
