@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit sync path input coercion,DONE,Finding recorded in PROGRESS.md,test -f .codex-tasks/20260517-continuous-audit-batch-131/PROGRESS.md,2026-05-17T00:00:00Z,0,
+2,Add failing regression coverage,DONE,Non-string sync paths are covered by tests,node server/test/encoding-run-tests.js,2026-05-17T00:00:00Z,0,Failed before fix as expected
+3,Apply minimal validation fix,DONE,Shared validator rejects non-string sync paths,node server/test/encoding-run-tests.js,2026-05-17T00:00:00Z,0,Added explicit non-string guard in validateSyncPath
+4,Run validation and commit,DONE,Check/test/diff validation pass and commit is created,timeout 60s npm test,2026-05-17T00:00:00Z,0,Validation passed and ready to commit

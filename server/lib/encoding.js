@@ -31,7 +31,13 @@ export function decodePath(value) {
 }
 
 export function validateSyncPath(value) {
-    const path = String(value || '').trim();
+    if (value === undefined || value === null || value === '') {
+        throw badRequest('Sync path is required');
+    }
+    if (typeof value !== 'string') {
+        throw badRequest('Sync path must be a string');
+    }
+    const path = value.trim();
     if (!path) {
         throw badRequest('Sync path is required');
     }

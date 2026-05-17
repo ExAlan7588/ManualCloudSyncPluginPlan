@@ -22,6 +22,7 @@ function testSyncPathValidation() {
     assert.throws(() => validateSyncPath('../secret'), /Invalid sync path/);
     assert.throws(() => validateSyncPath('default-user//chat.jsonl'), /Invalid sync path/);
     assert.throws(() => validateSyncPath('default-user/user/lan-sync/state.json'), /excluded from TT-Sync/);
+    assert.throws(() => validateSyncPath(123), /Sync path must be a string/);
 }
 
 function testEncodedPathRejectsInvalidBase64Url() {
