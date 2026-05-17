@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 38 audit finding,done,Routes authenticate normalized namespace but pass raw namespace afterward
+2,Add regression coverage,done,Focused routes test fails before fix because session response keeps raw namespace
+3,Implement route namespace normalization,done,Session and plan routes pass normalized namespace after auth
+4,Run focused and full validation,done,Focused routes test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 38 files and related code changes

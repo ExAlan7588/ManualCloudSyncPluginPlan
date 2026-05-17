@@ -139,8 +139,9 @@ async function handleSession(context) {
         });
         return sendJson(context.response, tauriSessionResponse(await context.storage.openSession(namespace, sessionBody.deviceId)));
     }
-    await authenticate(context, body.namespace);
-    return sendJson(context.response, await context.storage.openSession(body.namespace, body.deviceId));
+    const namespace = safeName(body.namespace || 'default', 'namespace');
+    await authenticate(context, namespace);
+    return sendJson(context.response, await context.storage.openSession(namespace, body.deviceId));
 }
 
 async function handleDevices(context, url) {
@@ -179,9 +180,10 @@ async function handlePlan(context, kind) {
         await context.storage.savePlan(plan);
         return sendJson(context.response, tauriPlanResponse(plan));
     }
-    await authenticate(context, body.namespace);
-    const remoteManifest = await context.storage.readManifest(body.namespace);
-    const plan = buildPlan({ ...body, kind, remoteManifest });
+    const namespace = safeName(body.namespace || 'default', 'namespace');
+    await authenticate(context, namespace);
+    const remoteManifest = await context.storage.readManifest(namespace);
+    const plan = buildPlan({ ...body, kind, namespace, remoteManifest });
     await context.storage.savePlan(plan);
     return sendJson(context.response, planSummary(plan));
 }

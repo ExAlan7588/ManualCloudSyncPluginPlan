@@ -6,6 +6,8 @@ const VALID_SPKI_PIN = Buffer.alloc(32, 1).toString('base64url');
 
 await testAccountPairingUriRejectsUnsupportedEndpointScheme();
 await testAccountPairingUriRejectsMalformedSpkiPin();
+await testSessionOpenUsesNormalizedNamespace();
+await testPlanRouteUsesNormalizedNamespace();
 console.log('ok - routes validate account pairing URI inputs');
 
 async function testAccountPairingUriRejectsUnsupportedEndpointScheme() {
@@ -46,6 +48,48 @@ async function testAccountPairingUriRejectsMalformedSpkiPin() {
     });
     assert.equal(response.statusCode, 400);
     assert.match(JSON.parse(response.body).error, /spki must be a base64url SHA-256 pin/);
+}
+
+async function testSessionOpenUsesNormalizedNamespace() {
+    const response = await dispatch({
+        body: { deviceId: 'device-1', namespace: ' default ' },
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async openSession(namespace, deviceId) {
+                return { deviceId, namespace };
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: '/v2/session/open',
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(JSON.parse(response.body).namespace, 'default');
+}
+
+async function testPlanRouteUsesNormalizedNamespace() {
+    const response = await dispatch({
+        body: { deviceId: 'device-1', localManifest: [], namespace: ' default ' },
+        headers: { authorization: 'Bearer token' },
+        method: 'POST',
+        storage: {
+            async readManifest(namespace) {
+                assert.equal(namespace, 'default');
+                return [];
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+            async savePlan(plan) {
+                return plan;
+            },
+        },
+        url: '/v2/sync/push-plan',
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(JSON.parse(response.body).namespace, 'default');
 }
 
 async function dispatch(options) {
