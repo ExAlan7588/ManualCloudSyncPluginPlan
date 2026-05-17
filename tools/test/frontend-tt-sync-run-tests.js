@@ -17,6 +17,7 @@ import {
 } from '../../modules/webdav-compat.js';
 import {
     diffSummaryRows,
+    serverStatus,
     transferSummaryRows,
 } from '../../modules/tt-sync-view.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
@@ -70,6 +71,7 @@ const tests = [
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['TT-Sync progress UI ignores malformed numeric payloads', testProgressIgnoresMalformedNumericPayloads],
     ['TT-Sync summary UI ignores malformed numeric payloads', testSummaryIgnoresMalformedNumericPayloads],
+    ['TT-Sync server status preserves malformed timestamp text', testServerStatusPreservesMalformedTimestamp],
     ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
     ['WebDAV manifest rejects uppercase SHA-256', testWebDavManifestRejectsUppercaseSha256],
     ['WebDAV manifest rejects null sizeBytes', testWebDavManifestRejectsNullSizeBytes],
@@ -226,6 +228,16 @@ function testSummaryIgnoresMalformedNumericPayloads() {
     assertProgressRow(diffRows, '上傳檔案', '未回傳');
     assertProgressRow(diffRows, '上傳大小', '未回傳');
     assertProgressRow(diffRows, '衝突檔案', '未回傳');
+}
+
+function testServerStatusPreservesMalformedTimestamp() {
+    const status = serverStatus({
+        base_url: 'https://sync.example.test',
+        last_sync_ms: '0x10',
+        permissions: { mirror_delete: true, read: true, write: true },
+    });
+    assert.ok(status.includes('最後同步：0x10'));
+    assert.equal(status.includes('1970-'), false);
 }
 
 function assertProgressRow(rows, label, expected) {

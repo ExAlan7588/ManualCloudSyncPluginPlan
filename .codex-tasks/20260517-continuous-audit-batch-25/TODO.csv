@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 25 audit finding,done,Timestamp display accepts malformed numeric strings
+2,Add regression coverage,done,Malformed last_sync_ms remains visible as raw text
+3,Implement strict timestamp parsing,done,Allow non-negative integers and decimal digit strings only
+4,Run focused and full validation,done,Focused frontend TT-Sync test npm run check and npm test passed
+5,Commit batch changes,done,Commit only batch 25 files and related code changes

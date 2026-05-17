@@ -372,7 +372,7 @@ function optionElement(value, text) {
 }
 
 function timestampText(value) {
-    const number = Number(value);
+    const number = nonNegativeIntegerValue(value);
     if (!Number.isFinite(number)) {
         return stringValue(value);
     }
