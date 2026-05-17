@@ -2,9 +2,10 @@ const PLAN_SIZE_BYTES_ERROR = 'Invalid plan sizeBytes';
 
 export function planSummary(plan) {
     const fields = planFields(plan);
+    const kind = planKind(plan);
     return {
         id: plan.id,
-        kind: plan.kind,
+        kind,
         ok: Boolean(plan.committedAt),
         namespace: plan.namespace,
         uploads: fields.uploads,
@@ -16,7 +17,7 @@ export function planSummary(plan) {
         progress: progressSummary({ ...plan, ...fields }),
         summary: {
             conflictFiles: fields.conflicts.length,
-            deleteFiles: plan.kind === 'push' ? fields.remoteDeletes.length : fields.localDeletes.length,
+            deleteFiles: kind === 'push' ? fields.remoteDeletes.length : fields.localDeletes.length,
             downloadBytes: sumBytes(fields.downloads),
             downloadFiles: fields.downloads.length,
             uploadBytes: sumBytes(fields.uploads.filter(entry => !entry.conflict)),
@@ -27,6 +28,7 @@ export function planSummary(plan) {
 
 export function progressSummary(plan) {
     const fields = planFields(plan);
+    const kind = planKind(plan);
     const totalFiles = fields.uploads.length + fields.downloads.length;
     const totalBytes = sumBytes([...fields.uploads, ...fields.downloads]);
     const staged = currentStagedEntries(fields);
@@ -37,7 +39,7 @@ export function progressSummary(plan) {
         committed,
         currentPath: currentProgressPath(fields),
         filesTransferred,
-        partial_upload_safe: plan.kind === 'push' && !committed,
+        partial_upload_safe: kind === 'push' && !committed,
         pending_files: Math.max(totalFiles - filesTransferred, 0),
         phase: progressPhase(plan, staged),
         staged_files: staged.length,
@@ -59,6 +61,13 @@ function planFields(plan) {
         staged: planStaged(plan.staged),
         uploads: planEntryArray(plan.uploads, 'uploads'),
     };
+}
+
+function planKind(plan) {
+    if (plan.kind !== 'push' && plan.kind !== 'pull') {
+        throw new Error('Invalid plan kind');
+    }
+    return plan.kind;
 }
 
 function planArray(value, label) {

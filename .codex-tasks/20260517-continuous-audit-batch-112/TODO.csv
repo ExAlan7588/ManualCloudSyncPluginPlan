@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed plan kind regression test,DONE,Test fails before fix because unknown kind is accepted,node server/test/plan-response-run-tests.js,2026-05-17,0,Initial currentPath hypothesis was invalid; kind test failed with missing expected exception
+2,Validate plan kind,DONE,Plan response summaries accept only push or pull kind,node server/test/plan-response-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

@@ -7,6 +7,7 @@ testProgressSummaryIgnoresUnplannedStagedEntries();
 testPlanSummaryRejectsMalformedSizeBytes();
 testPlanSummaryRejectsMalformedEntryPaths();
 testPlanSummaryRejectsMalformedConflicts();
+testPlanSummaryRejectsMalformedKind();
 testPlanSummaryRejectsMalformedArrays();
 testPlanSummaryRejectsMalformedStagedMap();
 console.log('ok - plan response summaries preserve response shapes');
@@ -105,6 +106,17 @@ function testPlanSummaryRejectsMalformedConflicts() {
     assert.throws(
         () => planSummary({ ...planFixture(), conflicts: [{ local: 'bad', path: 'conflict.txt' }] }),
         /Invalid plan conflicts entry/,
+    );
+}
+
+function testPlanSummaryRejectsMalformedKind() {
+    assert.throws(
+        () => planSummary({ ...planFixture(), kind: 'mirror' }),
+        /Invalid plan kind/,
+    );
+    assert.throws(
+        () => progressSummary({ ...planFixture(), kind: '' }),
+        /Invalid plan kind/,
     );
 }
 
