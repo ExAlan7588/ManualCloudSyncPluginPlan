@@ -21,6 +21,7 @@ await testFileRouteRejectsMalformedPlanModifiedMsBeforeStat();
 await testBundleRouteRejectsMalformedPlanSizeBytesBeforeRead();
 await testPairCompleteRejectsUnsafePairingUriEndpoints();
 await testPairCompleteRejectsUnsafeDirectEndpoints();
+await testPairCompleteRejectsMalformedDeviceName();
 await testTauriSessionRejectsMalformedDevices();
 console.log('ok - routes validate account pairing URI inputs');
 
@@ -371,6 +372,26 @@ async function testPairCompleteRejectsUnsafeDirectEndpoints() {
         assert.equal(response.statusCode, 400);
         assert.match(JSON.parse(response.body).error, /endpoint must/);
     }
+}
+
+async function testPairCompleteRejectsMalformedDeviceName() {
+    const response = await dispatch({
+        body: {
+            deviceName: { value: 'phone' },
+            endpoint: 'https://sync.example.test',
+            namespace: 'default',
+            token: 'token',
+        },
+        method: 'POST',
+        storage: {
+            async completePairing() {
+                throw new Error('completePairing must not be called for malformed deviceName');
+            },
+        },
+        url: '/v2/pair/complete',
+    });
+    assert.equal(response.statusCode, 400);
+    assert.match(JSON.parse(response.body).error, /deviceName must be a string/);
 }
 
 async function testTauriSessionRejectsMalformedDevices() {

@@ -297,7 +297,7 @@ function normalizePairingBody(body) {
         return pairingBodyFromUri(body);
     }
     return {
-        deviceName: body.deviceName,
+        deviceName: pairingDeviceName(body),
         endpoint: directPairingEndpoint(body),
         namespace: safeName(body.namespace || 'default', 'namespace'),
         token: body.token,
@@ -360,7 +360,7 @@ function pairingBodyFromUri(body) {
     }
     const endpoint = pairingUriEndpoint(uri);
     return {
-        deviceName: body.deviceName,
+        deviceName: pairingDeviceName(body),
         endpoint,
         namespace: safeName(uri.searchParams.get('namespace') || 'default', 'namespace'),
         token: uri.searchParams.get('token') || '',
@@ -373,6 +373,17 @@ function pairingUriEndpoint(uri) {
         return '';
     }
     return parseHttpUrl(value, 'endpoint').toString().replace(/\/$/, '');
+}
+
+function pairingDeviceName(body) {
+    const value = body.deviceName;
+    if (value === undefined || value === null || value === '') {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        throw badRequest('deviceName must be a string');
+    }
+    return value.trim();
 }
 
 function parsePairingUri(value) {

@@ -9,7 +9,7 @@ export function addDevice(record, deviceName) {
     const devices = namespaceDevices(record);
     const device = {
         deviceId: randomUUID(),
-        deviceName: String(deviceName || '').trim(),
+        deviceName: deviceNameField(deviceName),
         pairedAt: new Date().toISOString(),
     };
     devices.push(device);
@@ -20,16 +20,17 @@ export function upsertDevice(record, input) {
     const devices = namespaceDevices(record);
     const deviceId = deviceIdField(input.deviceId);
     const publicKey = devicePublicKey(input.publicKey);
+    const deviceName = deviceNameField(input.deviceName);
     const existing = devices.find(device => device.deviceId === deviceId);
     if (existing) {
         Object.assign(existing, {
-            deviceName: input.deviceName,
+            deviceName,
             publicKey,
             pairedAt: existing.pairedAt || new Date().toISOString(),
         });
         return existing;
     }
-    const device = { ...input, deviceId, publicKey, pairedAt: new Date().toISOString() };
+    const device = { ...input, deviceId, deviceName, publicKey, pairedAt: new Date().toISOString() };
     devices.push(device);
     return device;
 }
@@ -110,6 +111,16 @@ function planArrayFields(plan) {
 
 function namespaceDevices(record) {
     return arrayField(record.devices, 'namespace devices');
+}
+
+function deviceNameField(value) {
+    if (value === undefined || value === null || value === '') {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        throw new Error('Invalid device name');
+    }
+    return value.trim();
 }
 
 function deviceIdField(value) {

@@ -17,6 +17,7 @@ testStorageRecordHelpers();
 testStorageRecordHelpersRejectMalformedArrays();
 testStorageRecordHelpersRejectMalformedPlanPaths();
 testDeviceHelpersRejectMalformedDevices();
+testDeviceHelpersRejectMalformedNames();
 testUpsertDeviceRejectsMalformedIdentity();
 testPairingResponseRejectsMalformedFields();
 console.log('ok - storage record helpers preserve response shapes');
@@ -107,6 +108,17 @@ function testDeviceHelpersRejectMalformedDevices() {
     assert.throws(
         () => touchDevice({ devices: {} }, 'device-1', {}),
         /Invalid namespace devices/,
+    );
+}
+
+function testDeviceHelpersRejectMalformedNames() {
+    assert.throws(
+        () => addDevice({ devices: [] }, { value: 'Phone' }),
+        /Invalid device name/,
+    );
+    assert.throws(
+        () => upsertDevice({ devices: [] }, { deviceId: SERVER_ID, deviceName: { value: 'Phone' }, publicKey: rawPublicKey() }),
+        /Invalid device name/,
     );
 }
 

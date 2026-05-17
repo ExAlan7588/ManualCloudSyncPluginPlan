@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Record audit finding,DONE,PROGRESS.md explains deviceName coercion risk,test -f .codex-tasks/20260517-continuous-audit-batch-133/PROGRESS.md,2026-05-17T00:00:00Z,0,
+2,Add failing regression coverage,DONE,Route and storage helper tests expose non-string deviceName handling,node server/test/routes-unit-run-tests.js,2026-05-17T00:00:00Z,0,Failed before fix as expected
+3,Apply minimal validation fix,DONE,Non-string deviceName is rejected before storage pollution,node server/test/storage-records-run-tests.js,2026-05-17T00:00:00Z,0,Validated route and storage helper device names
+4,Run validation and commit,DONE,Check/test/diff validation pass and commit is created,timeout 60s npm test,2026-05-17T00:00:00Z,0,Validation passed and ready to commit
