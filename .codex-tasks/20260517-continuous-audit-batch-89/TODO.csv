@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed account endpoint URL regression tests,DONE,Test fails before fix for non-http credentials and fragment endpoints,node tools/test/tt-sync-account-run-tests.js,2026-05-17,0,Failed before fix because unsafe endpoint was accepted
+2,Validate account endpoint scheme and clean URL shape,DONE,Invalid endpoint URLs throw existing URL format error,node tools/test/tt-sync-account-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,

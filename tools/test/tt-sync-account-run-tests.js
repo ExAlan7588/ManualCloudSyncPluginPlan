@@ -28,6 +28,7 @@ await testAccountRejectsMalformedPairingUri();
 await testAccountIgnoresMalformedPairingExpiry();
 await testAccountListFiltersMalformedTextFields();
 await testAccountRejectsMalformedListItems();
+await testAccountRejectsUnsafeEndpointUrls();
 console.log('ok - TT-Sync account validates session payloads');
 
 async function testAccountRejectsMalformedSessionToken() {
@@ -47,6 +48,26 @@ async function testAccountRejectsMalformedSessionToken() {
         assert.equal(elements.mcs_tts_account_status.textContent, '尚未登入');
     } finally {
         restore();
+    }
+}
+
+async function testAccountRejectsUnsafeEndpointUrls() {
+    for (const endpoint of [
+        'tt-sync://sync.example.test',
+        'https://user:pass@sync.example.test',
+        'https://sync.example.test#fragment',
+    ]) {
+        const { elements, fetch, restore } = installAccountPanelFixture(ACCOUNT_PANEL_IDS, {});
+        try {
+            elements.mcs_tts_account_endpoint.value = endpoint;
+            bindTtSyncAccountPanel({ fetch, runAction: runAccountPanelAction });
+            await assert.rejects(
+                elements.mcs_tts_account_login.handlers.click(),
+                /帳號服務端 URL 格式不正確/,
+            );
+        } finally {
+            restore();
+        }
     }
 }
 

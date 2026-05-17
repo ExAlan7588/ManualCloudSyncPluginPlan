@@ -254,10 +254,21 @@ function requiredUrl(selector, message) {
 
 function parseRequiredUrl(value) {
     try {
-        return new URL(value);
+        const url = new URL(value);
+        if (!isAccountEndpointUrl(url)) {
+            throw new Error();
+        }
+        return url;
     } catch {
         throw new Error('帳號服務端 URL 格式不正確');
     }
+}
+
+function isAccountEndpointUrl(url) {
+    return (url.protocol === 'http:' || url.protocol === 'https:')
+        && !url.username
+        && !url.password
+        && !url.hash;
 }
 
 function requiredValue(selector, message) {
