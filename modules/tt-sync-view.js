@@ -261,10 +261,19 @@ function diffSummaryFrom(payload) {
 }
 
 function conflictListFrom(payload) {
-    const conflicts = firstValue(payload, ['conflicts'])
-        || firstValue(payload?.diff, ['conflicts'])
-        || firstValue(payload?.plan, ['conflicts']);
-    return Array.isArray(conflicts) ? conflicts : [];
+    const candidates = [
+        firstValue(payload, ['conflicts']),
+        firstValue(payload?.diff, ['conflicts']),
+        firstValue(payload?.plan, ['conflicts']),
+    ];
+    const conflicts = candidates.find(value => value !== undefined);
+    if (conflicts === undefined) {
+        return [];
+    }
+    if (!Array.isArray(conflicts)) {
+        throw new Error('TT-Sync 衝突列表格式不正確');
+    }
+    return conflicts;
 }
 
 function hasVisibleRows(rows) {
