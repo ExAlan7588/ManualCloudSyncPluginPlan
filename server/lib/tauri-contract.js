@@ -77,13 +77,13 @@ export function verifyTauriSessionRequest(options) {
 
 export function tauriSessionResponse(opened) {
     return {
-        expires_at_ms: Date.parse(opened.session.expiresAt),
+        expires_at_ms: tauriSessionExpirationMs(opened.session.expiresAt),
         granted_permissions: {
             mirror_delete: true,
             read: true,
             write: true,
         },
-        session_token: opened.session.accessToken,
+        session_token: tauriSessionToken(opened.session.accessToken),
     };
 }
 
@@ -156,6 +156,21 @@ function assertFreshTimestamp(timestampMs) {
     if (!Number.isSafeInteger(timestamp) || deltaMs > SESSION_TIMESTAMP_WINDOW_MS) {
         throw unauthorized('TT-Sync session timestamp is outside the allowed window');
     }
+}
+
+function tauriSessionExpirationMs(value) {
+    const timestamp = Date.parse(value);
+    if (!Number.isSafeInteger(timestamp)) {
+        throw new Error('Invalid Tauri session expiration');
+    }
+    return timestamp;
+}
+
+function tauriSessionToken(value) {
+    if (typeof value !== 'string' || !value.trim()) {
+        throw new Error('Invalid Tauri session token');
+    }
+    return value;
 }
 
 function publicKeyFromRaw(publicKey) {

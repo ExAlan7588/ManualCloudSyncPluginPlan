@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add regression coverage for malformed Tauri session response fields,DONE,Focused unit test fails before implementation,node server/test/tauri-contract-unit-run-tests.js,2026-05-17,0,Failed before implementation with missing expected exception
+2,Validate Tauri session token and expiration before serialization,DONE,Malformed session fields throw explicit errors,node server/test/tauri-contract-unit-run-tests.js,2026-05-17,0,Focused test passes after session response validation
+3,Run full validation,DONE,check/test/diff validation pass,"timeout 60s npm run check && timeout 60s npm test && git diff --check",2026-05-17,0,All validation commands passed
+4,Commit batch changes,IN_PROGRESS,Commit contains only batch 120 files,git status --short,,0,
