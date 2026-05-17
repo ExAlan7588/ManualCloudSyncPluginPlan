@@ -359,7 +359,7 @@ export class TtSyncStorage {
         record.pairingTokens = prunePairingTokens(record.pairingTokens || []);
         await mkdir(path.join(this.namespaceDir(namespace), 'files'), { recursive: true });
         await writeJsonAtomic(this.namespacePath(namespace), record);
-        await writeJsonAtomic(this.manifestPath(namespace), await this.readManifest(namespace).catch(() => []));
+        await writeJsonAtomic(this.manifestPath(namespace), await this.readManifest(namespace));
     }
 
     async commitPushPlan(plan, decisions) {

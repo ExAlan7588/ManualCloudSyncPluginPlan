@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { TtSyncStorage } from '../lib/storage.js';
 
 await testCommitPlanRejectsStaleSnapshot();
-console.log('ok - storage commit rejects stale plan snapshots');
+await testWriteNamespaceSurfacesMalformedManifest();
+console.log('ok - storage commit rejects stale snapshots and surfaces malformed manifests');
 
 async function testCommitPlanRejectsStaleSnapshot() {
     await withStorage(async storage => {
@@ -33,6 +34,20 @@ async function testCommitPlanRejectsStaleSnapshot() {
             storage.commitPlan(staleSnapshot, {}),
             /Plan already committed: plan-1/,
         );
+    });
+}
+
+async function testWriteNamespaceSurfacesMalformedManifest() {
+    await withStorage(async storage => {
+        await storage.writeNamespace('default', await storage.createNamespace('default'));
+        const manifestPath = storage.manifestPath('default');
+        await writeFile(manifestPath, '{ broken');
+
+        await assert.rejects(
+            storage.writeNamespace('default', await storage.readNamespace('default')),
+            /Storage JSON is invalid:/,
+        );
+        assert.equal(await readFile(manifestPath, 'utf8'), '{ broken');
     });
 }
 
