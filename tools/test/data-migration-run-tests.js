@@ -2,13 +2,16 @@ import assert from 'node:assert/strict';
 import { importArchiveBlob } from '../../modules/data-migration.js';
 
 const originalFetch = globalThis.fetch;
+const originalSetTimeout = globalThis.setTimeout;
 
 try {
     await testImportRejectsMalformedJobId();
+    await testImportRejectsMalformedJobState();
     await testImportStatusRejectsMalformedTextValues();
-    console.log('ok - data migration validates job id and status text');
+    console.log('ok - data migration validates job payloads');
 } finally {
     restoreGlobal('fetch', originalFetch);
+    restoreGlobal('setTimeout', originalSetTimeout);
 }
 
 async function testImportRejectsMalformedJobId() {
@@ -22,6 +25,29 @@ async function testImportRejectsMalformedJobId() {
     await assert.rejects(
         importArchiveBlob(new Blob(['zip']), 'sync.zip', { setStatus() {} }),
         /資料匯入 job id 缺失/,
+    );
+}
+
+async function testImportRejectsMalformedJobState() {
+    let jobPolls = 0;
+    globalThis.setTimeout = fn => {
+        fn();
+        return 0;
+    };
+    globalThis.fetch = async url => {
+        if (String(url).includes('/job?')) {
+            jobPolls += 1;
+            if (jobPolls > 1) {
+                throw new Error('invalid state was polled again');
+            }
+            return jsonResponse({ state: { value: 'completed' } });
+        }
+        return jsonResponse({ job_id: 'job-1' });
+    };
+
+    await assert.rejects(
+        importArchiveBlob(new Blob(['zip']), 'sync.zip', { setStatus() {} }),
+        /資料遷移 job 狀態格式不正確/,
     );
 }
 

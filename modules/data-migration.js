@@ -107,8 +107,9 @@ async function shareIosDataArchive(jobId) {
 async function pollDataArchiveJob(options) {
     while (true) {
         const status = await fetchDataArchiveJob(options.jobId);
+        const state = requireJobState(status);
         updateStatusFromDataArchiveJob(status, options.setStatus);
-        if (TERMINAL_JOB_STATES.has(status.state)) {
+        if (TERMINAL_JOB_STATES.has(state)) {
             return status;
         }
         await sleep(JOB_POLL_INTERVAL_MS);
@@ -148,6 +149,14 @@ function isStatusTextValue(value) {
         return Number.isFinite(value);
     }
     return typeof value === 'bigint' || typeof value === 'string';
+}
+
+function requireJobState(status) {
+    const state = status?.state;
+    if (typeof state !== 'string' || !state || state.trim() !== state) {
+        throw new Error('資料遷移 job 狀態格式不正確');
+    }
+    return state;
 }
 
 async function postJson(url, body, label = '資料遷移 API') {
