@@ -1,0 +1,6 @@
+id,task,status,completed_at,notes
+1,Record audit finding and scope,DONE,2026-05-17,Finding recorded in SPEC.md
+2,Add focused failing test for malformed status text,DONE,2026-05-17,Focused test fails before implementation with object and boolean text output
+3,Implement data migration status text filtering,DONE,2026-05-17,Status rendering ignores malformed non-scalar text values
+4,Run focused and full validation,DONE,2026-05-17,Focused test npm run check npm test and git diff --check pass
+5,Commit batch changes,IN_PROGRESS,,

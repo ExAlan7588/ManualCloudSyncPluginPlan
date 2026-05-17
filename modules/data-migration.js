@@ -129,11 +129,25 @@ async function fetchDataArchiveJob(jobId) {
 
 function updateStatusFromDataArchiveJob(status, setStatus) {
     const parts = [status?.stage, formatProgress(status?.progress_percent), status?.message]
-        .map(value => String(value || '').trim())
+        .map(statusText)
         .filter(Boolean);
     if (parts.length > 0) {
         setStatus(parts.join(' | '));
     }
+}
+
+function statusText(value) {
+    if (!isStatusTextValue(value)) {
+        return '';
+    }
+    return String(value || '').trim();
+}
+
+function isStatusTextValue(value) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value);
+    }
+    return typeof value === 'bigint' || typeof value === 'string';
 }
 
 async function postJson(url, body, label = '資料遷移 API') {
