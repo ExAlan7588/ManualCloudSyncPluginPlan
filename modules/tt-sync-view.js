@@ -164,7 +164,7 @@ function validatedServerList(servers) {
 }
 
 function isServerItem(value) {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
+    return isRecordObject(value);
 }
 
 export function serverIdOf(server) {
@@ -305,7 +305,18 @@ function conflictListFrom(payload) {
     if (!Array.isArray(conflicts)) {
         throw new Error('TT-Sync 衝突列表格式不正確');
     }
+    if (!conflicts.every(isConflictItem)) {
+        throw new Error('TT-Sync 衝突列表格式不正確');
+    }
     return conflicts;
+}
+
+function isConflictItem(value) {
+    return isRecordObject(value);
+}
+
+function isRecordObject(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function hasVisibleRows(rows) {
