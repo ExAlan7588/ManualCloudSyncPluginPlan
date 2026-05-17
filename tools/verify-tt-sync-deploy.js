@@ -36,7 +36,7 @@ export async function verifyTtSyncDeploy(options = {}) {
         allowPlaceholders,
         checks,
         envPath: input.envPath,
-        publicUrl: firstValue(env, 'TT_SYNC_PUBLIC_URL'),
+        publicUrl: envValue(env, 'TT_SYNC_PUBLIC_URL'),
         servicePath: input.servicePath,
     });
 }
@@ -114,11 +114,11 @@ function envChecks(options) {
     const tls = tlsValues(options.env);
     return [
         check('env quoted values are well formed', noQuoteErrors(options.env), 'quoted env values must use matching quotes'),
-        ...REQUIRED_ENV_KEYS.map(key => check(`env ${key}`, hasText(firstValue(options.env, key)), `${key} must be set`)),
-        check('env data dir is absolute', path.isAbsolute(firstValue(options.env, 'TT_SYNC_DATA_DIR')), 'TT_SYNC_DATA_DIR must be absolute'),
-        check('env public URL', isHttpUrl(firstValue(options.env, 'TT_SYNC_PUBLIC_URL')), 'TT_SYNC_PUBLIC_URL must be http or https'),
-        check('env port', isValidPort(firstValue(options.env, 'TT_SYNC_PORT')), 'TT_SYNC_PORT must be a TCP port number'),
-        ...tlsChecks(tls, firstValue(options.env, 'TT_SYNC_PUBLIC_URL')),
+        ...REQUIRED_ENV_KEYS.map(key => check(`env ${key}`, hasText(envValue(options.env, key)), `${key} must be set`)),
+        check('env data dir is absolute', path.isAbsolute(envValue(options.env, 'TT_SYNC_DATA_DIR')), 'TT_SYNC_DATA_DIR must be absolute'),
+        check('env public URL', isHttpUrl(envValue(options.env, 'TT_SYNC_PUBLIC_URL')), 'TT_SYNC_PUBLIC_URL must be http or https'),
+        check('env port', isValidPort(envValue(options.env, 'TT_SYNC_PORT')), 'TT_SYNC_PORT must be a TCP port number'),
+        ...tlsChecks(tls, envValue(options.env, 'TT_SYNC_PUBLIC_URL')),
         check('env pairing token is not placeholder', tokenAllowed(options), 'TT_SYNC_PAIRING_TOKEN must not be a placeholder in real env files'),
     ];
 }
@@ -138,6 +138,15 @@ function consistencyChecks(options) {
 
 function firstValue(entries, key) {
     return valuesFor(entries, key)[0] || '';
+}
+
+function lastValue(entries, key) {
+    const values = valuesFor(entries, key);
+    return values.at(-1) || '';
+}
+
+function envValue(entries, key) {
+    return lastValue(entries, key);
 }
 
 function valuesFor(entries, key) {
@@ -178,8 +187,8 @@ function tlsChecks(tls, publicUrl) {
 }
 
 function tlsValues(env) {
-    const certPath = firstValue(env, TLS_CERT_KEY);
-    const keyPath = firstValue(env, TLS_KEY_KEY);
+    const certPath = envValue(env, TLS_CERT_KEY);
+    const keyPath = envValue(env, TLS_KEY_KEY);
     return { certPath, hasAny: hasText(certPath) || hasText(keyPath), keyPath };
 }
 
@@ -192,7 +201,7 @@ function urlProtocol(value) {
 }
 
 function tokenAllowed(options) {
-    const token = firstValue(options.env, 'TT_SYNC_PAIRING_TOKEN');
+    const token = envValue(options.env, 'TT_SYNC_PAIRING_TOKEN');
     return hasText(token) && (options.allowPlaceholders || !PLACEHOLDER_TOKENS.has(token));
 }
 

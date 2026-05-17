@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit deploy verifier env parser,DONE,Concrete bug documented in SPEC.md,test -f .codex-tasks/20260517-continuous-audit-batch-9/SPEC.md,2026-05-17T21:22:52+08:00,0,Duplicate env key semantics mismatch found
+2,Add focused regression coverage,DONE,deploy-run-tests covers effective duplicate key value,timeout 60s node tools/test/deploy-run-tests.js,2026-05-17T21:24:44+08:00,0,Regression fails before fix and covers safe-first placeholder-last duplicate token
+3,Implement minimal verifier fix,DONE,Verifier uses effective env value without API changes,timeout 60s node tools/test/deploy-run-tests.js,2026-05-17T21:24:44+08:00,0,Env checks now read the last assignment while service checks keep first-value behavior
+4,Run full validation,DONE,check and test scripts pass,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:25:09+08:00,0,npm run check and npm test passed
+5,Commit batch changes,IN_PROGRESS,Git commit contains only batch 9 changes,git status --short,,0,Ready to commit after diff review at 2026-05-17T21:25:35+08:00

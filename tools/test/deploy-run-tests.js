@@ -4,6 +4,7 @@ import { verifyTtSyncDeploy } from '../verify-tt-sync-deploy.js';
 const tests = [
     ['deploy verifier accepts repo template placeholders explicitly', testDeployVerifierTemplate],
     ['deploy verifier rejects placeholder token for real env', testDeployVerifierRejectsPlaceholderToken],
+    ['deploy verifier checks effective duplicate env value', testDeployVerifierChecksEffectiveDuplicateEnvValue],
     ['deploy verifier rejects malformed env quotes', testDeployVerifierRejectsMalformedQuotes],
     ['deploy verifier accepts paired TLS env', testDeployVerifierAcceptsPairedTlsEnv],
     ['deploy verifier rejects incomplete TLS env', testDeployVerifierRejectsIncompleteTlsEnv],
@@ -29,6 +30,22 @@ async function testDeployVerifierTemplate() {
 
 async function testDeployVerifierRejectsPlaceholderToken() {
     const report = await verifyTtSyncDeploy();
+    assert.equal(report.ok, false);
+    assert.ok(report.failed.includes('env pairing token is not placeholder'));
+}
+
+async function testDeployVerifierChecksEffectiveDuplicateEnvValue() {
+    const report = await verifyTtSyncDeploy({
+        envText: [
+            'TT_SYNC_DATA_DIR=/var/lib/manual-cloud-tt-sync',
+            'TT_SYNC_HOST=0.0.0.0',
+            'TT_SYNC_PORT=9443',
+            'TT_SYNC_PUBLIC_URL=https://sync.example.com:9443',
+            'TT_SYNC_PAIRING_TOKEN=real-token-for-deploy',
+            'TT_SYNC_PAIRING_TOKEN=replace-with-strong-token',
+        ].join('\n'),
+        serviceText: serviceText(),
+    });
     assert.equal(report.ok, false);
     assert.ok(report.failed.includes('env pairing token is not placeholder'));
 }
