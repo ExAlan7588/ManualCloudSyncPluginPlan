@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add malformed alias selection test,DONE,Test fails before fix because malformed primary aliases shadow valid fallback aliases,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,Failed before fix with label falling back to server id
+2,Use validated first display alias,DONE,Server label and base URL select the first valid scalar alias,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,
+3,Stabilize auto-selected test server ports,DONE,Auto-selected server ports avoid Fetch-blocked ports,node server/test/run-tests.js,2026-05-17,0,Full validation exposed Fetch bad port before this fix
+4,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,First full test exposed source-contract adjustment needed; rerun passed

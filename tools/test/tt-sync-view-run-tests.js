@@ -15,6 +15,7 @@ testHasObjectPayloadRejectsArrays();
 testServerStatusRejectsMalformedPermissionText();
 testServerStatusRejectsMalformedPermissionContainers();
 testServerDisplayTextFiltersMalformedValues();
+testServerDisplayUsesValidFallbackAliases();
 testServerStatusTimestampBoundaryValues();
 testRenderConflictListRejectsMalformedConflicts();
 testRenderConflictListRejectsMalformedConflictItems();
@@ -92,6 +93,17 @@ function testServerDisplayTextFiltersMalformedValues() {
     assert.equal(label, 'server-1');
     assert.equal(status.includes('[object Object]'), false);
     assert.equal(status, '已選擇服務端');
+}
+
+function testServerDisplayUsesValidFallbackAliases() {
+    const label = serverLabel({
+        base_url: { value: 'https://shadow.example.test' },
+        baseUrl: 'https://sync.example.test',
+        server_device_id: 'server-1',
+        server_device_name: { value: 'Desktop' },
+        serverDeviceName: 'Desktop',
+    });
+    assert.equal(label, 'Desktop | https://sync.example.test');
 }
 
 function testServerStatusTimestampBoundaryValues() {

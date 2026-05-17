@@ -173,7 +173,11 @@ export function serverIdOf(server) {
 
 export function serverLabel(server) {
     return [
-        serverDisplayText(server?.server_device_name || server?.serverDeviceName || server?.name) || serverIdOf(server),
+        firstServerDisplayText([
+            server?.server_device_name,
+            server?.serverDeviceName,
+            server?.name,
+        ]) || serverIdOf(server),
         serverBaseUrl(server),
     ].filter(Boolean).join(' | ');
 }
@@ -189,7 +193,11 @@ export function serverStatus(server) {
 }
 
 export function serverBaseUrl(server) {
-    return serverDisplayText(server?.base_url || server?.baseUrl || server?.endpoint);
+    return firstServerDisplayText([
+        server?.base_url,
+        server?.baseUrl,
+        server?.endpoint,
+    ]);
 }
 
 export function selectedServerId() {
@@ -285,6 +293,16 @@ function serverDisplayText(value) {
         return '';
     }
     return String(value || '').trim();
+}
+
+function firstServerDisplayText(values) {
+    for (const value of values) {
+        const text = serverDisplayText(value);
+        if (text) {
+            return text;
+        }
+    }
+    return '';
 }
 
 function serverIdText(server) {
