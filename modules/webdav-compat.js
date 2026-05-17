@@ -405,7 +405,7 @@ function bytesToHex(bytes) {
 }
 
 function isSha256(value) {
-    return /^[a-fA-F0-9]{64}$/.test(String(value || ''));
+    return /^[a-f0-9]{64}$/.test(String(value || ''));
 }
 
 function isManifestName(name) {

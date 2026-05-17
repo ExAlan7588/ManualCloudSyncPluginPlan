@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit WebDAV manifest validation,DONE,Concrete manifest validation inconsistency is identified,source inspection,2026-05-17T21:11:00+08:00,0,Compat WebDAV SHA-256 accepted uppercase hex while server manifest requires lowercase.
+2,Implement stricter digest validation,DONE,Compat manifests require lowercase SHA-256 hex,git diff --check,2026-05-17T21:12:46+08:00,0,Compat SHA-256 regex now accepts lowercase hex only.
+3,Add focused regression coverage,DONE,Uppercase SHA-256 manifests are rejected,timeout 60s node tools/test/frontend-tt-sync-run-tests.js,2026-05-17T21:12:46+08:00,0,Added compatListQueue fixture test for uppercase SHA-256 rejection.
+4,Run full validation,DONE,Focused test plus check/test pass within 60 seconds,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:13:16+08:00,0,Focused frontend/WebDAV test check and full npm test passed.
+5,Commit batch and report hash,IN_PROGRESS,Only batch changes are committed with hash reported,git status --short && git rev-parse HEAD,,0,

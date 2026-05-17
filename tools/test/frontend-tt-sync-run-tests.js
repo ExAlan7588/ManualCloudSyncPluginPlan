@@ -5,12 +5,16 @@ import {
     progressRows,
     resetProgressTracker,
 } from '../../modules/tt-sync-progress.js';
+import { BACKEND_WEBDAV } from '../../modules/constants.js';
 import {
     backendCommandMissingMessage,
     isTtSyncCommandMissingError,
     normalizeError,
 } from '../../modules/errors.js';
-import { hrefFileName } from '../../modules/webdav-compat.js';
+import {
+    compatListQueue,
+    hrefFileName,
+} from '../../modules/webdav-compat.js';
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 
 const SETTINGS_HTML = new URL('../../settings.html', import.meta.url);
@@ -19,6 +23,8 @@ const INDEX_MODULE = new URL('../../index.js', import.meta.url);
 const TT_SYNC_ACCOUNT_MODULE = new URL('../../modules/tt-sync-account.js', import.meta.url);
 const TT_SYNC_MODULE = new URL('../../modules/tt-sync.js', import.meta.url);
 const TT_SYNC_VIEW_MODULE = new URL('../../modules/tt-sync-view.js', import.meta.url);
+const INVALID_SHA256_HEX = 'A'.repeat(64);
+const TEST_MANIFEST_SIZE_BYTES = 1;
 
 const REQUIRED_TT_SYNC_IDS = Object.freeze([
     'mcs_tts_account_devices',
@@ -59,6 +65,7 @@ const tests = [
     ['extension module name decode errors include context', testModuleNameDecodeErrorContext],
     ['TT-Sync progress UI derives percent speed and ETA', testProgressMetrics],
     ['WebDAV href decoding reports contextual errors', testWebDavHrefDecodeErrors],
+    ['WebDAV manifest rejects uppercase SHA-256', testWebDavManifestRejectsUppercaseSha256],
     ['TT-Sync missing backend commands show explicit no-mock error', testMissingTtSyncCommandError],
     ['frontend avoids load-time runtime hard dependencies', testNoLoadTimeRuntimeHardDependencies],
 ];
@@ -186,6 +193,76 @@ function testWebDavHrefDecodeErrors() {
         () => hrefFileName('/dav/cloud-sync/%E0%A4%A.manifest.json'),
         /WebDAV PROPFIND href 編碼不正確/,
     );
+}
+
+async function testWebDavManifestRejectsUppercaseSha256() {
+    const restoreGlobals = installWebDavQueueFixture({
+        manifest: {
+            createdAt: new Date().toISOString(),
+            file: 'sync-0102030405.zip',
+            formatVersion: 1,
+            sha256: INVALID_SHA256_HEX,
+            sizeBytes: TEST_MANIFEST_SIZE_BYTES,
+        },
+    });
+    try {
+        await assert.rejects(
+            compatListQueue(),
+            /同步 manifest 的 SHA-256 不正確/,
+        );
+    } finally {
+        restoreGlobals();
+    }
+}
+
+function installWebDavQueueFixture(options) {
+    const previousDomParser = globalThis.DOMParser;
+    const previousFetch = globalThis.fetch;
+    const previousLocalStorage = globalThis.localStorage;
+    globalThis.DOMParser = FakeDomParser;
+    globalThis.fetch = async url => webDavFixtureResponse(url, options.manifest);
+    globalThis.localStorage = {
+        getItem: () => JSON.stringify({
+            config: {
+                backend: BACKEND_WEBDAV,
+                endpoint: 'https://storage.example.test/dav',
+                remotePrefix: 'cloud-sync',
+                webdav: { authMode: 'basic', username: 'user' },
+            },
+            secrets: { webdavPassword: 'pass' },
+        }),
+    };
+    return () => {
+        restoreGlobal('DOMParser', previousDomParser);
+        restoreGlobal('fetch', previousFetch);
+        restoreGlobal('localStorage', previousLocalStorage);
+    };
+}
+
+function webDavFixtureResponse(url, manifest) {
+    if (String(url).endsWith('cloud-sync')) {
+        return new Response('<href>/dav/cloud-sync/sync-0102030405.manifest.json</href>', { status: 207 });
+    }
+    return new Response(JSON.stringify(manifest), { status: 200 });
+}
+
+function restoreGlobal(name, value) {
+    if (value === undefined) {
+        delete globalThis[name];
+        return;
+    }
+    globalThis[name] = value;
+}
+
+function FakeDomParser() {
+    this.parseFromString = text => ({
+        getElementsByTagName(name) {
+            if (name === 'parsererror') {
+                return [];
+            }
+            return [{ localName: 'href', textContent: text.match(/<href>(.*?)<\/href>/)?.[1] || '' }];
+        },
+    });
 }
 
 function testMissingTtSyncCommandError() {
