@@ -172,11 +172,11 @@ async function readJsonResponse(response, label) {
 }
 
 function requireJobId(payload, message) {
-    const jobId = String(payload?.job_id || '').trim();
-    if (!jobId) {
+    const jobId = payload?.job_id;
+    if (typeof jobId !== 'string' || !jobId.trim()) {
         throw new Error(message);
     }
-    return jobId;
+    return jobId.trim();
 }
 
 function sleep(ms) {

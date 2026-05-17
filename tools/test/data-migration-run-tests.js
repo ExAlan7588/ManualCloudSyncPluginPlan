@@ -4,10 +4,25 @@ import { importArchiveBlob } from '../../modules/data-migration.js';
 const originalFetch = globalThis.fetch;
 
 try {
+    await testImportRejectsMalformedJobId();
     await testImportStatusRejectsMalformedTextValues();
-    console.log('ok - data migration status filters malformed text');
+    console.log('ok - data migration validates job id and status text');
 } finally {
     restoreGlobal('fetch', originalFetch);
+}
+
+async function testImportRejectsMalformedJobId() {
+    globalThis.fetch = async url => {
+        if (String(url).includes('/import')) {
+            return jsonResponse({ job_id: { value: 'job-1' } });
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+    };
+
+    await assert.rejects(
+        importArchiveBlob(new Blob(['zip']), 'sync.zip', { setStatus() {} }),
+        /資料匯入 job id 缺失/,
+    );
 }
 
 async function testImportStatusRejectsMalformedTextValues() {
