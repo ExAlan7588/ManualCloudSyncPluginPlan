@@ -104,9 +104,9 @@ export function normalizeTauriPlanInput(options) {
 
 export function tauriPlanResponse(plan) {
     const transferLabel = plan.kind === 'push' ? 'uploads' : 'downloads';
-    const transfer = tauriPlanArray(plan[transferLabel], transferLabel);
+    const transfer = tauriPlanEntries(plan[transferLabel], transferLabel);
     const deletePaths = plan.mode === 'Mirror'
-        ? tauriPlanArray(plan.kind === 'push' ? plan.remoteDeletes : plan.localDeletes, plan.kind === 'push' ? 'remoteDeletes' : 'localDeletes')
+        ? tauriPlanDeletePaths(plan.kind === 'push' ? plan.remoteDeletes : plan.localDeletes, plan.kind === 'push' ? 'remoteDeletes' : 'localDeletes')
         : [];
     return {
         bytes_total: sumBytes(transfer),
@@ -198,6 +198,24 @@ function tauriPlanArray(value, label) {
         throw new Error(`Invalid Tauri plan ${label}`);
     }
     return value;
+}
+
+function tauriPlanEntries(value, label) {
+    return tauriPlanArray(value, label).map(entry => ({
+        ...entry,
+        path: tauriPlanPath(entry?.path, label),
+    }));
+}
+
+function tauriPlanDeletePaths(value, label) {
+    return tauriPlanArray(value, label).map(path => tauriPlanPath(path, label));
+}
+
+function tauriPlanPath(value, label) {
+    if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`Invalid Tauri plan ${label} path`);
+    }
+    return validateSyncPath(value);
 }
 
 function syncMode(value) {
