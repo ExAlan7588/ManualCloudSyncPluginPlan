@@ -68,6 +68,9 @@ function accountPanelFetch(historyItem, overrides) {
 
 function accountPanelPayload(pathname, historyItem, overrides) {
     if (pathname === '/v2/account/login') {
+        if (Object.hasOwn(overrides, 'login')) {
+            return overrides.login;
+        }
         return { accessToken: 'access-token', namespace: 'default', refreshToken: 'refresh-token' };
     }
     if (pathname === '/v2/devices') {

@@ -125,12 +125,15 @@ function pairingUriBody(state) {
 }
 
 function updateSession(state, response) {
-    state.accessToken = String(response.accessToken || '');
-    state.refreshToken = String(response.refreshToken || '');
-    state.namespace = String(response.namespace || accountNamespace());
-    if (!state.accessToken || !state.refreshToken) {
+    const accessToken = sessionText(response?.accessToken);
+    const refreshToken = sessionText(response?.refreshToken);
+    if (!accessToken || !refreshToken) {
         throw new Error('帳號登入回應缺少 token');
     }
+    const namespace = sessionNamespace(response);
+    state.accessToken = accessToken;
+    state.refreshToken = refreshToken;
+    state.namespace = namespace;
 }
 
 function renderAccountState(state, message = '') {
@@ -268,6 +271,24 @@ function requireRefreshToken(state) {
     if (!state.refreshToken) {
         throw new Error('請先登入 TT-Sync 帳號');
     }
+}
+
+function sessionText(value) {
+    return typeof value === 'string' ? value : '';
+}
+
+function sessionNamespace(response) {
+    if (!hasSessionField(response, 'namespace') || response.namespace === null || response.namespace === '') {
+        return accountNamespace();
+    }
+    if (typeof response.namespace !== 'string') {
+        throw new Error('帳號登入回應 namespace 格式不正確');
+    }
+    return response.namespace;
+}
+
+function hasSessionField(response, name) {
+    return response !== null && typeof response === 'object' && Object.hasOwn(response, name);
 }
 
 function expiryText(response) {
