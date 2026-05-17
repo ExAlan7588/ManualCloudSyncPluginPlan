@@ -129,11 +129,11 @@ export function normalizeCompatConfig(config) {
 
 export function normalizeCompatSecrets(secrets) {
     return {
-        webdavPassword: secrets?.webdavPassword || null,
-        webdavToken: secrets?.webdavToken || null,
-        s3AccessKey: secrets?.s3AccessKey || null,
-        s3SecretKey: secrets?.s3SecretKey || null,
-        s3SessionToken: secrets?.s3SessionToken || null,
+        webdavPassword: compatSecret(secrets?.webdavPassword, 'webdavPassword'),
+        webdavToken: compatSecret(secrets?.webdavToken, 'webdavToken'),
+        s3AccessKey: compatSecret(secrets?.s3AccessKey, 's3AccessKey'),
+        s3SecretKey: compatSecret(secrets?.s3SecretKey, 's3SecretKey'),
+        s3SessionToken: compatSecret(secrets?.s3SessionToken, 's3SessionToken'),
     };
 }
 
@@ -197,6 +197,16 @@ function readS3Config() {
 function optionalSecret(selector) {
     const value = String($(selector).val() || '').trim();
     return value ? value : null;
+}
+
+function compatSecret(value, label) {
+    if (value === undefined || value === null) {
+        return null;
+    }
+    if (typeof value !== 'string') {
+        throw new Error(`Invalid compat secret ${label}`);
+    }
+    return value.trim() || null;
 }
 
 function mergeCompatSecrets(storedSecrets, secretInputs) {
