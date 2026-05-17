@@ -449,7 +449,16 @@ function planEntries(entries, label) {
     if (!Array.isArray(entries)) {
         throw new Error(`Invalid plan ${label}`);
     }
-    return entries;
+    return entries.map(entry => {
+        assertPlanEntryPath(entry?.path, label);
+        return entry;
+    });
+}
+
+function assertPlanEntryPath(value, label) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        throw new Error(`Invalid plan ${label} path`);
+    }
 }
 
 async function writeProgressEvent(context, planId) {

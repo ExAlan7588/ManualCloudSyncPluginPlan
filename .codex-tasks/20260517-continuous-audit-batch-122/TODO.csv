@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add regression coverage for malformed route plan entry paths,DONE,Focused route unit test fails before implementation,node server/test/routes-unit-run-tests.js,2026-05-17,0,Failed before implementation because readRemoteFile was reached
+2,Validate route plan entry paths before storage IO,DONE,Malformed entry paths throw explicit errors,node server/test/routes-unit-run-tests.js,2026-05-17,0,Focused test passes after planEntries path assertion
+3,Run full validation,DONE,check/test/diff validation pass,"timeout 60s npm run check && timeout 60s npm test && git diff --check",2026-05-17,0,All validation commands passed
+4,Commit batch changes,IN_PROGRESS,Commit contains only batch 122 files,git status --short,,0,

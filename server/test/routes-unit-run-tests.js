@@ -16,6 +16,7 @@ await testPlanRouteRejectsMalformedMode();
 await testCommitRouteUsesNormalizedPlanNamespace();
 await testFileRouteRejectsMalformedPlanDownloads();
 await testBundleRouteRejectsMalformedPlanDownloads();
+await testBundleRouteRejectsMalformedPlanDownloadPathsBeforeRead();
 await testPairCompleteRejectsUnsafePairingUriEndpoints();
 await testPairCompleteRejectsUnsafeDirectEndpoints();
 await testTauriSessionRejectsMalformedDevices();
@@ -237,6 +238,33 @@ async function testBundleRouteRejectsMalformedPlanDownloads() {
     });
     assert.equal(response.statusCode, 500);
     assert.match(JSON.parse(response.body).error, /Invalid plan downloads/);
+}
+
+async function testBundleRouteRejectsMalformedPlanDownloadPathsBeforeRead() {
+    const response = await dispatch({
+        body: {},
+        headers: { authorization: 'Bearer token' },
+        method: 'GET',
+        storage: {
+            async readPlan() {
+                return {
+                    downloads: [{ path: { value: 'default-user/chats/example.jsonl' } }],
+                    id: 'plan-1',
+                    namespace: 'default',
+                    uploads: [],
+                };
+            },
+            async readRemoteFile() {
+                throw new Error('readRemoteFile must not be called for malformed plan paths');
+            },
+            async requireAuth(namespace) {
+                assert.equal(namespace, 'default');
+            },
+        },
+        url: '/v2/plans/plan-1/bundle',
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(JSON.parse(response.body).error, /Invalid plan downloads path/);
 }
 
 async function testPairCompleteRejectsUnsafePairingUriEndpoints() {
