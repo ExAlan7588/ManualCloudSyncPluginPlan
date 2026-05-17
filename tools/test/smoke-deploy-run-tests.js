@@ -14,6 +14,7 @@ const tests = [
     ['server smoke verifier supports bulk fixture', testBulkSmokeFixture],
     ['server smoke verifier requires endpoint or local mode', testRequiresTarget],
     ['server smoke verifier requires remote pairing token', testRequiresRemotePairingToken],
+    ['server smoke verifier rejects non-http endpoint', testRejectsNonHttpEndpoint],
     ['server smoke verifier reports raw non-json responses', testRemoteSmokeReportsRawResponse],
 ];
 
@@ -96,6 +97,13 @@ async function testRequiresRemotePairingToken() {
     } finally {
         restorePairingToken(previousToken);
     }
+}
+
+async function testRejectsNonHttpEndpoint() {
+    await assert.rejects(
+        smokeTtSyncServer({ endpoint: 'ftp://sync.example.test', pairingToken: 'token' }),
+        /--endpoint must use http or https/,
+    );
 }
 
 async function testRemoteSmokeReportsRawResponse() {

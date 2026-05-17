@@ -436,6 +436,9 @@ function recordCheck(options) {
 
 function normalizeEndpoint(endpoint) {
     const parsed = new URL(endpoint);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('--endpoint must use http or https');
+    }
     return parsed.toString().replace(/\/$/, '');
 }
 

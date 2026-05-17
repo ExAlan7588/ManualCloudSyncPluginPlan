@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit smoke verifier endpoint validation,DONE,Concrete endpoint validation gap is identified,source inspection,2026-05-17T21:08:00+08:00,0,normalizeEndpoint accepted any URL scheme before fetch.
+2,Implement explicit endpoint scheme validation,DONE,Remote smoke endpoint must use http or https,git diff --check,2026-05-17T21:08:16+08:00,0,normalizeEndpoint now rejects non-http schemes.
+3,Add focused regression coverage,DONE,Non-HTTP endpoint is rejected with clear message,timeout 60s node tools/test/smoke-deploy-run-tests.js,2026-05-17T21:08:16+08:00,0,Added ftp endpoint rejection test.
+4,Run full validation,DONE,Focused test plus check/test pass within 60 seconds,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:08:43+08:00,0,Focused smoke verifier test check and full npm test passed.
+5,Commit batch and report hash,IN_PROGRESS,Only batch changes are committed with hash reported,git status --short && git rev-parse HEAD,,0,
