@@ -15,9 +15,19 @@ export function webDavXhrTransfer(options) {
 }
 
 function setXhrHeaders(xhr, headers) {
-    for (const [name, value] of Object.entries(headers || {})) {
+    for (const [name, value] of Object.entries(headerMap(headers))) {
         xhr.setRequestHeader(name, value);
     }
+}
+
+function headerMap(headers) {
+    if (headers === undefined || headers === null) {
+        return {};
+    }
+    if (Array.isArray(headers) || typeof headers !== 'object') {
+        throw new Error('WebDAV headers must be an object');
+    }
+    return headers;
 }
 
 function bindXhrTransferEvents(params) {

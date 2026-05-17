@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 61 audit finding,done,WebDAV transfer headers are not shape-validated
+2,Add regression coverage,done,Assert non-object headers are rejected explicitly
+3,Implement header shape validation,done,Allow missing headers but reject arrays and primitives
+4,Run focused and full validation,done,Focused WebDAV transfer test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 61 files and related code changes

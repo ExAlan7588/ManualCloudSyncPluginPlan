@@ -9,6 +9,8 @@ try {
     console.log('ok - WebDAV transfer helper sets headers and resolves responses');
     await testWebDavTransferReportsHttpFailureDetail();
     console.log('ok - WebDAV transfer helper reports HTTP failure detail');
+    await testWebDavTransferRejectsMalformedHeaders();
+    console.log('ok - WebDAV transfer helper rejects malformed headers');
 } finally {
     globalThis.XMLHttpRequest = originalXhr;
     globalThis.performance = originalPerformance;
@@ -57,6 +59,24 @@ async function testWebDavTransferReportsHttpFailureDetail() {
     xhr.instance.responseText = 'quota exceeded';
     xhr.instance.onload();
     await assert.rejects(transfer, /WebDAV GET remote\/file\.zip 回傳 HTTP 507：quota exceeded/);
+}
+
+async function testWebDavTransferRejectsMalformedHeaders() {
+    installFakeXhr();
+    await assert.rejects(
+        webDavXhrTransfer({
+            context: { setStatus: () => {} },
+            headers: 'Authorization: Basic abc',
+            key: 'remote/file.zip',
+            label: '上傳同步包',
+            method: 'PUT',
+            progressTarget: 'upload',
+            responseType: 'text',
+            totalBytes: 7,
+            url: 'https://storage.example.com/remote/file.zip',
+        }),
+        /WebDAV headers must be an object/,
+    );
 }
 
 function installFakeXhr() {
