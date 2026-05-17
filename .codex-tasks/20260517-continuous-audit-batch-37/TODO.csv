@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 37 audit finding,done,Account panel success JSON parse failures lack route context
+2,Add regression coverage,done,Focused frontend test fails before fix because malformed login JSON lacks route context
+3,Implement account JSON parse context,done,Account response JSON parse errors include route labels
+4,Run focused and full validation,done,Focused frontend test npm run check and npm test passed
+5,Commit batch changes,done,Committed batch 37 files and related code changes

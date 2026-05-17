@@ -1,4 +1,4 @@
-import { readFailureMessage } from './errors.js';
+import { normalizeError, readFailureMessage } from './errors.js';
 
 const ACCOUNT_ROUTES = Object.freeze({
     devices: '/v2/devices',
@@ -85,7 +85,15 @@ async function accountRequest(deps, options) {
     if (!response.ok) {
         throw new Error(await readFailureMessage(response) || `HTTP ${response.status}`);
     }
-    return response.json();
+    return readAccountJson(response, options.route);
+}
+
+async function readAccountJson(response, route) {
+    try {
+        return await response.json();
+    } catch (error) {
+        throw new Error(`TT-Sync 帳號 ${route} 回應 JSON 無法解析：${normalizeError(error)}`);
+    }
 }
 
 function requestInit(options) {
