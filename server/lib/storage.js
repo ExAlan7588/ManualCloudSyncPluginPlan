@@ -509,14 +509,15 @@ function assertPushUploadMetadata(plan) {
         return;
     }
     for (const entry of plan.uploads) {
-        assertCommitModifiedMs(entry);
+        assertCommitInteger(entry, 'modifiedMs');
+        assertCommitInteger(entry, 'sizeBytes');
     }
 }
 
-function assertCommitModifiedMs(entry) {
-    const value = entry?.modifiedMs;
+function assertCommitInteger(entry, field) {
+    const value = entry?.[field];
     if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-        throw badRequest(`Invalid modifiedMs for ${entry?.path}`);
+        throw badRequest(`Invalid ${field} for ${entry?.path}`);
     }
 }
 

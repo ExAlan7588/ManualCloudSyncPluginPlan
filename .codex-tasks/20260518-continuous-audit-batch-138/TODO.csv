@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Record audit finding,DONE,PROGRESS.md explains late sizeBytes failure risk,test -f .codex-tasks/20260518-continuous-audit-batch-138/PROGRESS.md,2026-05-18T00:00:00Z,0,
+2,Add failing regression coverage,DONE,Malformed upload sizeBytes fails before remote rename,node server/test/storage-run-tests.js,2026-05-18T00:00:00Z,0,Failed before fix because remote file was created
+3,Apply minimal validation fix,DONE,commitPlan validates upload sizeBytes before commitPushPlan,node server/test/storage-run-tests.js,2026-05-18T00:00:00Z,0,Extended push upload metadata preflight and kept storage.js under 600 lines
+4,Run validation and commit,DONE,Check/test/diff validation pass and commit is created,timeout 60s npm test,2026-05-18T00:00:00Z,0,Validation passed and ready to commit
