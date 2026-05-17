@@ -258,7 +258,13 @@ function tauriPlanPath(value, label) {
 }
 
 function syncMode(value) {
-    const text = String(value || 'Incremental').trim();
+    if (value === undefined || value === null || value === '') {
+        return 'Incremental';
+    }
+    if (typeof value !== 'string') {
+        throw badRequest('mode must be Incremental or Mirror');
+    }
+    const text = value.trim();
     if (text !== 'Incremental' && text !== 'Mirror') {
         throw badRequest('mode must be Incremental or Mirror');
     }

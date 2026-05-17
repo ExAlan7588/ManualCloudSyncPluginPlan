@@ -20,6 +20,7 @@ await testTauriSessionResponseRejectsMalformedFields();
 await testTauriManifestRejectsMalformedPaths();
 await testTauriManifestRejectsNullNumericFields();
 await testTauriManifestRejectsNonDecimalNumericStrings();
+await testTauriPlanInputRejectsMalformedMode();
 await testTauriPlanResponseRejectsMalformedSizeBytes();
 await testTauriPlanResponseRejectsMalformedArrays();
 await testTauriPlanResponseRejectsMalformedPaths();
@@ -100,6 +101,13 @@ async function testTauriManifestRejectsNonDecimalNumericStrings() {
     assert.throws(
         () => normalizeTauriPlanInput(tauriPlanInput({ modified_ms: '0x10' })),
         /modified_ms must be a non-negative integer/,
+    );
+}
+
+async function testTauriPlanInputRejectsMalformedMode() {
+    assert.throws(
+        () => normalizeTauriPlanInput(tauriPlanInput({}, { mode: 0 })),
+        /mode must be Incremental or Mirror/,
     );
 }
 
@@ -226,7 +234,7 @@ async function testTauriPlanResponseRejectsMalformedPlanIds() {
     );
 }
 
-function tauriPlanInput(entry) {
+function tauriPlanInput(entry, bodyPatch = {}) {
     return {
         body: {
             mode: 'Incremental',
@@ -238,6 +246,7 @@ function tauriPlanInput(entry) {
                     ...entry,
                 }],
             },
+            ...bodyPatch,
         },
         deviceId: DEVICE_ID,
         manifestKey: 'source_manifest',

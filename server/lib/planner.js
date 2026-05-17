@@ -50,7 +50,13 @@ function planEnvelope(input) {
 }
 
 function syncMode(value) {
-    const text = String(value || DEFAULT_SYNC_MODE).trim();
+    if (value === undefined || value === null || value === '') {
+        return DEFAULT_SYNC_MODE;
+    }
+    if (typeof value !== 'string') {
+        throw badRequest('mode must be Incremental or Mirror');
+    }
+    const text = value.trim();
     if (text !== DEFAULT_SYNC_MODE && text !== MIRROR_SYNC_MODE) {
         throw badRequest('mode must be Incremental or Mirror');
     }

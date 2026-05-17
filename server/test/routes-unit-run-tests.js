@@ -139,26 +139,28 @@ async function testPlanRouteIgnoresInjectedOppositeArrays() {
 }
 
 async function testPlanRouteRejectsMalformedMode() {
-    const response = await dispatch({
-        body: { deviceId: 'device-1', localManifest: [], mode: 'Mirorr', namespace: 'default' },
-        headers: { authorization: 'Bearer token' },
-        method: 'POST',
-        storage: {
-            async readManifest(namespace) {
-                assert.equal(namespace, 'default');
-                return [];
+    for (const mode of ['Mirorr', 0]) {
+        const response = await dispatch({
+            body: { deviceId: 'device-1', localManifest: [], mode, namespace: 'default' },
+            headers: { authorization: 'Bearer token' },
+            method: 'POST',
+            storage: {
+                async readManifest(namespace) {
+                    assert.equal(namespace, 'default');
+                    return [];
+                },
+                async requireAuth(namespace) {
+                    assert.equal(namespace, 'default');
+                },
+                async savePlan() {
+                    throw new Error('savePlan must not be called for malformed mode');
+                },
             },
-            async requireAuth(namespace) {
-                assert.equal(namespace, 'default');
-            },
-            async savePlan() {
-                throw new Error('savePlan must not be called for malformed mode');
-            },
-        },
-        url: '/v2/sync/push-plan',
-    });
-    assert.equal(response.statusCode, 400);
-    assert.match(JSON.parse(response.body).error, /mode must be Incremental or Mirror/);
+            url: '/v2/sync/push-plan',
+        });
+        assert.equal(response.statusCode, 400);
+        assert.match(JSON.parse(response.body).error, /mode must be Incremental or Mirror/);
+    }
 }
 
 async function testCommitRouteUsesNormalizedPlanNamespace() {
