@@ -12,6 +12,7 @@ import {
 } from '../lib/storage-records.js';
 
 testStorageRecordHelpers();
+testStorageRecordHelpersRejectMalformedArrays();
 console.log('ok - storage record helpers preserve response shapes');
 
 function testStorageRecordHelpers() {
@@ -59,6 +60,21 @@ function testStorageRecordHelpers() {
         serverId: 'server-id',
     });
     assert.deepEqual(withoutConflictFlag({ conflict: true, path: 'a.txt', sizeBytes: 1 }), { path: 'a.txt', sizeBytes: 1 });
+}
+
+function testStorageRecordHelpersRejectMalformedArrays() {
+    assert.throws(
+        () => affectedPaths({ ...planFixture(), uploads: {} }),
+        /Invalid plan uploads/,
+    );
+    assert.throws(
+        () => historyEntry({ ...planFixture(), remoteDeletes: null }),
+        /Invalid plan remoteDeletes/,
+    );
+    assert.throws(
+        () => rollbackPointSummary({ createdAt: 'now', files: 'bad', id: 'rollback-1', planId: 'plan-1' }),
+        /Invalid rollback files/,
+    );
 }
 
 function planFixture() {

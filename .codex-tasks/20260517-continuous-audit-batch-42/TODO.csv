@@ -1,0 +1,6 @@
+id,task,status,notes
+1,Record batch 42 audit finding,done,Storage record summary helpers assume persisted arrays are valid
+2,Add regression coverage,done,Assert malformed plan and rollback arrays fail with explicit errors
+3,Implement summary array validation,done,Validate arrays before affected path and history summary calculations
+4,Run focused and full validation,done,Focused storage record test npm run check and npm test passed
+5,Commit batch changes,in_progress,Commit only batch 42 files and related code changes

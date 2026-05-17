@@ -38,16 +38,20 @@ export function touchDevice(record, deviceId, patch) {
 }
 
 export function affectedPaths(plan) {
+    const uploads = arrayField(plan.uploads, 'plan uploads');
+    const remoteDeletes = arrayField(plan.remoteDeletes, 'plan remoteDeletes');
+    const conflicts = arrayField(plan.conflicts, 'plan conflicts');
     return Array.from(new Set([
-        ...plan.uploads.map(entry => entry.path),
-        ...plan.remoteDeletes,
-        ...plan.conflicts.map(item => item.path),
+        ...uploads.map(entry => entry.path),
+        ...remoteDeletes,
+        ...conflicts.map(item => item.path),
     ]));
 }
 
 export function rollbackPointSummary(snapshot) {
+    const files = arrayField(snapshot.files, 'rollback files');
     return {
-        affectedFiles: snapshot.files.length,
+        affectedFiles: files.length,
         createdAt: snapshot.createdAt,
         id: snapshot.id,
         planId: snapshot.planId,
@@ -55,15 +59,16 @@ export function rollbackPointSummary(snapshot) {
 }
 
 export function historyEntry(plan) {
+    const fields = planArrayFields(plan);
     return {
         committedAt: plan.committedAt,
-        conflicts: plan.conflicts.length,
+        conflicts: fields.conflicts.length,
         deviceId: plan.deviceId,
-        downloads: plan.downloads.length,
+        downloads: fields.downloads.length,
         kind: plan.kind,
         planId: plan.id,
-        remoteDeletes: plan.remoteDeletes.length,
-        uploads: plan.uploads.length,
+        remoteDeletes: fields.remoteDeletes.length,
+        uploads: fields.uploads.length,
     };
 }
 
@@ -84,4 +89,20 @@ export function pairingResponse(record, device, endpoint) {
 export function withoutConflictFlag(entry) {
     const { conflict: _conflict, ...rest } = entry;
     return rest;
+}
+
+function planArrayFields(plan) {
+    return {
+        conflicts: arrayField(plan.conflicts, 'plan conflicts'),
+        downloads: arrayField(plan.downloads, 'plan downloads'),
+        remoteDeletes: arrayField(plan.remoteDeletes, 'plan remoteDeletes'),
+        uploads: arrayField(plan.uploads, 'plan uploads'),
+    };
+}
+
+function arrayField(value, label) {
+    if (!Array.isArray(value)) {
+        throw new Error(`Invalid ${label}`);
+    }
+    return value;
 }
