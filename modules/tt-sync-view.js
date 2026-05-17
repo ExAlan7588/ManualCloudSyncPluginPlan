@@ -245,7 +245,7 @@ export function firstValue(object, keys, fallback) {
 
 export function firstObject(object, keys) {
     for (const key of keys) {
-        if (object?.[key] && typeof object[key] === 'object') {
+        if (isRecordObject(object?.[key])) {
             return object[key];
         }
     }

@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add regressing diff summary array test,DONE,Test fails before fix because array summary shadows outer conflict count,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,Failed before fix with wrong empty conflict message
+2,Reject arrays in firstObject,DONE,Summary candidate selection only accepts record objects,node tools/test/tt-sync-view-run-tests.js,2026-05-17,0,
+3,Run full validation and commit,DONE,All checks pass and phase changes are committed,timeout 60s npm run check && timeout 60s npm test && git diff --check,2026-05-17,0,
