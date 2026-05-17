@@ -207,6 +207,9 @@ export function isPullDirection(payload) {
 }
 
 export function stringValue(value) {
+    if (!isTextScalar(value)) {
+        return EMPTY_VALUE;
+    }
     const text = String(value || '').trim();
     return text || EMPTY_VALUE;
 }
@@ -255,6 +258,13 @@ function nonNegativeIntegerValue(value) {
     }
     const number = Number(value);
     return Number.isSafeInteger(number) ? number : null;
+}
+
+function isTextScalar(value) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value);
+    }
+    return typeof value === 'bigint' || typeof value === 'string';
 }
 
 function diffSummaryFrom(payload) {
