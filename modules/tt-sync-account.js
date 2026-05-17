@@ -165,7 +165,14 @@ function accountList(value, message) {
     if (!Array.isArray(value)) {
         throw new Error(message);
     }
+    if (!value.every(isAccountItem)) {
+        throw new Error(message);
+    }
     return value;
+}
+
+function isAccountItem(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function renderList(selector, items, formatter) {

@@ -27,6 +27,7 @@ await testAccountRejectsMalformedSessionNamespace();
 await testAccountRejectsMalformedPairingUri();
 await testAccountIgnoresMalformedPairingExpiry();
 await testAccountListFiltersMalformedTextFields();
+await testAccountRejectsMalformedListItems();
 console.log('ok - TT-Sync account validates session payloads');
 
 async function testAccountRejectsMalformedSessionToken() {
@@ -44,6 +45,22 @@ async function testAccountRejectsMalformedSessionToken() {
             /帳號登入回應缺少 token/,
         );
         assert.equal(elements.mcs_tts_account_status.textContent, '尚未登入');
+    } finally {
+        restore();
+    }
+}
+
+async function testAccountRejectsMalformedListItems() {
+    const { elements, fetch, restore } = installAccountPanelFixture(ACCOUNT_PANEL_IDS, {}, {
+        devices: { devices: [null] },
+        history: { history: ['bad'] },
+    });
+    try {
+        bindTtSyncAccountPanel({ fetch, runAction: runAccountPanelAction });
+        await assert.rejects(
+            elements.mcs_tts_account_login.handlers.click(),
+            /帳號裝置列表格式不正確/,
+        );
     } finally {
         restore();
     }
