@@ -57,7 +57,7 @@ export function compareEntries(left, right) {
 }
 
 function optionalSha256(value) {
-    const text = String(value || '').trim().toLowerCase();
+    const text = String(value || '').trim();
     if (!text) {
         return '';
     }
