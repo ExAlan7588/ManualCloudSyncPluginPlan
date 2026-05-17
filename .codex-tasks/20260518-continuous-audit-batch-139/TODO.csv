@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Record audit finding,DONE,PROGRESS.md explains upload entry shape risk,test -f .codex-tasks/20260518-continuous-audit-batch-139/PROGRESS.md,2026-05-18T00:00:00Z,0,
+2,Add failing regression coverage,DONE,uploadEntry rejects malformed upload paths explicitly,node server/test/storage-io-run-tests.js,2026-05-18T00:00:00Z,0,Failed before fix with TypeError
+3,Apply minimal validation fix,DONE,uploadEntry validates entry path shape before lookup,node server/test/storage-io-run-tests.js,2026-05-18T00:00:00Z,0,Added upload entry path validation
+4,Run validation and commit,DONE,Check/test/diff validation pass and commit is created,timeout 60s npm test,2026-05-18T00:00:00Z,0,Validation passed and ready to commit

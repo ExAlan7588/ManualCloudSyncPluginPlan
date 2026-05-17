@@ -10,6 +10,7 @@ await testReadJsonLabelsMalformedStorageFile();
 await testWriteFileAtomicCleansTempFileAfterRenameFailure();
 await testValidateStagedBufferRejectsMalformedSizeBytes();
 await testUploadEntryRejectsMalformedUploads();
+await testUploadEntryRejectsMalformedUploadPaths();
 await testWriteRequestStreamRejectsMalformedExpectedBytes();
 console.log('ok - storage IO errors include context and clean temp files');
 
@@ -53,6 +54,13 @@ async function testUploadEntryRejectsMalformedUploads() {
     assert.throws(
         () => uploadEntry({ uploads: {} }, 'default-user/chats/example.jsonl'),
         /Invalid plan uploads/,
+    );
+}
+
+async function testUploadEntryRejectsMalformedUploadPaths() {
+    assert.throws(
+        () => uploadEntry({ uploads: [null] }, 'default-user/chats/example.jsonl'),
+        /Invalid plan uploads path/,
     );
 }
 

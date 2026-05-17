@@ -62,7 +62,7 @@ function isSizeBytes(value) {
 }
 
 export function uploadEntry(plan, syncPath) {
-    const uploads = planUploads(plan);
+    const uploads = planUploadEntries(plan);
     const entry = uploads.find(item => item.path === syncPath);
     if (!entry) {
         throw notFound(`Path is not part of this plan: ${syncPath}`);
@@ -75,4 +75,13 @@ function planUploads(plan) {
         throw new Error('Invalid plan uploads');
     }
     return plan.uploads;
+}
+
+function planUploadEntries(plan) {
+    return planUploads(plan).map(entry => {
+        if (typeof entry?.path !== 'string' || entry.path.trim() === '') {
+            throw new Error('Invalid plan uploads path');
+        }
+        return entry;
+    });
 }
