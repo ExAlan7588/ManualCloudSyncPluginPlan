@@ -13,6 +13,7 @@ import {
 
 testStorageRecordHelpers();
 testStorageRecordHelpersRejectMalformedArrays();
+testStorageRecordHelpersRejectMalformedPlanPaths();
 testDeviceHelpersRejectMalformedDevices();
 console.log('ok - storage record helpers preserve response shapes');
 
@@ -75,6 +76,17 @@ function testStorageRecordHelpersRejectMalformedArrays() {
     assert.throws(
         () => rollbackPointSummary({ createdAt: 'now', files: 'bad', id: 'rollback-1', planId: 'plan-1' }),
         /Invalid rollback files/,
+    );
+}
+
+function testStorageRecordHelpersRejectMalformedPlanPaths() {
+    assert.throws(
+        () => affectedPaths({ ...planFixture(), uploads: [{ path: { value: 'a.txt' } }] }),
+        /Invalid plan uploads path/,
+    );
+    assert.throws(
+        () => historyEntry({ ...planFixture(), remoteDeletes: [''] }),
+        /Invalid plan remoteDeletes path/,
     );
 }
 

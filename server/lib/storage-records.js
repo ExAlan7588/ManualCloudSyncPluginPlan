@@ -41,13 +41,11 @@ export function touchDevice(record, deviceId, patch) {
 }
 
 export function affectedPaths(plan) {
-    const uploads = arrayField(plan.uploads, 'plan uploads');
-    const remoteDeletes = arrayField(plan.remoteDeletes, 'plan remoteDeletes');
-    const conflicts = arrayField(plan.conflicts, 'plan conflicts');
+    const fields = planArrayFields(plan);
     return Array.from(new Set([
-        ...uploads.map(entry => entry.path),
-        ...remoteDeletes,
-        ...conflicts.map(item => item.path),
+        ...fields.uploads.map(entry => entry.path),
+        ...fields.remoteDeletes,
+        ...fields.conflicts.map(item => item.path),
     ]));
 }
 
@@ -96,10 +94,10 @@ export function withoutConflictFlag(entry) {
 
 function planArrayFields(plan) {
     return {
-        conflicts: arrayField(plan.conflicts, 'plan conflicts'),
-        downloads: arrayField(plan.downloads, 'plan downloads'),
-        remoteDeletes: arrayField(plan.remoteDeletes, 'plan remoteDeletes'),
-        uploads: arrayField(plan.uploads, 'plan uploads'),
+        conflicts: planEntryArray(plan.conflicts, 'plan conflicts'),
+        downloads: planEntryArray(plan.downloads, 'plan downloads'),
+        remoteDeletes: planPathArray(plan.remoteDeletes, 'plan remoteDeletes'),
+        uploads: planEntryArray(plan.uploads, 'plan uploads'),
     };
 }
 
@@ -112,4 +110,24 @@ function arrayField(value, label) {
         throw new Error(`Invalid ${label}`);
     }
     return value;
+}
+
+function planEntryArray(value, label) {
+    return arrayField(value, label).map(entry => {
+        assertPlanPath(entry?.path, label);
+        return entry;
+    });
+}
+
+function planPathArray(value, label) {
+    return arrayField(value, label).map(path => {
+        assertPlanPath(path, label);
+        return path;
+    });
+}
+
+function assertPlanPath(value, label) {
+    if (typeof value !== 'string' || value.trim() === '') {
+        throw new Error(`Invalid ${label} path`);
+    }
 }
