@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { renderQueue } from '../../modules/queue-renderer.js';
 
 testQueueRendererSkipsMalformedShaPreview();
-console.log('ok - queue renderer handles malformed SHA previews');
+testQueueRendererSkipsMalformedTextFields();
+console.log('ok - queue renderer handles malformed manifest text');
 
 function testQueueRendererSkipsMalformedShaPreview() {
     const { container, restore } = installDocumentFixture();
@@ -17,6 +18,26 @@ function testQueueRendererSkipsMalformedShaPreview() {
         }], () => {}));
         const meta = container.children[0].children[0].children[1].textContent;
         assert.equal(meta.includes('SHA-256：'), false);
+    } finally {
+        restore();
+    }
+}
+
+function testQueueRendererSkipsMalformedTextFields() {
+    const { container, restore } = installDocumentFixture();
+    try {
+        renderQueue([{
+            manifest: {
+                createdAt: { iso: '2026-05-17T00:00:00.000Z' },
+                deviceId: { id: 'phone' },
+                file: { name: 'sync-0102030405.zip' },
+                sizeBytes: 1,
+            },
+        }], () => {});
+        const title = container.children[0].children[0].children[0].textContent;
+        const meta = container.children[0].children[0].children[1].textContent;
+        assert.equal(title, '');
+        assert.equal(meta.includes('[object Object]'), false);
     } finally {
         restore();
     }

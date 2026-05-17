@@ -36,7 +36,7 @@ function queueItemMain(item) {
     main.className = 'mcs-item-main';
     const title = document.createElement('div');
     title.className = 'mcs-item-title';
-    title.textContent = item?.manifest?.file || '';
+    title.textContent = queueText(item?.manifest?.file);
     const meta = document.createElement('div');
     meta.className = 'mcs-item-meta';
     meta.textContent = queueItemMeta(item);
@@ -46,12 +46,26 @@ function queueItemMain(item) {
 
 function queueItemMeta(item) {
     const manifest = item?.manifest || {};
+    const deviceId = queueText(manifest.deviceId);
     return [
         queueSizeText(manifest.sizeBytes),
-        manifest.createdAt || '',
-        manifest.deviceId ? `來源：${manifest.deviceId}` : '',
+        queueText(manifest.createdAt),
+        deviceId ? `來源：${deviceId}` : '',
         queueShaText(manifest.sha256),
     ].filter(Boolean).join(' | ');
+}
+
+function queueText(value) {
+    if (!value) {
+        return '';
+    }
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? String(value) : '';
+    }
+    if (typeof value === 'bigint' || typeof value === 'string') {
+        return String(value);
+    }
+    return '';
 }
 
 function queueShaText(value) {
