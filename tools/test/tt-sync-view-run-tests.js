@@ -8,6 +8,7 @@ import {
 } from '../../modules/tt-sync-view.js';
 
 testServerListFromRejectsMalformedServers();
+testServerListFromRejectsMalformedServerItems();
 testServerListFromKeepsMissingServersBehavior();
 testHasObjectPayloadRejectsArrays();
 testServerStatusRejectsMalformedPermissionText();
@@ -19,6 +20,17 @@ console.log('ok - TT-Sync view validates conflict payloads');
 function testServerListFromRejectsMalformedServers() {
     assert.throws(
         () => serverListFrom({ servers: {} }),
+        /TT-Sync 服務端列表格式不正確/,
+    );
+}
+
+function testServerListFromRejectsMalformedServerItems() {
+    assert.throws(
+        () => serverListFrom({ servers: [null] }),
+        /TT-Sync 服務端列表格式不正確/,
+    );
+    assert.throws(
+        () => serverListFrom(['bad']),
         /TT-Sync 服務端列表格式不正確/,
     );
 }

@@ -145,15 +145,26 @@ export function hasObjectPayload(value) {
 
 export function serverListFrom(result) {
     if (Array.isArray(result)) {
-        return result;
+        return validatedServerList(result);
     }
     if (Array.isArray(result?.servers)) {
-        return result.servers;
+        return validatedServerList(result.servers);
     }
     if (result?.servers !== undefined && result?.servers !== null) {
         throw new Error('TT-Sync 服務端列表格式不正確');
     }
     return [];
+}
+
+function validatedServerList(servers) {
+    if (!servers.every(isServerItem)) {
+        throw new Error('TT-Sync 服務端列表格式不正確');
+    }
+    return servers;
+}
+
+function isServerItem(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 export function serverIdOf(server) {
