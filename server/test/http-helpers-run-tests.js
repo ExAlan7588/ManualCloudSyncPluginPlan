@@ -6,6 +6,7 @@ await testReadJsonRequestIncludesParserDetail();
 await testReadJsonRequestUsesFallbackForEmptyBody();
 await testReadJsonRequestReturnsBodyAndBuffer();
 await testReadJsonRequestRejectsOversizedBody();
+await testReadJsonRequestRejectsMalformedMaxBodyEnv();
 console.log('ok - HTTP JSON helpers expose parser details');
 
 async function testReadJsonRequestIncludesParserDetail() {
@@ -35,6 +36,19 @@ async function testReadJsonRequestRejectsOversizedBody() {
         await assert.rejects(
             readJsonRequest(requestFrom('{"ok":true}')),
             /Request body is too large/,
+        );
+    } finally {
+        restoreEnv('TT_SYNC_MAX_BODY_BYTES', previousMaxBytes);
+    }
+}
+
+async function testReadJsonRequestRejectsMalformedMaxBodyEnv() {
+    const previousMaxBytes = process.env.TT_SYNC_MAX_BODY_BYTES;
+    process.env.TT_SYNC_MAX_BODY_BYTES = 'not-a-number';
+    try {
+        await assert.rejects(
+            readJsonRequest(requestFrom('{"ok":true}')),
+            /TT_SYNC_MAX_BODY_BYTES must be a positive integer/,
         );
     } finally {
         restoreEnv('TT_SYNC_MAX_BODY_BYTES', previousMaxBytes);

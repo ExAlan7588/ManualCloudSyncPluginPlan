@@ -1,0 +1,6 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Audit max body env parsing,DONE,Concrete bug documented in SPEC.md,test -f .codex-tasks/20260517-continuous-audit-batch-16/SPEC.md,2026-05-17T21:48:07+08:00,0,Malformed TT_SYNC_MAX_BODY_BYTES silently falls back to default
+2,Add focused regression coverage,DONE,http helper tests cover malformed max body env,timeout 60s node server/test/http-helpers-run-tests.js,2026-05-17T21:49:37+08:00,0,Regression failed before fix because malformed env fell back to default
+3,Implement explicit config validation,DONE,Malformed TT_SYNC_MAX_BODY_BYTES throws explicit error,timeout 60s node server/test/http-helpers-run-tests.js,2026-05-17T21:49:37+08:00,0,Focused HTTP helper test passes
+4,Run full validation,DONE,check and test scripts pass,timeout 60s npm run check && timeout 60s npm test,2026-05-17T21:50:22+08:00,0,npm run check and npm test passed
+5,Commit batch changes,IN_PROGRESS,Git commit contains only batch 16 changes,git status --short,,0,Ready to commit after diff review at 2026-05-17T21:50:48+08:00

@@ -61,11 +61,22 @@ export function writeServerSentEvent(response, event, payload) {
 }
 
 export function maxBodyBytes() {
-    const configured = Number(process.env.TT_SYNC_MAX_BODY_BYTES);
-    return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_BODY_BYTES;
+    const rawValue = process.env.TT_SYNC_MAX_BODY_BYTES;
+    if (rawValue === undefined || rawValue === '') {
+        return DEFAULT_MAX_BODY_BYTES;
+    }
+    if (!/^\d+$/.test(rawValue.trim())) {
+        throw new Error('TT_SYNC_MAX_BODY_BYTES must be a positive integer');
+    }
+    const configured = Number(rawValue);
+    if (!Number.isSafeInteger(configured) || configured <= 0) {
+        throw new Error('TT_SYNC_MAX_BODY_BYTES must be a positive integer');
+    }
+    return configured;
 }
 
 function readRawBody(request) {
+    const limitBytes = maxBodyBytes();
     return new Promise((resolve, reject) => {
         const chunks = [];
         let settled = false;
@@ -75,7 +86,7 @@ function readRawBody(request) {
                 return;
             }
             size += chunk.length;
-            if (size > maxBodyBytes()) {
+            if (size > limitBytes) {
                 settled = true;
                 reject(badRequest('Request body is too large'));
                 request.destroy();
