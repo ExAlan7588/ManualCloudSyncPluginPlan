@@ -4,10 +4,10 @@
 
 - Task: tool verifier modernization.
 - Shape: single-full.
-- Progress: 4/5 complete.
-- Current: run full validation.
+- Progress: 5/5 complete.
+- Current: complete.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/tasks/03-tool-modernization/TODO.csv`.
-- Next: run full validation and close tool modernization.
+- Next: bubble completion to the parent epic.
 
 ## Log
 
@@ -69,3 +69,11 @@
   - `timeout 60 node tools/test/smoke-deploy-run-tests.js`
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
+
+### 2026-05-22 01:13 Asia/Taipei
+
+- Completed final tool modernization validation.
+- Validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Tool modernization child task is complete.
