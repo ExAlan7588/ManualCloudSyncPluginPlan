@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    isCliEntry,
+    writeFormattedOutput,
+    writeOptionalJsonFile,
+} from './cli-helpers.js';
 
 const DEFAULT_ENV_PATH = 'deploy/systemd/manual-cloud-tt-sync.env.example';
 const DEFAULT_SERVICE_PATH = 'deploy/systemd/manual-cloud-tt-sync.service';
-const EXIT_FAILURE = 1;
-const EXIT_SUCCESS = 0;
-const JSON_INDENT = 2;
 const REPORT_SCHEMA_VERSION = 1;
 const REPORT_TOOL = 'verify-tt-sync-deploy';
 const PLACEHOLDER_TOKENS = new Set(['change-me', 'replace-me', 'replace-with-strong-token']);
@@ -286,8 +289,8 @@ async function runCli() {
             return EXIT_SUCCESS;
         }
         const report = await verifyTtSyncDeploy(cliInput(options));
-        await writeManifest({ manifestPath: options.manifest, report });
-        writeOutput({ json: options.json, report });
+        await writeOptionalJsonFile({ filePath: options.manifest, value: report });
+        writeFormattedOutput({ format: formatDeployReport, json: options.json, value: report });
         return report.ok ? EXIT_SUCCESS : EXIT_FAILURE;
     } catch (error) {
         console.error(error.message);
@@ -303,25 +306,6 @@ function cliInput(options) {
     };
 }
 
-async function writeManifest(options) {
-    if (!options.manifestPath) {
-        return;
-    }
-    await writeFile(options.manifestPath, `${JSON.stringify(options.report, null, JSON_INDENT)}\n`);
-}
-
-function writeOutput(options) {
-    if (options.json) {
-        console.log(JSON.stringify(options.report, null, JSON_INDENT));
-        return;
-    }
-    console.log(formatDeployReport(options.report));
-}
-
-function isCliEntry() {
-    return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isCliEntry()) {
+if (isCliEntry(import.meta.url)) {
     process.exitCode = await runCli();
 }

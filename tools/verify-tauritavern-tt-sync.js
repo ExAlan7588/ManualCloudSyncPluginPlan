@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-import { opendir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { opendir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    isCliEntry,
+    writeFormattedOutput,
+    writeOptionalJsonFile,
+} from './cli-helpers.js';
 import { ZIP_LIKE_EXTENSIONS, zipEntriesFrom } from './zip-entries.js';
 
 export const REQUIRED_TT_SYNC_COMMANDS = Object.freeze([
@@ -17,9 +23,6 @@ export const COMMAND_REPORT_SCHEMA_VERSION = 1;
 export const COMMAND_REPORT_TOOL = 'verify-tauritavern-tt-sync';
 
 const COMMAND_ENCODING = 'utf8';
-const EXIT_FAILURE = 1;
-const EXIT_SUCCESS = 0;
-const JSON_INDENT = 2;
 const TRUSTED_BINARY_EXTENSIONS = new Set([
     '.arsc',
     '.class',
@@ -307,28 +310,13 @@ async function runCli() {
             return EXIT_SUCCESS;
         }
         const report = await verifyTauriTavernCommands({ source: options.source });
-        await writeManifest({ manifestPath: options.manifest, report });
-        writeCliOutput({ json: options.json, report });
+        await writeOptionalJsonFile({ filePath: options.manifest, value: report });
+        writeFormattedOutput({ format: formatVerificationReport, json: options.json, value: report });
         return report.ok ? EXIT_SUCCESS : EXIT_FAILURE;
     } catch (error) {
         console.error(error.message);
         return EXIT_FAILURE;
     }
-}
-
-async function writeManifest(options) {
-    if (!options.manifestPath) {
-        return;
-    }
-    await writeFile(options.manifestPath, `${JSON.stringify(options.report, null, JSON_INDENT)}\n`);
-}
-
-function writeCliOutput(options) {
-    if (options.json) {
-        console.log(JSON.stringify(options.report, null, JSON_INDENT));
-        return;
-    }
-    console.log(formatVerificationReport(options.report));
 }
 
 function compareText(left, right) {
@@ -415,10 +403,6 @@ function isPrintableByte(value) {
         || (value >= ASCII_PRINTABLE_MIN && value <= ASCII_PRINTABLE_MAX);
 }
 
-function isCliEntry() {
-    return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isCliEntry()) {
+if (isCliEntry(import.meta.url)) {
     process.exitCode = await runCli();
 }

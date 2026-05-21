@@ -6,8 +6,8 @@ import { createDeviceEvidenceTemplate } from '../create-device-evidence-template
 import { REQUIRED_TT_SYNC_COMMANDS } from '../verify-tauritavern-tt-sync.js';
 import {
     verifyIncrementalCloudSyncEvidence,
-    writeManifest,
 } from '../verify-incremental-cloud-sync-evidence.js';
+import { writeOptionalJsonFile } from '../cli-helpers.js';
 import {
     completeEvidence,
     desktopCommandReportFixture,
@@ -91,7 +91,7 @@ async function testFinalEvidenceManifestWritten() {
     try {
         const manifestPath = path.join(tempDir, 'final-report.json');
         const report = await verifyIncrementalCloudSyncEvidence(completeEvidence());
-        await writeManifest({ manifestPath, report });
+        await writeOptionalJsonFile({ filePath: manifestPath, value: report });
         const saved = JSON.parse(await readFile(manifestPath, 'utf8'));
         assert.equal(saved.ok, true);
         assert.equal(saved.verifiedAt, report.verifiedAt);

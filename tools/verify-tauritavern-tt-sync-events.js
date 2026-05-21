@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-import { opendir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { opendir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    isCliEntry,
+    writeFormattedOutput,
+    writeOptionalJsonFile,
+} from './cli-helpers.js';
 
 export const REQUIRED_TT_SYNC_EVENTS = Object.freeze([
     'tt_sync:progress',
@@ -31,10 +37,6 @@ const DIFF_CONFLICT_SURFACE_GROUPS = Object.freeze({
     preTransferDiffEvent: ['tt_sync:diff', 'tt_sync:plan'],
 });
 const TEXT_EXTENSIONS = new Set(['.js', '.json', '.md', '.rs', '.toml', '.ts', '.txt']);
-const EXIT_FAILURE = 1;
-const EXIT_SUCCESS = 0;
-const JSON_INDENT = 2;
-
 export async function verifyTauriTavernTtSyncEventSurface(options) {
     const sourceInfo = await sourceInfoFor(options?.source);
     const state = createState(sourceInfo);
@@ -291,8 +293,8 @@ async function runCli() {
             return EXIT_SUCCESS;
         }
         const report = await verifyTauriTavernTtSyncEventSurface({ source: options.source });
-        await writeManifest({ manifestPath: options.manifest, report });
-        writeCliOutput({ json: options.json, report });
+        await writeOptionalJsonFile({ filePath: options.manifest, value: report });
+        writeFormattedOutput({ format: formatEventSurfaceReport, json: options.json, value: report });
         return report.ok ? EXIT_SUCCESS : EXIT_FAILURE;
     } catch (error) {
         console.error(error.message);
@@ -300,25 +302,6 @@ async function runCli() {
     }
 }
 
-async function writeManifest(options) {
-    if (!options.manifestPath) {
-        return;
-    }
-    await writeFile(options.manifestPath, `${JSON.stringify(options.report, null, JSON_INDENT)}\n`);
-}
-
-function writeCliOutput(options) {
-    if (options.json) {
-        console.log(JSON.stringify(options.report, null, JSON_INDENT));
-        return;
-    }
-    console.log(formatEventSurfaceReport(options.report));
-}
-
-function isCliEntry() {
-    return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isCliEntry()) {
+if (isCliEntry(import.meta.url)) {
     process.exitCode = await runCli();
 }

@@ -1,7 +1,6 @@
 id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
-1,Audit repeated verifier CLI and report utilities,IN_PROGRESS,Shared duplication targets are documented,"rg -n \"writeManifest|writeCliOutput|parseCliOptions|usageText\" tools",,0,
-2,Extract shared CLI/report helpers,TODO,Duplicated write/output utilities are centralized without behavior change,"timeout 60 npm run check && timeout 60 node tools/test/deploy-run-tests.js",,0,
-3,Modernize command and event scanners,TODO,Scanner traversal/report helpers are clearer and focused tests pass,"timeout 60 node tools/test/verify-tauritavern-run-tests.js && timeout 60 node tools/test/verify-tauritavern-events-run-tests.js",,0,
+1,Audit repeated verifier CLI and report utilities,DONE,Shared duplication targets are documented,"rg -n \"writeManifest|writeCliOutput|parseCliOptions|usageText\" tools",2026-05-22T00:41:00+08:00,0,
+2,Extract shared CLI/report helpers,DONE,Duplicated write/output utilities are centralized without behavior change,"timeout 60 npm run check && timeout 60 node tools/test/deploy-run-tests.js",2026-05-22T00:45:00+08:00,0,
+3,Modernize command and event scanners,IN_PROGRESS,Scanner traversal/report helpers are clearer and focused tests pass,"timeout 60 node tools/test/verify-tauritavern-run-tests.js && timeout 60 node tools/test/verify-tauritavern-events-run-tests.js",,0,
 4,Modernize evidence and smoke verifiers,TODO,Large verifier files are reduced and focused tests pass,"timeout 60 node tools/test/smoke-deploy-run-tests.js && timeout 60 node tools/test/device-evidence-run-tests.js && timeout 60 node tools/test/evidence-url-run-tests.js && timeout 60 node tools/test/run-tests.js",,0,
 5,Run full validation,TODO,full check and tests pass after tool modernization,"timeout 60 npm run check && timeout 60 npm test",,0,
-

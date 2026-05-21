@@ -3,11 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { encodePath } from '../server/lib/encoding.js';
 import { sha256 } from '../server/lib/manifest.js';
 import { buildPairingUri, startServer } from '../server/tt-sync-server.js';
+import {
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    isCliEntry,
+    writeFormattedOutput,
+    writeOptionalJsonFile,
+} from './cli-helpers.js';
 import {
     parseJsonResponse,
     parseSseProgress,
@@ -21,10 +27,7 @@ const DEFAULT_FIXTURE_FILE_BYTES = null;
 const DEFAULT_FIXTURE_FILE_COUNT = 1;
 const DEFAULT_DEVICE_PREFIX = 'smoke-device';
 const DEFAULT_NAMESPACE_PREFIX = 'smoke';
-const EXIT_FAILURE = 1;
-const EXIT_SUCCESS = 0;
 const FIXTURE_INDEX_PAD = 4;
-const JSON_INDENT = 2;
 const LOCAL_PORT = 0;
 const MIN_FIXTURE_FILE_BYTES = 0;
 const MIN_FIXTURE_FILE_COUNT = 1;
@@ -493,8 +496,8 @@ async function runCli() {
             return EXIT_SUCCESS;
         }
         const report = await smokeTtSyncServer(cliInput(options));
-        await writeManifest({ manifestPath: options.manifest, report });
-        writeCliOutput({ json: options.json, report });
+        await writeOptionalJsonFile({ filePath: options.manifest, value: report });
+        writeFormattedOutput({ format: formatSmokeReport, json: options.json, value: report });
         return EXIT_SUCCESS;
     } catch (error) {
         console.error(error.message);
@@ -514,25 +517,6 @@ function cliInput(options) {
     };
 }
 
-async function writeManifest(options) {
-    if (!options.manifestPath) {
-        return;
-    }
-    await writeFile(options.manifestPath, `${JSON.stringify(options.report, null, JSON_INDENT)}\n`);
-}
-
-function writeCliOutput(options) {
-    if (options.json) {
-        console.log(JSON.stringify(options.report, null, JSON_INDENT));
-        return;
-    }
-    console.log(formatSmokeReport(options.report));
-}
-
-function isCliEntry() {
-    return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isCliEntry()) {
+if (isCliEntry(import.meta.url)) {
     process.exitCode = await runCli();
 }

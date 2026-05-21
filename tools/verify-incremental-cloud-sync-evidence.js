@@ -1,8 +1,14 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    isCliEntry,
+    writeFormattedOutput,
+    writeOptionalJsonFile,
+} from './cli-helpers.js';
 import {
     COMMAND_REPORT_SCHEMA_VERSION,
     COMMAND_REPORT_TOOL,
@@ -35,9 +41,6 @@ export {
 } from './incremental-evidence-schema.js';
 const MIN_REAL_LARGE_SYNC_BYTES = 300 * 1024 * 1024;
 
-const EXIT_FAILURE = 1;
-const EXIT_SUCCESS = 0;
-const JSON_INDENT = 2;
 const TRUSTED_COMMAND_EVIDENCE_KINDS = new Set([
     'build-artifact-string',
     'tauri-command-declaration',
@@ -496,8 +499,8 @@ async function runCli() {
             return EXIT_SUCCESS;
         }
         const report = await verifyIncrementalCloudSyncEvidence(cliInput(options));
-        await writeManifest({ manifestPath: options.manifest, report });
-        writeOutput({ json: options.json, report });
+        await writeOptionalJsonFile({ filePath: options.manifest, value: report });
+        writeFormattedOutput({ format: formatEvidenceReport, json: options.json, value: report });
         return report.ok ? EXIT_SUCCESS : EXIT_FAILURE;
     } catch (error) {
         console.error(error.message);
@@ -516,25 +519,6 @@ function cliInput(options) {
     };
 }
 
-export async function writeManifest(options) {
-    if (!options.manifestPath) {
-        return;
-    }
-    await writeFile(options.manifestPath, `${JSON.stringify(options.report, null, JSON_INDENT)}\n`);
-}
-
-function writeOutput(options) {
-    if (options.json) {
-        console.log(JSON.stringify(options.report, null, JSON_INDENT));
-        return;
-    }
-    console.log(formatEvidenceReport(options.report));
-}
-
-function isCliEntry() {
-    return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isCliEntry()) {
+if (isCliEntry(import.meta.url)) {
     process.exitCode = await runCli();
 }

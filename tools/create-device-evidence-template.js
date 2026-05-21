@@ -1,15 +1,18 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    isCliEntry,
+    jsonText,
+    writeOptionalJsonFile,
+} from './cli-helpers.js';
 import { REQUIRED_DEVICE_CHECKS } from './verify-incremental-cloud-sync-evidence.js';
 
 const DEFAULT_ANDROID_PLATFORM = 'Android';
 const DEFAULT_DESKTOP_PLATFORM = 'desktop';
-const EXIT_FAILURE = 1;
-const EXIT_SUCCESS = 0;
-const JSON_INDENT = 2;
 
 export function createDeviceEvidenceTemplate(options = {}) {
     const checks = Object.fromEntries(REQUIRED_DEVICE_CHECKS.map(deviceCheckTemplate));
@@ -133,9 +136,9 @@ async function runCli() {
             return EXIT_SUCCESS;
         }
         const template = createDeviceEvidenceTemplate(await cliInput(options));
-        await writeTemplate({ outputPath: options.output, template });
+        await writeOptionalJsonFile({ filePath: options.output, value: template });
         if (options.json || !options.output) {
-            console.log(JSON.stringify(template, null, JSON_INDENT));
+            console.log(jsonText(template));
         }
         return EXIT_SUCCESS;
     } catch (error) {
@@ -188,17 +191,6 @@ async function readReportOption(options) {
     }
 }
 
-async function writeTemplate(options) {
-    if (!options.outputPath) {
-        return;
-    }
-    await writeFile(options.outputPath, `${JSON.stringify(options.template, null, JSON_INDENT)}\n`);
-}
-
-function isCliEntry() {
-    return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-if (isCliEntry()) {
+if (isCliEntry(import.meta.url)) {
     process.exitCode = await runCli();
 }

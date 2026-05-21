@@ -53,3 +53,14 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next active subtask: tool verifier modernization.
+
+### 2026-05-22 00:45 Asia/Taipei
+
+- Started tool verifier modernization.
+- Found repeated CLI/report output patterns across deploy, Tauri command, Tauri event, smoke, evidence, and device-evidence tools.
+- Extracted `tools/cli-helpers.js` and removed per-file duplicated JSON output helpers.
+- Validation passed:
+  - focused deploy/command/event/smoke/evidence tests
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Next: modernize command/event scanner traversal and shared scan utilities.
