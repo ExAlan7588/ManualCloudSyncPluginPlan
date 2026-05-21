@@ -4,10 +4,10 @@
 
 - Task: full-scope zero technical debt refactor.
 - Shape: epic.
-- Progress: 4/6 subtasks complete.
-- Current: subtask 5, test runner and validation consolidation.
+- Progress: 5/6 subtasks complete.
+- Current: subtask 6, final performance and dead-code pass.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/SUBTASKS.csv`.
-- Next: consolidate validation scripts and test runner structure.
+- Next: run final complexity/dead-code scan and final validation.
 
 ## Log
 
@@ -124,3 +124,18 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next active subtask: test runner and validation consolidation.
+
+### 2026-05-22 01:19 Asia/Taipei
+
+- Started test runner and validation consolidation.
+- Created child task tracking files under `tasks/05-validation-consolidation`.
+- Next: audit package validation scripts and extract explicit validation runners.
+
+### 2026-05-22 01:20 Asia/Taipei
+
+- Completed test runner and validation consolidation.
+- Replaced long inline package validation scripts with explicit Node runners that fail on missing files and directories.
+- Full validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Next active subtask: final performance and dead-code pass.
