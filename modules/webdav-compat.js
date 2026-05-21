@@ -84,20 +84,32 @@ export async function compatDownloadAndImport(item, context) {
 }
 
 function validateQueueItem(item) {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    if (isInvalidQueueItem(item)) {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
-    if (!item.manifest || typeof item.manifest !== 'object' || Array.isArray(item.manifest)) {
+    if (isInvalidQueueItemManifest(item.manifest)) {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
-    if (typeof item.manifestKey !== 'string' || item.manifestKey.trim() === '') {
+    if (isBlankText(item.manifestKey)) {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
-    if (typeof item.zipKey !== 'string' || item.zipKey.trim() === '') {
+    if (isBlankText(item.zipKey)) {
         throw new Error('WebDAV 佇列項目格式不正確');
     }
     validateManifest(item.manifest);
     validateQueueItemKeys(item);
+}
+
+function isInvalidQueueItem(item) {
+    return !item || typeof item !== 'object' || Array.isArray(item);
+}
+
+function isInvalidQueueItemManifest(manifest) {
+    return !manifest || typeof manifest !== 'object' || Array.isArray(manifest);
+}
+
+function isBlankText(value) {
+    return typeof value !== 'string' || value.trim() === '';
 }
 
 function validateQueueItemKeys(item) {

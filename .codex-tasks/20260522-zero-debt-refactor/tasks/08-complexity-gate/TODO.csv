@@ -1,0 +1,4 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Add nesting and complexity gate,DONE,npm run check enforces nesting depth and cyclomatic complexity limits,"timeout 60 node tools/test/code-metrics-run-tests.js && timeout 60 npm run check",2026-05-22T01:43:28+08:00,0,Nesting and cyclomatic complexity checks added to code metrics gate.
+2,Fix gate-exposed issues,DONE,Any true metric violations exposed by the gate are fixed or documented as scan false positives,"timeout 60 npm run check",2026-05-22T01:43:28+08:00,0,Gate-exposed complexity issues were split; nullish coalescing false-positive was corrected.
+3,Run final validation,DONE,Full validation passes after the gate,"timeout 60 npm run check && timeout 60 npm test",2026-05-22T01:43:28+08:00,0,Full check and test suite passed.

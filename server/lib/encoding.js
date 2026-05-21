@@ -31,6 +31,13 @@ export function decodePath(value) {
 }
 
 export function validateSyncPath(value) {
+    const path = syncPathText(value);
+    assertPortableSyncPath(path);
+    assertAllowedSyncPath(path);
+    return path;
+}
+
+function syncPathText(value) {
     if (value === undefined || value === null || value === '') {
         throw badRequest('Sync path is required');
     }
@@ -41,16 +48,22 @@ export function validateSyncPath(value) {
     if (!path) {
         throw badRequest('Sync path is required');
     }
+    return path;
+}
+
+function assertPortableSyncPath(path) {
     if (path.startsWith('/') || path.includes('\\') || path.includes('\0')) {
         throw badRequest(`Invalid sync path: ${path}`);
     }
     if (path.split('/').some(segment => segment === '..' || segment === '')) {
         throw badRequest(`Invalid sync path: ${path}`);
     }
+}
+
+function assertAllowedSyncPath(path) {
     if (isExcludedSyncPath(path)) {
         throw badRequest(`Sync path is excluded from TT-Sync: ${path}`);
     }
-    return path;
 }
 
 export function safeName(value, label) {

@@ -4,10 +4,10 @@
 
 - Task: full-scope zero technical debt refactor.
 - Shape: epic.
-- Progress: 7/7 subtasks complete.
-- Current: parameter limit enforcement complete.
+- Progress: 8/8 subtasks complete.
+- Current: nesting and complexity enforcement complete.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/SUBTASKS.csv`.
-- Next: commit the verified parameter-limit phase and rerun completion audit.
+- Next: commit the verified nesting and complexity enforcement phase.
 
 ## Log
 
@@ -174,5 +174,21 @@
 - Completed parameter limit enforcement.
 - `npm run check` now enforces 600-line files, 50-line functions, and at most 3 positional parameters.
 - Full validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+
+### 2026-05-22 01:26 Asia/Taipei
+
+- Completion audit continued: file length, function length, and parameter limits are enforced, but nesting depth and cyclomatic complexity still need a reusable gate.
+- Started subtask 8 to add conservative control-flow based nesting/complexity checks without treating object literals or fixtures as control blocks.
+
+### 2026-05-22 01:43 Asia/Taipei
+
+- Completed nesting and complexity enforcement.
+- `npm run check` now enforces 600-line files, 50-line functions, at most 3 positional parameters, nesting depth <= 3, and cyclomatic complexity <= 10.
+- Split gate-exposed functions in WebDAV compatibility, encoding, and planning helpers.
+- Corrected a nullish-coalescing false positive in the complexity scan and covered it with a focused regression test.
+- Final validation passed:
+  - `timeout 60 node tools/test/code-metrics-run-tests.js`
   - `timeout 60 npm run check`
   - `timeout 60 npm test`

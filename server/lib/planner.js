@@ -40,13 +40,25 @@ function planEnvelope(input) {
         committedAt: '',
         localManifest: input.local,
         remoteManifest: input.remote,
-        uploads: input.kind === 'push' ? input.uploads || [] : [],
-        downloads: input.kind === 'pull' ? input.downloads || [] : [],
-        remoteDeletes: input.kind === 'push' ? input.remoteDeletes || [] : [],
-        localDeletes: input.kind === 'pull' ? input.localDeletes || [] : [],
+        ...planTransferFields(input),
+        ...planDeleteFields(input),
         conflicts: input.conflicts || [],
         staged: {},
     };
+}
+
+function planTransferFields(input) {
+    if (input.kind === 'push') {
+        return { downloads: [], uploads: input.uploads || [] };
+    }
+    return { downloads: input.downloads || [], uploads: [] };
+}
+
+function planDeleteFields(input) {
+    if (input.kind === 'push') {
+        return { localDeletes: [], remoteDeletes: input.remoteDeletes || [] };
+    }
+    return { localDeletes: input.localDeletes || [], remoteDeletes: [] };
 }
 
 function syncMode(value) {
