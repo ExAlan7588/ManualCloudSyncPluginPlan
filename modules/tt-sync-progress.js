@@ -1,6 +1,13 @@
 import { formatBytes } from './format.js';
+import {
+    EMPTY_VALUE,
+    firstValue,
+    formatOptionalBytes,
+    formatOptionalCount,
+    nonNegativeIntegerValue,
+    stringValue,
+} from './payload.js';
 
-const EMPTY_VALUE = '未回傳';
 const MILLISECONDS_PER_SECOND = 1000;
 const PERCENT_FACTOR = 100;
 const SECONDS_PER_MINUTE = 60;
@@ -40,11 +47,11 @@ export function progressRows(progress, tracker, now = Date.now()) {
 function progressSnapshot(progress, tracker, now) {
     const elapsedSeconds = elapsedSecondsFrom(tracker, now);
     const snapshot = {
-        bytesDone: numberValue(firstValue(progress, ['bytes_done', 'bytesDone', 'bytesTransferred', 'completedBytes'])),
-        bytesTotal: numberValue(firstValue(progress, ['bytes_total', 'bytesTotal', 'totalBytes', 'byteTotal'])),
+        bytesDone: nonNegativeIntegerValue(firstValue(progress, ['bytes_done', 'bytesDone', 'bytesTransferred', 'completedBytes'])),
+        bytesTotal: nonNegativeIntegerValue(firstValue(progress, ['bytes_total', 'bytesTotal', 'totalBytes', 'byteTotal'])),
         elapsedSeconds,
-        filesDone: numberValue(firstValue(progress, ['files_done', 'filesDone', 'filesTransferred', 'completedFiles'])),
-        filesTotal: numberValue(firstValue(progress, ['files_total', 'filesTotal', 'totalFiles', 'fileTotal'])),
+        filesDone: nonNegativeIntegerValue(firstValue(progress, ['files_done', 'filesDone', 'filesTransferred', 'completedFiles'])),
+        filesTotal: nonNegativeIntegerValue(firstValue(progress, ['files_total', 'filesTotal', 'totalFiles', 'fileTotal'])),
         speedBytesPerSecond: null,
         timestamp: now,
     };
@@ -142,47 +149,4 @@ function durationText(seconds) {
         return `${minutes}m ${rounded % SECONDS_PER_MINUTE}s`;
     }
     return `${rounded}s`;
-}
-
-function formatOptionalCount(value) {
-    return Number.isFinite(value) ? String(value) : EMPTY_VALUE;
-}
-
-function formatOptionalBytes(value) {
-    return Number.isFinite(value) ? formatBytes(value) : EMPTY_VALUE;
-}
-
-function numberValue(value) {
-    if (typeof value === 'number') {
-        return Number.isSafeInteger(value) && value >= 0 ? value : null;
-    }
-    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
-        return null;
-    }
-    const number = Number(value);
-    return Number.isSafeInteger(number) ? number : null;
-}
-
-function firstValue(object, keys) {
-    for (const key of keys) {
-        if (object?.[key] !== undefined && object?.[key] !== null) {
-            return object[key];
-        }
-    }
-    return undefined;
-}
-
-function stringValue(value) {
-    if (!isTextScalar(value)) {
-        return EMPTY_VALUE;
-    }
-    const text = String(value || '').trim();
-    return text || EMPTY_VALUE;
-}
-
-function isTextScalar(value) {
-    if (typeof value === 'number') {
-        return Number.isFinite(value);
-    }
-    return typeof value === 'bigint' || typeof value === 'string';
 }

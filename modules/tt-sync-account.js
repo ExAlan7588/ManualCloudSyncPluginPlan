@@ -1,4 +1,5 @@
-import { normalizeError, readFailureMessage } from './errors.js';
+import { readFailureMessage, readJsonResponse } from './errors.js';
+import { isRecordObject, nonNegativeIntegerValue } from './payload.js';
 
 const ACCOUNT_ROUTES = Object.freeze({
     devices: '/v2/devices',
@@ -10,7 +11,6 @@ const ACCOUNT_ROUTES = Object.freeze({
 const DEFAULT_NAMESPACE = 'default';
 const EMPTY_TEXT = '尚無資料';
 const UNAVAILABLE_TEXT = '未回傳';
-const DECIMAL_INTEGER_PATTERN = /^\d+$/;
 
 export function bindTtSyncAccountPanel(deps) {
     const state = { accessToken: '', refreshToken: '', namespace: DEFAULT_NAMESPACE };
@@ -86,7 +86,7 @@ async function accountRequest(deps, options) {
     if (!response.ok) {
         throw new Error(await readFailureMessage(response) || `HTTP ${response.status}`);
     }
-    return readAccountJson(response, options.route);
+    return readJsonResponse(response, `TT-Sync 帳號 ${options.route} 回應`);
 }
 
 function requireAccountResponse(response, route) {
@@ -101,14 +101,6 @@ function isAccountResponse(response) {
         && typeof response.ok === 'boolean'
         && typeof response.json === 'function'
         && typeof response.text === 'function';
-}
-
-async function readAccountJson(response, route) {
-    try {
-        return await response.json();
-    } catch (error) {
-        throw new Error(`TT-Sync 帳號 ${route} 回應 JSON 無法解析：${normalizeError(error)}`);
-    }
 }
 
 function requestInit(options) {
@@ -187,7 +179,7 @@ function accountList(value, message) {
 }
 
 function isAccountItem(value) {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
+    return isRecordObject(value);
 }
 
 function renderList(selector, items, formatter) {
@@ -241,17 +233,6 @@ function historyCountText(value) {
     }
     const count = nonNegativeIntegerValue(value);
     return count === null ? UNAVAILABLE_TEXT : String(count);
-}
-
-function nonNegativeIntegerValue(value) {
-    if (typeof value === 'number') {
-        return Number.isSafeInteger(value) && value >= 0 ? value : null;
-    }
-    if (typeof value !== 'string' || !DECIMAL_INTEGER_PATTERN.test(value)) {
-        return null;
-    }
-    const number = Number(value);
-    return Number.isSafeInteger(number) ? number : null;
 }
 
 function accountEndpoint() {

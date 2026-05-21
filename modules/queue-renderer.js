@@ -1,5 +1,6 @@
 import { SHA_PREVIEW_LENGTH } from './constants.js';
 import { formatBytes } from './format.js';
+import { nonNegativeIntegerValue, scalarText } from './payload.js';
 
 const UNKNOWN_SIZE_TEXT = '大小：未回傳';
 
@@ -56,16 +57,7 @@ function queueItemMeta(item) {
 }
 
 function queueText(value) {
-    if (!value) {
-        return '';
-    }
-    if (typeof value === 'number') {
-        return Number.isFinite(value) ? String(value) : '';
-    }
-    if (typeof value === 'bigint' || typeof value === 'string') {
-        return String(value);
-    }
-    return '';
+    return scalarText(value);
 }
 
 function queueShaText(value) {
@@ -78,17 +70,6 @@ function queueShaText(value) {
 function queueSizeText(value) {
     const sizeBytes = nonNegativeIntegerValue(value);
     return Number.isFinite(sizeBytes) ? formatBytes(sizeBytes) : UNKNOWN_SIZE_TEXT;
-}
-
-function nonNegativeIntegerValue(value) {
-    if (typeof value === 'number') {
-        return Number.isSafeInteger(value) && value >= 0 ? value : null;
-    }
-    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
-        return null;
-    }
-    const number = Number(value);
-    return Number.isSafeInteger(number) ? number : null;
 }
 
 function deleteButton(fileName, onDeleteRemoteItem) {

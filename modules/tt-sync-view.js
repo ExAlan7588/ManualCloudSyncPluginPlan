@@ -1,5 +1,26 @@
-import { formatBytes } from './format.js';
+import {
+    EMPTY_VALUE,
+    firstObject,
+    firstValue,
+    formatOptionalBytes,
+    formatOptionalCount,
+    hasObjectPayload,
+    isRecordObject,
+    isTextScalar,
+    nonNegativeIntegerValue,
+    scalarText,
+    stringValue,
+} from './payload.js';
 import { createProgressTracker, progressRows } from './tt-sync-progress.js';
+
+export {
+    firstObject,
+    firstValue,
+    formatOptionalBytes,
+    formatOptionalCount,
+    hasObjectPayload,
+    stringValue,
+} from './payload.js';
 
 const CONFLICT_DECISIONS = Object.freeze({
     local: 'local',
@@ -9,8 +30,6 @@ const CONFLICT_DECISION_LABELS = Object.freeze({
     local: '使用本機',
     remote: '使用遠端',
 });
-const EMPTY_VALUE = '未回傳';
-
 export function renderServerOptions(servers) {
     const select = document.getElementById('mcs_tts_server');
     select.replaceChildren();
@@ -139,10 +158,6 @@ export function progressStatus(progress) {
     return `TT-Sync ${directionLabel(progress?.direction)} ${stringValue(progress?.phase)}`;
 }
 
-export function hasObjectPayload(value) {
-    return Boolean(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0);
-}
-
 export function serverListFrom(result) {
     if (Array.isArray(result)) {
         return validatedServerList(result);
@@ -227,14 +242,6 @@ export function isPullDirection(payload) {
     return String(payload?.direction || '').toLowerCase() === 'pull';
 }
 
-export function stringValue(value) {
-    if (!isTextScalar(value)) {
-        return EMPTY_VALUE;
-    }
-    const text = String(value || '').trim();
-    return text || EMPTY_VALUE;
-}
-
 export function errorMessage(error) {
     if (error instanceof Error && error.message) {
         return error.message;
@@ -242,57 +249,8 @@ export function errorMessage(error) {
     return stringValue(error);
 }
 
-export function firstValue(object, keys, fallback) {
-    for (const key of keys) {
-        if (object?.[key] !== undefined && object?.[key] !== null) {
-            return object[key];
-        }
-    }
-    return fallback;
-}
-
-export function firstObject(object, keys) {
-    for (const key of keys) {
-        if (isRecordObject(object?.[key])) {
-            return object[key];
-        }
-    }
-    return null;
-}
-
-export function formatOptionalCount(value) {
-    const number = nonNegativeIntegerValue(value);
-    return Number.isFinite(number) ? String(number) : EMPTY_VALUE;
-}
-
-export function formatOptionalBytes(value) {
-    const number = nonNegativeIntegerValue(value);
-    return Number.isFinite(number) ? formatBytes(number) : EMPTY_VALUE;
-}
-
-function nonNegativeIntegerValue(value) {
-    if (typeof value === 'number') {
-        return Number.isSafeInteger(value) && value >= 0 ? value : null;
-    }
-    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
-        return null;
-    }
-    const number = Number(value);
-    return Number.isSafeInteger(number) ? number : null;
-}
-
-function isTextScalar(value) {
-    if (typeof value === 'number') {
-        return Number.isFinite(value);
-    }
-    return typeof value === 'bigint' || typeof value === 'string';
-}
-
 function serverDisplayText(value) {
-    if (!isTextScalar(value)) {
-        return '';
-    }
-    return String(value || '').trim();
+    return scalarText(value);
 }
 
 function firstServerDisplayText(values) {
@@ -349,10 +307,6 @@ function hasConflictPath(value) {
 
 function isConflictEntry(value) {
     return value === undefined || value === null || isRecordObject(value);
-}
-
-function isRecordObject(value) {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function hasVisibleRows(rows) {

@@ -42,6 +42,14 @@ export async function readFailureMessage(response) {
     return extractErrorMessage(text);
 }
 
+export async function readJsonResponse(response, label) {
+    try {
+        return await response.json();
+    } catch (error) {
+        throw new Error(`${label} JSON 無法解析：${normalizeError(error)}`);
+    }
+}
+
 export function extractErrorMessage(text) {
     if (!text) {
         return '';

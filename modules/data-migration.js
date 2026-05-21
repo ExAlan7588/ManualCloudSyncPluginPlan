@@ -3,7 +3,7 @@ import {
     JSON_CONTENT_TYPE,
     TERMINAL_JOB_STATES,
 } from './constants.js';
-import { normalizeError, readFailureMessage } from './errors.js';
+import { normalizeError, readFailureMessage, readJsonResponse } from './errors.js';
 import { formatProgress } from './format.js';
 
 let mobileRuntimePromise = null;
@@ -30,7 +30,7 @@ export async function importArchiveBlob(blob, fileName, context) {
         throw new Error(await readFailureMessage(response));
     }
 
-    const jobId = requireJobId(await readJsonResponse(response, '資料匯入啟動'), '資料匯入 job id 缺失');
+    const jobId = requireJobId(await readJsonResponse(response, '資料匯入啟動回應'), '資料匯入 job id 缺失');
     const finalStatus = await pollDataArchiveJob({ jobId, setStatus: context.setStatus });
     if (finalStatus.state !== 'completed') {
         throw new Error(finalStatus.error || `資料匯入未完成：${finalStatus.state}`);
@@ -43,7 +43,7 @@ async function startDataArchiveExportJob() {
         throw new Error(await readFailureMessage(response));
     }
 
-    return requireJobId(await readJsonResponse(response, '資料匯出啟動'), '資料匯出 job id 缺失');
+    return requireJobId(await readJsonResponse(response, '資料匯出啟動回應'), '資料匯出 job id 缺失');
 }
 
 async function saveDataArchiveExport(jobId) {
@@ -125,7 +125,7 @@ async function fetchDataArchiveJob(jobId) {
         throw new Error(await readFailureMessage(response));
     }
 
-    return readJsonResponse(response, '資料遷移 job 狀態');
+    return readJsonResponse(response, '資料遷移 job 狀態回應');
 }
 
 function updateStatusFromDataArchiveJob(status, setStatus) {
@@ -169,15 +169,7 @@ async function postJson(url, body, label = '資料遷移 API') {
         throw new Error(await readFailureMessage(response));
     }
 
-    return readJsonResponse(response, label);
-}
-
-async function readJsonResponse(response, label) {
-    try {
-        return await response.json();
-    } catch (error) {
-        throw new Error(`${label}回應 JSON 無法解析：${normalizeError(error)}`);
-    }
+    return readJsonResponse(response, `${label}回應`);
 }
 
 function requireJobId(payload, message) {

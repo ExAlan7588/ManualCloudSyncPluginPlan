@@ -109,3 +109,9 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next active subtask: frontend module consistency cleanup.
+
+### 2026-05-22 01:14 Asia/Taipei
+
+- Started frontend module consistency cleanup.
+- Created child task tracking files under `tasks/04-frontend-cleanup`.
+- Next: audit frontend module boundaries and focused tests.
