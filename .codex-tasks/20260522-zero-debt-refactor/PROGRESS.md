@@ -88,3 +88,16 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next: split smoke verifier runtime/fixture/report helpers.
+
+### 2026-05-22 01:12 Asia/Taipei
+
+- Split smoke verifier responsibilities into runtime, fixture, API, and report modules.
+- `tools/smoke-tt-sync-server.js` is now 190 lines and preserves public exports:
+  - `smokeTtSyncServer`
+  - `formatSmokeReport`
+  - `parseSseProgress`
+- Validation passed:
+  - `timeout 60 node tools/test/smoke-deploy-run-tests.js`
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Next: run final validation for tool modernization.

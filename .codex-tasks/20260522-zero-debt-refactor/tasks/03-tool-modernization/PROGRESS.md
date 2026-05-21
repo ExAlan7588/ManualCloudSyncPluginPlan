@@ -4,10 +4,10 @@
 
 - Task: tool verifier modernization.
 - Shape: single-full.
-- Progress: 3/5 complete.
-- Current: modernize evidence and smoke verifiers.
+- Progress: 4/5 complete.
+- Current: run full validation.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/tasks/03-tool-modernization/TODO.csv`.
-- Next: inspect evidence and smoke verifiers and extract behavior-preserving helpers.
+- Next: run full validation and close tool modernization.
 
 ## Log
 
@@ -53,5 +53,19 @@
   - `timeout 60 node tools/test/run-tests.js`
   - `timeout 60 node tools/test/device-evidence-run-tests.js`
   - `timeout 60 node tools/test/evidence-url-run-tests.js`
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+
+### 2026-05-22 01:12 Asia/Taipei
+
+- Split `tools/smoke-tt-sync-server.js` into focused smoke modules:
+  - `tools/smoke-runtime.js`
+  - `tools/smoke-fixture.js`
+  - `tools/smoke-api.js`
+  - `tools/smoke-report.js`
+- `tools/smoke-tt-sync-server.js` now keeps public API, CLI parsing, and high-level smoke workflow.
+- Reduced `tools/smoke-tt-sync-server.js` from 522 to 190 lines.
+- Validated with:
+  - `timeout 60 node tools/test/smoke-deploy-run-tests.js`
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
