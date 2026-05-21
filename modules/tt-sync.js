@@ -52,8 +52,6 @@ const TT_SYNC_EVENTS = Object.freeze({
 const DEFAULT_SYNC_MODE = 'Incremental';
 const SYNC_MODES = new Set([DEFAULT_SYNC_MODE, 'Mirror']);
 
-let eventListenersInstalled = false;
-
 export function bindTtSyncPanel(deps) {
     const controller = createTtSyncController(deps);
     controller.bind();
@@ -65,6 +63,7 @@ export function bindTtSyncPanel(deps) {
 function createTtSyncController(deps) {
     const state = {
         conflictChoices: new Map(),
+        eventListenersInstalled: false,
         lastConflictPayload: null,
         progressTracker: createProgressTracker(),
         servers: [],
@@ -213,7 +212,7 @@ async function loadServers(deps, state) {
 }
 
 function installTtSyncEventListeners(deps, state) {
-    if (eventListenersInstalled) {
+    if (state.eventListenersInstalled) {
         return;
     }
     if (typeof deps.listen !== 'function') {
@@ -221,7 +220,7 @@ function installTtSyncEventListeners(deps, state) {
         return;
     }
 
-    eventListenersInstalled = true;
+    state.eventListenersInstalled = true;
     void Promise.all([
         deps.listen(TT_SYNC_EVENTS.progress, event => handleProgressEvent(state, event?.payload)),
         deps.listen(TT_SYNC_EVENTS.completed, event => handleCompletedEvent(deps, state, event?.payload)),
@@ -230,7 +229,7 @@ function installTtSyncEventListeners(deps, state) {
         deps.listen(TT_SYNC_EVENTS.conflict, event => handleConflictEvent(state, event?.payload)),
         deps.listen(TT_SYNC_EVENTS.error, event => handleErrorEvent(state, event?.payload)),
     ]).catch(error => {
-        eventListenersInstalled = false;
+        state.eventListenersInstalled = false;
         renderTtStatus(`TT-Sync 事件訂閱失敗：${errorMessage(error)}`);
     });
 }

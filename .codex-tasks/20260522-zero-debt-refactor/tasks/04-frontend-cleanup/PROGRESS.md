@@ -4,10 +4,10 @@
 
 - Task: frontend module consistency cleanup.
 - Shape: single-full.
-- Progress: 2/5 complete.
-- Current: clean TT-Sync module state and event surfaces.
+- Progress: 3/5 complete.
+- Current: run focused frontend validation.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/tasks/04-frontend-cleanup/TODO.csv`.
-- Next: inspect TT-Sync transfer state and event listener boundaries.
+- Next: run focused frontend validation across all frontend module tests.
 
 ## Log
 
@@ -39,3 +39,16 @@
   - `timeout 60 node tools/test/frontend-tt-sync-run-tests.js`
   - `timeout 60 node tools/test/config-run-tests.js`
   - `timeout 60 node tools/test/webdav-compat-run-tests.js`
+
+### 2026-05-22 01:16 Asia/Taipei
+
+- Moved TT-Sync event listener installation state from module scope into controller state.
+- Added `tools/test/tt-sync-events-run-tests.js` to cover controller-scoped listener installation.
+- Added the new focused test to `npm test`.
+- Validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 node tools/test/frontend-tt-sync-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-view-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-progress-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-account-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-events-run-tests.js`
