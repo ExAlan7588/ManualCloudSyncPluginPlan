@@ -5,13 +5,16 @@ import { join } from 'node:path';
 import {
     MAX_FILE_LINES,
     MAX_FUNCTION_LINES,
+    MAX_POSITIONAL_PARAMETERS,
     codeMetricIssues,
 } from '../check-code-metrics.js';
 
 await testAcceptsCompactFunction();
 await testRejectsOversizedFile();
 await testRejectsOversizedFunction();
-console.log('ok - code metrics expose file and function limit violations');
+await testRejectsTooManyPositionalParameters();
+await testAllowsOptionsObjectParameter();
+console.log('ok - code metrics expose file, function, and parameter limit violations');
 
 async function testAcceptsCompactFunction() {
     await withTempRoot(async root => {
@@ -44,6 +47,27 @@ async function testRejectsOversizedFunction() {
             line: 1,
             name: 'tooLarge',
         }]);
+    });
+}
+
+async function testRejectsTooManyPositionalParameters() {
+    await withTempRoot(async root => {
+        await writeFile(join(root, 'many-parameters.js'), 'export function tooMany(one, two, three, four) {\n    return one + two + three + four;\n}\n');
+        assert.deepEqual(codeMetricIssues(root, ['many-parameters.js']), [{
+            actual: MAX_POSITIONAL_PARAMETERS + 1,
+            file: 'many-parameters.js',
+            kind: 'function-parameters',
+            limit: MAX_POSITIONAL_PARAMETERS,
+            line: 1,
+            name: 'tooMany',
+        }]);
+    });
+}
+
+async function testAllowsOptionsObjectParameter() {
+    await withTempRoot(async root => {
+        await writeFile(join(root, 'options.js'), 'export function ok({ one, two, three, four }) {\n    return one + two + three + four;\n}\n');
+        assert.deepEqual(codeMetricIssues(root, ['options.js']), []);
     });
 }
 

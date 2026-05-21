@@ -21,7 +21,12 @@ export async function downloadPlanFile(context, plan, syncPath) {
 
 export async function uploadPlanFile(context, plan, syncPath) {
     const entry = findPlanEntry(plan.uploads, syncPath, 'uploads');
-    await context.storage.stageFileStream(plan, entry, context.request, maxBodyBytes());
+    await context.storage.stageFileStream({
+        entry,
+        maxBytes: maxBodyBytes(),
+        plan,
+        stream: context.request,
+    });
     return { ok: true, path: syncPath };
 }
 

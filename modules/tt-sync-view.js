@@ -336,18 +336,23 @@ function conflictActionRow(state, conflict, decision) {
     const row = document.createElement('div');
     row.className = 'mcs-conflict-actions';
     for (const option of Object.values(CONFLICT_DECISIONS)) {
-        row.appendChild(conflictDecisionButton(state, conflict, option, decision));
+        row.appendChild(conflictDecisionButton({
+            conflict,
+            decision: option,
+            selectedDecision: decision,
+            state,
+        }));
     }
     return row;
 }
 
-function conflictDecisionButton(state, conflict, decision, selectedDecision) {
+function conflictDecisionButton(options) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `menu_button menu_button_icon mcs-conflict-choice${selectedDecision === decision ? ' is-selected' : ''}`;
-    button.setAttribute('aria-pressed', String(selectedDecision === decision));
-    button.textContent = CONFLICT_DECISION_LABELS[decision];
-    button.addEventListener('click', () => setConflictDecision(state, conflict, decision));
+    button.className = `menu_button menu_button_icon mcs-conflict-choice${options.selectedDecision === options.decision ? ' is-selected' : ''}`;
+    button.setAttribute('aria-pressed', String(options.selectedDecision === options.decision));
+    button.textContent = CONFLICT_DECISION_LABELS[options.decision];
+    button.addEventListener('click', () => setConflictDecision(options.state, options.conflict, options.decision));
     return button;
 }
 

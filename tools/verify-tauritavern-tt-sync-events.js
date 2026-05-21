@@ -117,18 +117,28 @@ function recordTokenHits(hitMap, text, label) {
 }
 
 function recordPayloadFields(fieldHits, text, label) {
-    recordStructFields(fieldHits.progress, 'TtSyncProgressEvent', text, label);
-    recordStructFields(fieldHits.completed, 'TtSyncCompletedEvent', text, label);
+    recordStructFields({
+        hitMap: fieldHits.progress,
+        label,
+        structName: 'TtSyncProgressEvent',
+        text,
+    });
+    recordStructFields({
+        hitMap: fieldHits.completed,
+        label,
+        structName: 'TtSyncCompletedEvent',
+        text,
+    });
 }
 
-function recordStructFields(hitMap, structName, text, label) {
-    const structBody = structBodyFor(text, structName);
+function recordStructFields(options) {
+    const structBody = structBodyFor(options.text, options.structName);
     if (!structBody) {
         return;
     }
-    for (const [field, files] of hitMap) {
+    for (const [field, files] of options.hitMap) {
         if (new RegExp(`\\bpub\\s+${escapeRegex(field)}\\b`).test(structBody)) {
-            files.push(label);
+            files.push(options.label);
         }
     }
 }

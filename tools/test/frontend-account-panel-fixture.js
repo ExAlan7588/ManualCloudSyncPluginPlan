@@ -62,37 +62,42 @@ function jqueryElement(element) {
 function accountPanelFetch(historyItem, overrides) {
     return async (input, init = {}) => {
         const url = new URL(input);
-        return jsonResponse(accountPanelPayload(url.pathname, historyItem, overrides, init));
+        return jsonResponse(accountPanelPayload({
+            historyItem,
+            init,
+            overrides,
+            pathname: url.pathname,
+        }));
     };
 }
 
-function accountPanelPayload(pathname, historyItem, overrides, init) {
-    if (pathname === '/v2/account/login') {
-        if (Object.hasOwn(overrides, 'login')) {
-            return overrides.login;
+function accountPanelPayload(options) {
+    if (options.pathname === '/v2/account/login') {
+        if (Object.hasOwn(options.overrides, 'login')) {
+            return options.overrides.login;
         }
         return { accessToken: 'access-token', namespace: 'default', refreshToken: 'refresh-token' };
     }
-    if (pathname === '/v2/devices') {
-        if (Object.hasOwn(overrides, 'devices')) {
-            return overrides.devices;
+    if (options.pathname === '/v2/devices') {
+        if (Object.hasOwn(options.overrides, 'devices')) {
+            return options.overrides.devices;
         }
         return { devices: [] };
     }
-    if (pathname === '/v2/history') {
-        if (Object.hasOwn(overrides, 'history')) {
-            return overrides.history;
+    if (options.pathname === '/v2/history') {
+        if (Object.hasOwn(options.overrides, 'history')) {
+            return options.overrides.history;
         }
-        return { history: [{ kind: 'sync', planId: 'plan-1', ...historyItem }] };
+        return { history: [{ kind: 'sync', planId: 'plan-1', ...options.historyItem }] };
     }
-    if (pathname === '/v2/account/pairing-uri') {
-        assert.equal(init?.headers?.Authorization, 'Bearer access-token');
-        if (Object.hasOwn(overrides, 'pairingUri')) {
-            return overrides.pairingUri;
+    if (options.pathname === '/v2/account/pairing-uri') {
+        assert.equal(options.init?.headers?.Authorization, 'Bearer access-token');
+        if (Object.hasOwn(options.overrides, 'pairingUri')) {
+            return options.overrides.pairingUri;
         }
         return { expiresAt: '2026-05-17T00:00:00Z', pairingUri: 'tt-sync://pair/test' };
     }
-    throw new Error(`Unexpected account panel route: ${pathname}`);
+    throw new Error(`Unexpected account panel route: ${options.pathname}`);
 }
 
 function jsonResponse(payload) {

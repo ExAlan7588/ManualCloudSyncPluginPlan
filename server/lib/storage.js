@@ -203,22 +203,22 @@ export class TtSyncStorage {
         });
     }
 
-    async stageFileStream(plan, entry, stream, maxBytes) {
-        const latest = await this.readPlan(plan.id);
+    async stageFileStream(options) {
+        const latest = await this.readPlan(options.plan.id);
         assertPlanOpen(latest);
         assertPlanStaged(latest);
-        const latestEntry = uploadEntry(latest, entry.path);
+        const latestEntry = uploadEntry(latest, options.entry.path);
         const stagedPath = this.stagedFilePath(latest.id, latestEntry.path);
         const result = await writeRequestStreamAtomic({
             expectedBytes: latestEntry.sizeBytes,
             expectedSha256: latestEntry.sha256 || '',
             filePath: stagedPath,
-            maxBytes,
-            stream,
+            maxBytes: options.maxBytes,
+            stream: options.stream,
             syncPath: latestEntry.path,
         });
-        return this.withPlanLock(plan.id, async () => {
-            const locked = await this.readPlan(plan.id);
+        return this.withPlanLock(options.plan.id, async () => {
+            const locked = await this.readPlan(options.plan.id);
             if (locked.committedAt) {
                 await rm(stagedPath, { force: true });
                 assertPlanOpen(locked);
@@ -376,7 +376,12 @@ export class TtSyncStorage {
             await this.deleteRemote(plan.namespace, syncPath, manifest);
         }
         for (const conflictItem of plan.conflicts) {
-            await this.applyConflictDelete(plan.namespace, conflictItem, decisions, manifest);
+            await this.applyConflictDelete({
+                conflictItem,
+                decisions,
+                manifest,
+                namespace: plan.namespace,
+            });
         }
         await this.writeManifest(plan.namespace, Array.from(manifest.values()).sort(compareEntries));
     }
@@ -400,11 +405,11 @@ export class TtSyncStorage {
         manifest.delete(syncPath);
     }
 
-    async applyConflictDelete(namespace, conflictItem, decisions, manifest) {
-        if (decisions[conflictItem.path] !== 'local' || conflictItem.local) {
+    async applyConflictDelete(options) {
+        if (options.decisions[options.conflictItem.path] !== 'local' || options.conflictItem.local) {
             return;
         }
-        await this.deleteRemote(namespace, conflictItem.path, manifest);
+        await this.deleteRemote(options.namespace, options.conflictItem.path, options.manifest);
     }
 
     async createRollbackPoint(plan) {

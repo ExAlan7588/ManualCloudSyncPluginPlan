@@ -4,10 +4,10 @@
 
 - Task: full-scope zero technical debt refactor.
 - Shape: epic.
-- Progress: 6/6 subtasks complete.
-- Current: final validation complete.
+- Progress: 7/7 subtasks complete.
+- Current: parameter limit enforcement complete.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/SUBTASKS.csv`.
-- Next: commit the verified final-pass phase.
+- Next: commit the verified parameter-limit phase and rerun completion audit.
 
 ## Log
 
@@ -156,5 +156,23 @@
 - `npm run check` now enforces syntax plus 600-line file and 50-line function limits.
 - Reviewed final obsolete-pattern hits; remaining `compat`, `mock`, and `fallback` occurrences are intentional supported behavior or explicit failure/no-mock tests, not dead compatibility paths or fake success.
 - Final validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+
+### 2026-05-22 01:23 Asia/Taipei
+
+- Completion audit found the goal is not yet closed: three scanned functions still exceed the 3 positional parameter limit.
+- Started subtask 7 to convert those call sites to options objects and add parameter-count enforcement to `npm run check`.
+
+### 2026-05-22 01:24 Asia/Taipei
+
+- Parameter-count enforcement exposed two additional true storage-layer violations after the gate was added.
+- Expanded subtask 7 from three to five functions and converted all five call sites to options objects.
+
+### 2026-05-22 01:25 Asia/Taipei
+
+- Completed parameter limit enforcement.
+- `npm run check` now enforces 600-line files, 50-line functions, and at most 3 positional parameters.
+- Full validation passed:
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
