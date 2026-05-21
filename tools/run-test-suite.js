@@ -41,6 +41,7 @@ const TEST_FILES = Object.freeze([
     'tools/test/smoke-deploy-run-tests.js',
     'tools/test/docs-coverage-run-tests.js',
     'tools/test/validation-runner-run-tests.js',
+    'tools/test/code-metrics-run-tests.js',
     'tools/test/device-evidence-run-tests.js',
     'tools/test/evidence-url-run-tests.js',
     'tools/test/run-tests.js',

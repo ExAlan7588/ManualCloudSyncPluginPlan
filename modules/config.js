@@ -11,6 +11,17 @@ import {
 } from './constants.js';
 import { normalizeError } from './errors.js';
 
+const CONFIG_FIELD_BINDINGS = Object.freeze([
+    ['#mcs_backend', config => config.backend || BACKEND_WEBDAV],
+    ['#mcs_endpoint', config => config.endpoint || ''],
+    ['#mcs_remote_prefix', config => config.remotePrefix || DEFAULT_REMOTE_PREFIX],
+    ['#mcs_device_id', config => config.deviceId || ''],
+    ['#mcs_webdav_auth_mode', config => config.webdav?.authMode || AUTH_BASIC],
+    ['#mcs_webdav_username', config => config.webdav?.username || ''],
+    ['#mcs_s3_bucket', config => config.s3?.bucket || ''],
+    ['#mcs_s3_region', config => config.s3?.region || DEFAULT_S3_REGION],
+]);
+
 export function readConfig() {
     return {
         version: CONFIG_VERSION,
@@ -35,14 +46,9 @@ export function readSecrets() {
 
 export function fillConfig(view) {
     const config = view?.config || {};
-    $('#mcs_backend').val(config.backend || BACKEND_WEBDAV);
-    $('#mcs_endpoint').val(config.endpoint || '');
-    $('#mcs_remote_prefix').val(config.remotePrefix || DEFAULT_REMOTE_PREFIX);
-    $('#mcs_device_id').val(config.deviceId || '');
-    $('#mcs_webdav_auth_mode').val(config.webdav?.authMode || AUTH_BASIC);
-    $('#mcs_webdav_username').val(config.webdav?.username || '');
-    $('#mcs_s3_bucket').val(config.s3?.bucket || '');
-    $('#mcs_s3_region').val(config.s3?.region || DEFAULT_S3_REGION);
+    for (const [selector, valueFor] of CONFIG_FIELD_BINDINGS) {
+        $(selector).val(valueFor(config));
+    }
     $('#mcs_s3_path_style').prop('checked', config.s3?.pathStyle ?? true);
     applySecretPlaceholders(view?.secrets || {});
     refreshBackendFields();

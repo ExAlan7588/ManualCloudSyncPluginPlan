@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/check-syntax.js",
+    "check": "node tools/check-project.js",
     "test": "node tools/run-test-suite.js",
     "evidence:device-template": "node tools/create-device-evidence-template.js",
     "tt-sync:pair": "node server/tt-sync-server.js pair",

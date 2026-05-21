@@ -4,10 +4,10 @@
 
 - Task: full-scope zero technical debt refactor.
 - Shape: epic.
-- Progress: 5/6 subtasks complete.
-- Current: subtask 6, final performance and dead-code pass.
+- Progress: 6/6 subtasks complete.
+- Current: final validation complete.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/SUBTASKS.csv`.
-- Next: run final complexity/dead-code scan and final validation.
+- Next: commit the verified final-pass phase.
 
 ## Log
 
@@ -139,3 +139,22 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next active subtask: final performance and dead-code pass.
+
+### 2026-05-22 01:21 Asia/Taipei
+
+- Started final performance and dead-code pass.
+- Created child task tracking files under `tasks/06-final-pass`.
+- Next: run file/function size and obsolete-pattern scans.
+
+### 2026-05-22 01:22 Asia/Taipei
+
+- Completed final performance and dead-code pass.
+- Added a reusable code metrics gate:
+  - `tools/check-code-metrics.js`
+  - `tools/check-project.js`
+  - `tools/test/code-metrics-run-tests.js`
+- `npm run check` now enforces syntax plus 600-line file and 50-line function limits.
+- Reviewed final obsolete-pattern hits; remaining `compat`, `mock`, and `fallback` occurrences are intentional supported behavior or explicit failure/no-mock tests, not dead compatibility paths or fake success.
+- Final validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
