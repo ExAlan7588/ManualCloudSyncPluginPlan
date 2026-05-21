@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { opendir, readFile, realpath, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import {
@@ -9,6 +9,7 @@ import {
     writeFormattedOutput,
     writeOptionalJsonFile,
 } from './cli-helpers.js';
+import { compareText, displayPath, escapeRegex, scanSourceEntry, sourceInfoFor as scanSourceInfoFor } from './source-scan.js';
 import { ZIP_LIKE_EXTENSIONS, zipEntriesFrom } from './zip-entries.js';
 
 export const REQUIRED_TT_SYNC_COMMANDS = Object.freeze([
@@ -64,7 +65,12 @@ const ASCII_CR = 13;
 export async function verifyTauriTavernCommands(options) {
     const sourceInfo = await sourceInfoFor(options?.source);
     const state = createScanState(sourceInfo);
-    await scanEntry({ entryPath: sourceInfo.startPath, state });
+    await scanSourceEntry({
+        entryPath: sourceInfo.startPath,
+        state,
+        visitFile: scanFile,
+        visitSpecial: recordSpecialEntry,
+    });
     return reportFor(state);
 }
 
@@ -82,21 +88,10 @@ export function formatVerificationReport(report) {
 }
 
 async function sourceInfoFor(source) {
-    if (!source) {
-        throw new Error(usageText());
-    }
-    const resolved = await realpath(path.resolve(source));
-    const sourceStats = await stat(resolved);
-    return {
-        isSingleFile: sourceStats.isFile(),
-        rootDir: sourceStats.isDirectory() ? resolved : path.dirname(resolved),
-        source: resolved,
-        sourceKind: sourceKindFor(resolved, sourceStats),
-        startPath: resolved,
-    };
+    return scanSourceInfoFor({ source, sourceKindFor, usageText });
 }
 
-function sourceKindFor(sourcePath, sourceStats) {
+function sourceKindFor({ sourcePath, sourceStats }) {
     if (sourceStats.isDirectory()) {
         return 'source-tree';
     }
@@ -126,35 +121,8 @@ function createScanState(sourceInfo) {
     };
 }
 
-async function scanEntry(options) {
-    const resolved = await realpath(options.entryPath);
-    if (options.state.visited.has(resolved)) {
-        return;
-    }
-    options.state.visited.add(resolved);
-
-    const entryStats = await stat(resolved);
-    if (entryStats.isDirectory()) {
-        await scanDirectory({ dirPath: resolved, state: options.state });
-        return;
-    }
-    if (entryStats.isFile()) {
-        await scanFile({ filePath: resolved, state: options.state });
-        return;
-    }
-    options.state.skippedSpecialEntries.push(displayPath(options.state, resolved));
-}
-
-async function scanDirectory(options) {
-    const directory = await opendir(options.dirPath);
-    const names = [];
-    for await (const entry of directory) {
-        names.push(entry.name);
-    }
-    names.sort(compareText);
-    for (const name of names) {
-        await scanEntry({ entryPath: path.join(options.dirPath, name), state: options.state });
-    }
+function recordSpecialEntry(options) {
+    options.state.skippedSpecialEntries.push(displayPath(options.state, options.entryPath));
 }
 
 async function scanFile(options) {
@@ -239,10 +207,6 @@ function commandEvidenceCoversCommand(evidence) {
         || (kinds.has('tauri-command-declaration') && kinds.has('tauri-handler-registration'));
 }
 
-function displayPath(state, filePath) {
-    return path.relative(state.rootDir, filePath) || path.basename(filePath);
-}
-
 function appendMissingSection(options) {
     if (options.report.missingCommands.length === 0) {
         return;
@@ -319,10 +283,6 @@ async function runCli() {
     }
 }
 
-function compareText(left, right) {
-    return left.localeCompare(right);
-}
-
 function compareEvidence(left, right) {
     return compareText(`${left.file}:${left.kind}`, `${right.file}:${right.kind}`);
 }
@@ -361,10 +321,6 @@ function hasQualifiedRustHandlerRegistration(options) {
 
 function isRustSource(label) {
     return path.extname(artifactLabel(label)).toLowerCase() === '.rs';
-}
-
-function escapeRegex(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isTrustedBuildArtifact(options) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { opendir, readFile, realpath, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import {
@@ -9,6 +9,7 @@ import {
     writeFormattedOutput,
     writeOptionalJsonFile,
 } from './cli-helpers.js';
+import { compareText, displayPath, escapeRegex, scanSourceEntry, sourceInfoFor as scanSourceInfoFor } from './source-scan.js';
 
 export const REQUIRED_TT_SYNC_EVENTS = Object.freeze([
     'tt_sync:progress',
@@ -40,7 +41,11 @@ const TEXT_EXTENSIONS = new Set(['.js', '.json', '.md', '.rs', '.toml', '.ts', '
 export async function verifyTauriTavernTtSyncEventSurface(options) {
     const sourceInfo = await sourceInfoFor(options?.source);
     const state = createState(sourceInfo);
-    await scanEntry({ entryPath: sourceInfo.startPath, state });
+    await scanSourceEntry({
+        entryPath: sourceInfo.startPath,
+        state,
+        visitFile: scanTextFile,
+    });
     return reportFor(state);
 }
 
@@ -60,17 +65,11 @@ export function formatEventSurfaceReport(report) {
 }
 
 async function sourceInfoFor(source) {
-    if (!source) {
-        throw new Error(usageText());
-    }
-    const resolved = await realpath(path.resolve(source));
-    const sourceStats = await stat(resolved);
-    return {
-        rootDir: sourceStats.isDirectory() ? resolved : path.dirname(resolved),
-        source: resolved,
-        sourceKind: sourceStats.isDirectory() ? 'source-tree' : 'source-file',
-        startPath: resolved,
-    };
+    return scanSourceInfoFor({ source, sourceKindFor, usageText });
+}
+
+function sourceKindFor({ sourceStats }) {
+    return sourceStats.isDirectory() ? 'source-tree' : 'source-file';
 }
 
 function createState(sourceInfo) {
@@ -97,35 +96,10 @@ function hitsFor(values) {
     return new Map(values.map(value => [value, []]));
 }
 
-async function scanEntry(options) {
-    const resolved = await realpath(options.entryPath);
-    if (options.state.visited.has(resolved)) {
-        return;
-    }
-    options.state.visited.add(resolved);
-    const entryStats = await stat(resolved);
-    if (entryStats.isDirectory()) {
-        await scanDirectory({ dirPath: resolved, state: options.state });
-        return;
-    }
-    if (entryStats.isFile() && isTextFile(resolved)) {
-        await scanTextFile({ filePath: resolved, state: options.state });
-    }
-}
-
-async function scanDirectory(options) {
-    const directory = await opendir(options.dirPath);
-    const names = [];
-    for await (const entry of directory) {
-        names.push(entry.name);
-    }
-    names.sort(compareText);
-    for (const name of names) {
-        await scanEntry({ entryPath: path.join(options.dirPath, name), state: options.state });
-    }
-}
-
 async function scanTextFile(options) {
+    if (!isTextFile(options.filePath)) {
+        return;
+    }
     const text = await readFile(options.filePath, 'utf8');
     const label = displayPath(options.state, options.filePath);
     options.state.scannedFiles += 1;
@@ -251,18 +225,6 @@ function fileList(item) {
 
 function isTextFile(filePath) {
     return TEXT_EXTENSIONS.has(path.extname(filePath).toLowerCase());
-}
-
-function displayPath(state, filePath) {
-    return path.relative(state.rootDir, filePath) || path.basename(filePath);
-}
-
-function compareText(left, right) {
-    return left.localeCompare(right);
-}
-
-function escapeRegex(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function parseCliOptions() {

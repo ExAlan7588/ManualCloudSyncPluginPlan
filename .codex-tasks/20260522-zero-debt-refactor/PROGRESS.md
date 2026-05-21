@@ -64,3 +64,15 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next: modernize command/event scanner traversal and shared scan utilities.
+
+### 2026-05-22 00:52 Asia/Taipei
+
+- Extracted shared source traversal into `tools/source-scan.js`.
+- Command and event verifiers now share source info, sorted traversal, visited tracking, display paths, text comparison, and regex escaping.
+- Domain-specific evidence and event field logic remains local to each verifier.
+- Validation passed:
+  - `timeout 60 node tools/test/verify-tauritavern-run-tests.js`
+  - `timeout 60 node tools/test/verify-tauritavern-events-run-tests.js`
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Next: reduce evidence and smoke verifier files.
