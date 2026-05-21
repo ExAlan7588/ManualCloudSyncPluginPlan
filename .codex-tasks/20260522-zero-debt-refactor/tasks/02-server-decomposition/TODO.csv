@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Extract storage path lock validation and namespace helpers,DONE,storage.js is smaller and focused storage tests pass,"timeout 60 node server/test/storage-run-tests.js && timeout 60 npm run check && timeout 60 npm test",2026-05-22T00:17:00+08:00,0,
+2,Split route request normalization helpers,DONE,routes.js reduced without route behavior regression,"timeout 60 node server/test/routes-unit-run-tests.js && timeout 60 npm run check",2026-05-22T00:28:00+08:00,0,
+3,Split route plan/file transfer helpers,DONE,plan file and bundle code isolated with focused tests passing,"timeout 60 node server/test/routes-unit-run-tests.js && timeout 60 node server/test/run-tests.js",2026-05-22T00:31:00+08:00,0,
+4,Run full server validation,DONE,full check and tests pass after server decomposition,"timeout 60 npm run check && timeout 60 npm test",2026-05-22T00:33:00+08:00,0,

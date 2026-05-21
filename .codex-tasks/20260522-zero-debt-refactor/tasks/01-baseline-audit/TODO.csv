@@ -1,0 +1,5 @@
+id,task,status,acceptance_criteria,validation_command,completed_at,retry_count,notes
+1,Run syntax baseline,DONE,npm check passes,timeout 60 npm run check,2026-05-22T00:17:00+08:00,0,
+2,Run behavioral baseline,DONE,npm test passes,timeout 60 npm test,2026-05-22T00:17:00+08:00,0,
+3,Record architectural targets,DONE,Parent PROGRESS.md contains initial findings,test -f .codex-tasks/20260522-zero-debt-refactor/PROGRESS.md,2026-05-22T00:17:00+08:00,0,
+

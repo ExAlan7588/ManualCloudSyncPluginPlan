@@ -1,6 +1,5 @@
 import { mkdir, readFile, rename, rm, stat, utimes } from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { decodeBase64Content } from './base64-content.js';
 import {
     accountPairingResponse,
@@ -12,15 +11,16 @@ import {
     assertAccountLogin,
     constantTimeEqual,
     consumePairingToken,
-    pruneExpiredSessions,
-    prunePairingTokens,
     randomToken,
     sessionResponse,
 } from './account.js';
-import { encodePath, safeName, validateSyncPath } from './encoding.js';
+import { safeName } from './encoding.js';
 import { badRequest, forbidden, notFound, unauthorized } from './http-error.js';
-import { compareEntries, normalizeEntry, normalizeManifest, sha256 } from './manifest.js';
+import { compareEntries, normalizeManifest, sha256 } from './manifest.js';
 import { readJson, uploadEntry, validateStagedBuffer, writeFileAtomic, writeJsonAtomic } from './storage-io.js';
+import { createPlanLockStore } from './storage-locks.js';
+import { createNamespaceRecord, namespaceRecordForWrite } from './storage-namespace.js';
+import { createStoragePaths } from './storage-paths.js';
 import {
     addDevice,
     affectedPaths,
@@ -32,6 +32,18 @@ import {
     upsertDevice,
     withoutConflictFlag,
 } from './storage-records.js';
+import {
+    assertConflictDecisions,
+    assertNamespaceCommitRecord,
+    assertPlanHistoryShape,
+    assertPlanOpen,
+    assertPlanStaged,
+    assertPushUploadMetadata,
+    conflictDecisions,
+    normalizeRollbackFile,
+    optionalRecordArray,
+    sessionDeviceId,
+} from './storage-validation.js';
 import { writeRequestStreamAtomic } from './stream-io.js';
 
 const MAX_HISTORY_ITEMS = 100;
@@ -39,8 +51,9 @@ const MAX_ROLLBACK_POINTS = 20;
 
 export class TtSyncStorage {
     constructor(options) {
-        this.rootDir = path.resolve(options.rootDir);
-        this.planLocks = new Map();
+        this.paths = createStoragePaths(options.rootDir);
+        this.planLocks = createPlanLockStore();
+        this.rootDir = this.paths.rootDir;
     }
 
     async status() {
@@ -286,55 +299,39 @@ export class TtSyncStorage {
     }
 
     namespaceDir(namespace) {
-        return path.join(this.rootDir, 'namespaces', safeName(namespace, 'namespace'));
+        return this.paths.namespaceDir(namespace);
     }
 
     planDir(planId) {
-        return path.join(this.rootDir, 'plans', safeName(planId, 'plan id'));
+        return this.paths.planDir(planId);
     }
 
     manifestPath(namespace) {
-        return path.join(this.namespaceDir(namespace), 'manifest.json');
+        return this.paths.manifestPath(namespace);
     }
 
     namespacePath(namespace) {
-        return path.join(this.namespaceDir(namespace), 'namespace.json');
+        return this.paths.namespacePath(namespace);
     }
 
     planPath(planId) {
-        return path.join(this.planDir(planId), 'plan.json');
+        return this.paths.planPath(planId);
     }
 
     stagedFilePath(planId, syncPath) {
-        return path.join(this.planDir(planId), 'staged', encodePath(syncPath));
+        return this.paths.stagedFilePath(planId, syncPath);
     }
 
     remoteFilePath(namespace, syncPath) {
-        return path.join(this.namespaceDir(namespace), 'files', encodePath(syncPath));
+        return this.paths.remoteFilePath(namespace, syncPath);
     }
 
     rollbackPointPath(namespace, rollbackId) {
-        return path.join(this.namespaceDir(namespace), 'rollback', `${safeName(rollbackId, 'rollback id')}.json`);
+        return this.paths.rollbackPointPath(namespace, rollbackId);
     }
 
     async withPlanLock(planId, operation) {
-        const key = safeName(planId, 'plan id');
-        const previous = this.planLocks.get(key) || Promise.resolve();
-        let release;
-        const next = new Promise(resolve => {
-            release = resolve;
-        });
-        const chained = previous.catch(() => {}).then(() => next);
-        this.planLocks.set(key, chained);
-        await previous.catch(() => {});
-        try {
-            return await operation();
-        } finally {
-            release();
-            if (this.planLocks.get(key) === chained) {
-                this.planLocks.delete(key);
-            }
-        }
+        return this.planLocks.run(planId, operation);
     }
 
     async readNamespace(namespace) {
@@ -356,24 +353,13 @@ export class TtSyncStorage {
     }
 
     async createNamespace(namespace) {
-        return {
-            namespace,
-            serverId: randomUUID(),
-            authToken: randomToken(),
-            devices: [],
-            pairingTokens: [],
-            rollbackPoints: [],
-            sessions: [],
-            syncHistory: [],
-            createdAt: new Date().toISOString(),
-        };
+        return createNamespaceRecord(namespace);
     }
 
     async writeNamespace(namespace, record) {
-        record.sessions = pruneExpiredSessions(optionalRecordArray(record.sessions, 'namespace sessions'));
-        record.pairingTokens = prunePairingTokens(optionalRecordArray(record.pairingTokens, 'namespace pairingTokens'));
+        const normalizedRecord = namespaceRecordForWrite(record);
         await mkdir(path.join(this.namespaceDir(namespace), 'files'), { recursive: true });
-        await writeJsonAtomic(this.namespacePath(namespace), record);
+        await writeJsonAtomic(this.namespacePath(namespace), normalizedRecord);
         await writeJsonAtomic(this.manifestPath(namespace), await this.readManifest(namespace));
     }
 
@@ -483,114 +469,4 @@ export class TtSyncStorage {
         const record = await this.readNamespace(plan.namespace);
         assertNamespaceCommitRecord(record, plan.kind === 'push');
     }
-}
-
-function assertConflictDecisions(plan, decisions) {
-    for (const item of plan.conflicts) {
-        if (decisions[item.path] !== 'local' && decisions[item.path] !== 'remote') {
-            throw forbidden(`Missing conflict decision for ${item.path}`);
-        }
-    }
-}
-
-function conflictDecisions(body) {
-    const value = body?.conflictDecisions;
-    if (value === undefined || value === null) {
-        return {};
-    }
-    if (Array.isArray(value) || typeof value !== 'object') {
-        throw badRequest('Invalid conflict decisions');
-    }
-    return value;
-}
-
-function assertPushUploadMetadata(plan) {
-    if (plan.kind !== 'push') {
-        return;
-    }
-    for (const entry of plan.uploads) {
-        assertCommitInteger(entry, 'modifiedMs');
-        assertCommitInteger(entry, 'sizeBytes');
-    }
-}
-
-function assertCommitInteger(entry, field) {
-    const value = entry?.[field];
-    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-        throw badRequest(`Invalid ${field} for ${entry?.path}`);
-    }
-}
-
-function sessionDeviceId(value) {
-    if (value === undefined || value === null || value === '') {
-        return '';
-    }
-    if (typeof value !== 'string') {
-        throw badRequest('deviceId must be a string');
-    }
-    return value.trim();
-}
-
-function assertPlanOpen(plan) {
-    if (plan.committedAt) {
-        throw forbidden(`Plan already committed: ${plan.id}`);
-    }
-}
-
-function assertPlanHistoryShape(plan) {
-    assertPlanKind(plan);
-    historyEntry(plan);
-}
-
-function assertPlanKind(plan) {
-    if (plan.kind !== 'push' && plan.kind !== 'pull') {
-        throw new Error('Invalid plan kind');
-    }
-}
-
-function assertPlanStaged(plan) {
-    if (plan.staged === undefined || plan.staged === null) {
-        return;
-    }
-    if (Array.isArray(plan.staged) || typeof plan.staged !== 'object') {
-        throw forbidden('Invalid plan staged');
-    }
-}
-
-function assertNamespaceCommitRecord(record, rollbackPoint) {
-    recordArray(record.devices, 'namespace devices');
-    optionalRecordArray(record.syncHistory, 'namespace syncHistory');
-    if (rollbackPoint) {
-        optionalRecordArray(record.rollbackPoints, 'namespace rollbackPoints');
-    }
-}
-
-function optionalRecordArray(value, label) {
-    if (value === undefined || value === null) {
-        return [];
-    }
-    return recordArray(value, label);
-}
-
-function recordArray(value, label) {
-    if (!Array.isArray(value)) {
-        throw new Error(`Invalid ${label}`);
-    }
-    return value;
-}
-
-function normalizeRollbackFile(file) {
-    const syncPath = validateSyncPath(file?.path);
-    if (!file.entry) {
-        return { entry: null, path: syncPath };
-    }
-    const entry = normalizeEntry(file.entry);
-    if (entry.path !== syncPath) {
-        throw badRequest('Rollback file entry path must match rollback file path');
-    }
-    return {
-        contentBase64: file.contentBase64,
-        entry,
-        path: syncPath,
-    };
 }

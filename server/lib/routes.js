@@ -1,7 +1,5 @@
-import { decodeBase64Content } from './base64-content.js';
 import { decodePath, safeName } from './encoding.js';
 import {
-    maxBodyBytes,
     publicErrorMessage,
     readJsonBody,
     readJsonRequest,
@@ -11,10 +9,13 @@ import {
     startEventStream,
     writeServerSentEvent,
 } from './http-helpers.js';
-import { badRequest, HttpError, notFound } from './http-error.js';
+import { notFound } from './http-error.js';
 import { planSummary, progressSummary } from './plan-response.js';
 import { buildPullPlan, buildPushPlan } from './planner.js';
-import { pipeFileToResponse } from './stream-io.js';
+import { authenticate, authenticateQuery, loadAuthedPlan } from './route-auth.js';
+import { isBundleRoute, isPlanFileRoute, parsePlanBundlePath, parsePlanFilePath, routeKey } from './route-matching.js';
+import { buildDownloadBundle, downloadPlanFile, stageUploadBundle, uploadPlanFile } from './route-plan-transfer.js';
+import { normalizePairingBody, pairedDevice, pairingEndpoint, pairingSpki, requestDeviceId } from './route-request.js';
 import {
     isTauriPlanRequest,
     isTauriPairingRequest,
@@ -29,10 +30,7 @@ import {
     verifyTauriSessionRequest,
 } from './tauri-contract.js';
 
-const BINARY_TYPE = 'application/octet-stream';
 const PROGRESS_EVENT_INTERVAL_MS = 1000;
-const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
-const SPKI_SHA256_BYTES = 32;
 
 const STATIC_ROUTE_HANDLERS = Object.freeze({
     'GET /v2/status': handleStatus,
@@ -196,7 +194,7 @@ async function handlePlanFile(context, pathname) {
     if (context.request.method === 'GET') {
         return downloadPlanFile(context, plan, syncPath);
     }
-    return uploadPlanFile(context, plan, syncPath);
+    return sendJson(context.response, await uploadPlanFile(context, plan, syncPath));
 }
 
 async function handleBundle(context, pathname) {
@@ -231,279 +229,10 @@ async function handlePlanEvents(context, url) {
     streamProgressEvents(context, plan.id);
 }
 
-async function downloadPlanFile(context, plan, syncPath) {
-    const entry = findPlanEntry(plan.downloads, syncPath, 'downloads');
-    const filePath = context.storage.remoteFilePath(plan.namespace, entry.path);
-    const fileStat = await context.storage.remoteFileStat(plan.namespace, entry);
-    context.response.writeHead(200, {
-        'Content-Length': fileStat.size,
-        'Content-Type': BINARY_TYPE,
-        'Last-Modified': new Date(entry.modifiedMs).toUTCString(),
-        'X-TT-Sync-Modified-Ms': String(entry.modifiedMs),
-    });
-    await pipeFileToResponse({ filePath, response: context.response });
-}
-
-async function uploadPlanFile(context, plan, syncPath) {
-    const entry = findPlanEntry(plan.uploads, syncPath, 'uploads');
-    await context.storage.stageFileStream(plan, entry, context.request, maxBodyBytes());
-    sendJson(context.response, { ok: true, path: syncPath });
-}
-
-async function buildDownloadBundle(context, plan) {
-    const files = [];
-    for (const entry of planEntries(plan.downloads, 'downloads')) {
-        const buffer = await context.storage.readRemoteFile(plan.namespace, entry);
-        files.push({ contentBase64: buffer.toString('base64'), entry, path: entry.path });
-    }
-    return { files };
-}
-
-async function stageUploadBundle(context, plan) {
-    const body = await readJsonBody(context.request);
-    if (!Array.isArray(body.files)) {
-        throw badRequest('Bundle files must be an array');
-    }
-    let stagedPlan = plan;
-    for (const file of body.files) {
-        const entry = findPlanEntry(stagedPlan.uploads, bundleFilePath(file), 'uploads');
-        stagedPlan = await context.storage.stageFile(stagedPlan, entry, decodeBundleContent(file));
-    }
-    return stagedPlan;
-}
-
-async function loadAuthedPlan(context, planId) {
-    const plan = await context.storage.readPlan(planId);
-    const namespace = safeName(plan.namespace, 'namespace');
-    await authenticate(context, namespace);
-    return { ...plan, namespace };
-}
-
-async function authenticate(context, namespace) {
-    await context.storage.requireAuth(
-        safeName(namespace, 'namespace'),
-        context.request.headers.authorization,
-    );
-}
-
-async function authenticateQuery(context, url) {
-    const namespace = safeName(url.searchParams.get('namespace') || 'default', 'namespace');
-    await authenticate(context, namespace);
-    return namespace;
-}
-
-function normalizePairingBody(body) {
-    if (body.pairingUri) {
-        return pairingBodyFromUri(body);
-    }
-    return {
-        deviceName: pairingDeviceName(body),
-        endpoint: directPairingEndpoint(body),
-        namespace: safeName(body.namespace || 'default', 'namespace'),
-        token: body.token,
-    };
-}
-
-function directPairingEndpoint(body) {
-    const value = String(body.endpoint || '').trim();
-    if (!value) {
-        return '';
-    }
-    return parseHttpUrl(value, 'endpoint').toString().replace(/\/$/, '');
-}
-
-function pairingEndpoint(body) {
-    const value = String(body.endpoint || process.env.TT_SYNC_PUBLIC_URL || '').trim();
-    if (!value) {
-        throw badRequest('endpoint is required for account pairing URI');
-    }
-    const url = parseHttpUrl(value, 'endpoint');
-    return url.toString().replace(/\/$/, '');
-}
-
-function pairingSpki(body) {
-    const value = String(body.spki || '').trim();
-    if (!value) {
-        throw badRequest('spki is required for account pairing URI');
-    }
-    if (!BASE64URL_PATTERN.test(value)) {
-        throw badRequest('spki must be base64url');
-    }
-    if (Buffer.from(value, 'base64url').length !== SPKI_SHA256_BYTES) {
-        throw badRequest('spki must be a base64url SHA-256 pin');
-    }
-    return value;
-}
-
-function parseHttpUrl(value, label) {
-    try {
-        const url = new URL(value);
-        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-            throw badRequest(`${label} must use http or https`);
-        }
-        if (url.username || url.password || url.hash) {
-            throw badRequest(`${label} must not include credentials or fragments`);
-        }
-        return url;
-    } catch (error) {
-        if (error instanceof HttpError) {
-            throw error;
-        }
-        throw badRequest(`${label} must be a valid URL`);
-    }
-}
-
-function pairingBodyFromUri(body) {
-    const uri = parsePairingUri(body.pairingUri);
-    if (uri.protocol !== 'tt-sync:') {
-        throw badRequest('Pairing URI must use tt-sync://');
-    }
-    const endpoint = pairingUriEndpoint(uri);
-    return {
-        deviceName: pairingDeviceName(body),
-        endpoint,
-        namespace: safeName(uri.searchParams.get('namespace') || 'default', 'namespace'),
-        token: uri.searchParams.get('token') || '',
-    };
-}
-
-function pairingUriEndpoint(uri) {
-    const value = uri.searchParams.get('endpoint') || '';
-    if (!value) {
-        return '';
-    }
-    return parseHttpUrl(value, 'endpoint').toString().replace(/\/$/, '');
-}
-
-function pairingDeviceName(body) {
-    const value = body.deviceName;
-    if (value === undefined || value === null || value === '') {
-        return '';
-    }
-    if (typeof value !== 'string') {
-        throw badRequest('deviceName must be a string');
-    }
-    return value.trim();
-}
-
-function requestDeviceId(value) {
-    if (value === undefined || value === null || value === '') {
-        return '';
-    }
-    if (typeof value !== 'string') {
-        throw badRequest('deviceId must be a string');
-    }
-    return value.trim();
-}
-
-function parsePairingUri(value) {
-    try {
-        return new URL(String(value || ''));
-    } catch {
-        throw badRequest('Pairing URI must be a valid tt-sync:// URI');
-    }
-}
-
-function decodeBundleContent(file) {
-    return decodeBase64Content(file?.contentBase64, 'Bundle file contentBase64');
-}
-
-function bundleFilePath(file) {
-    if (typeof file?.path !== 'string') {
-        throw badRequest('Bundle file path must be a string');
-    }
-    return file.path;
-}
-
 function buildPlan(input) {
     return input.kind === 'push'
         ? buildPushPlan(input)
         : buildPullPlan(input);
-}
-
-function pairedDevice(record, deviceId) {
-    const devices = namespaceDevices(record);
-    const device = devices.find(item => item.deviceId === deviceId);
-    if (!device?.publicKey) {
-        throw badRequest(`Paired Tauri device not found: ${deviceId}`);
-    }
-    return device;
-}
-
-function namespaceDevices(record) {
-    if (!Array.isArray(record.devices)) {
-        throw new Error('Invalid namespace devices');
-    }
-    return record.devices;
-}
-
-function routeKey(method, pathname) {
-    return `${method} ${pathname}`;
-}
-
-function isPlanFileRoute(method, pathname) {
-    return (method === 'GET' || method === 'PUT') && /^\/v2\/plans\/[^/]+\/files\/[^/]+$/.test(pathname);
-}
-
-function isBundleRoute(method, pathname) {
-    return (method === 'GET' || method === 'PUT') && /^\/v2\/plans\/[^/]+\/bundle$/.test(pathname);
-}
-
-function parsePlanFilePath(pathname) {
-    const parts = pathname.split('/');
-    return { pathB64: parts[5], planId: safeName(parts[3], 'plan id') };
-}
-
-function parsePlanBundlePath(pathname) {
-    return safeName(pathname.split('/')[3], 'plan id');
-}
-
-function findPlanEntry(entries, syncPath, label) {
-    const entry = planEntries(entries, label).find(item => item.path === syncPath);
-    if (!entry) {
-        throw notFound(`Path is not part of this plan: ${syncPath}`);
-    }
-    return entry;
-}
-
-function planEntries(entries, label) {
-    if (!Array.isArray(entries)) {
-        throw new Error(`Invalid plan ${label}`);
-    }
-    return entries.map(entry => {
-        assertPlanEntryPath(entry?.path, label);
-        assertPlanEntryModifiedMs(entry?.modifiedMs, label);
-        assertPlanEntrySizeBytes(entry?.sizeBytes, label);
-        return entry;
-    });
-}
-
-function assertPlanEntryPath(value, label) {
-    if (typeof value !== 'string' || value.trim() === '') {
-        throw new Error(`Invalid plan ${label} path`);
-    }
-}
-
-function assertPlanEntryModifiedMs(value, label) {
-    if (!isNonNegativeIntegerInput(value)) {
-        throw new Error(`Invalid plan ${label} modifiedMs`);
-    }
-}
-
-function assertPlanEntrySizeBytes(value, label) {
-    if (!isNonNegativeIntegerInput(value)) {
-        throw new Error(`Invalid plan ${label} sizeBytes`);
-    }
-}
-
-function isNonNegativeIntegerInput(value) {
-    if (typeof value === 'number') {
-        return Number.isSafeInteger(value) && value >= 0;
-    }
-    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) {
-        return false;
-    }
-    return Number.isSafeInteger(Number(value));
 }
 
 async function writeProgressEvent(context, planId) {
