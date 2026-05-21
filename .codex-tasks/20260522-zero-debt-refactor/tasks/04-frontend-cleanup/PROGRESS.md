@@ -4,10 +4,10 @@
 
 - Task: frontend module consistency cleanup.
 - Shape: single-full.
-- Progress: 3/5 complete.
-- Current: run focused frontend validation.
+- Progress: 5/5 complete.
+- Current: complete.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/tasks/04-frontend-cleanup/TODO.csv`.
-- Next: run focused frontend validation across all frontend module tests.
+- Next: bubble completion to the parent epic.
 
 ## Log
 
@@ -52,3 +52,27 @@
   - `timeout 60 node tools/test/tt-sync-progress-run-tests.js`
   - `timeout 60 node tools/test/tt-sync-account-run-tests.js`
   - `timeout 60 node tools/test/tt-sync-events-run-tests.js`
+
+### 2026-05-22 01:17 Asia/Taipei
+
+- Completed focused frontend validation across config, TT-Sync, queue, WebDAV, data migration, account, and transfer modules.
+- Validation passed:
+  - `timeout 60 node tools/test/config-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-view-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-progress-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-events-run-tests.js`
+  - `timeout 60 node tools/test/queue-renderer-run-tests.js`
+  - `timeout 60 node tools/test/webdav-compat-run-tests.js`
+  - `timeout 60 node tools/test/webdav-url-run-tests.js`
+  - `timeout 60 node tools/test/data-migration-run-tests.js`
+  - `timeout 60 node tools/test/tt-sync-account-run-tests.js`
+  - `timeout 60 node tools/test/frontend-tt-sync-run-tests.js`
+  - `timeout 60 node tools/test/webdav-transfer-run-tests.js`
+
+### 2026-05-22 01:18 Asia/Taipei
+
+- Completed final frontend cleanup validation.
+- Validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Frontend module consistency cleanup is complete.

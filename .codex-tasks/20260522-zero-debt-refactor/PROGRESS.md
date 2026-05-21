@@ -4,10 +4,10 @@
 
 - Task: full-scope zero technical debt refactor.
 - Shape: epic.
-- Progress: 3/6 subtasks complete.
-- Current: subtask 4, frontend module consistency cleanup.
+- Progress: 4/6 subtasks complete.
+- Current: subtask 5, test runner and validation consolidation.
 - Files: `.codex-tasks/20260522-zero-debt-refactor/SUBTASKS.csv`.
-- Next: inspect frontend modules and remove inconsistent wrappers.
+- Next: consolidate validation scripts and test runner structure.
 
 ## Log
 
@@ -115,3 +115,12 @@
 - Started frontend module consistency cleanup.
 - Created child task tracking files under `tasks/04-frontend-cleanup`.
 - Next: audit frontend module boundaries and focused tests.
+
+### 2026-05-22 01:18 Asia/Taipei
+
+- Completed frontend module consistency cleanup.
+- Added shared frontend payload parsing helpers and controller-scoped TT-Sync event listener state.
+- Full validation passed:
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Next active subtask: test runner and validation consolidation.
