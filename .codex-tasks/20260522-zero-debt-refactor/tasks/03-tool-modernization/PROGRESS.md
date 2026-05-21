@@ -40,3 +40,18 @@
   - `timeout 60 node tools/test/verify-tauritavern-events-run-tests.js`
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
+
+### 2026-05-22 01:01 Asia/Taipei
+
+- Extracted final evidence gate checks into `tools/incremental-evidence-checks.js`.
+- `tools/verify-incremental-cloud-sync-evidence.js` now handles evidence loading, report formatting, and CLI flow only.
+- No evidence gates were weakened; the same focused negative tests still assert failures for missing, malformed, placeholder, mismatched, or incomplete evidence.
+- Reduced:
+  - `tools/verify-incremental-cloud-sync-evidence.js`: 524 to 131 lines
+  - new `tools/incremental-evidence-checks.js`: 350 lines
+- Validated with:
+  - `timeout 60 node tools/test/run-tests.js`
+  - `timeout 60 node tools/test/device-evidence-run-tests.js`
+  - `timeout 60 node tools/test/evidence-url-run-tests.js`
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`

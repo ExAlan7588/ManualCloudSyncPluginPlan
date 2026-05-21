@@ -76,3 +76,15 @@
   - `timeout 60 npm run check`
   - `timeout 60 npm test`
 - Next: reduce evidence and smoke verifier files.
+
+### 2026-05-22 01:01 Asia/Taipei
+
+- Extracted final evidence gate checks into `tools/incremental-evidence-checks.js`.
+- Kept public `verifyIncrementalCloudSyncEvidence` API stable while reducing the CLI/verifier entry file to orchestration.
+- Validation passed:
+  - `timeout 60 node tools/test/run-tests.js`
+  - `timeout 60 node tools/test/device-evidence-run-tests.js`
+  - `timeout 60 node tools/test/evidence-url-run-tests.js`
+  - `timeout 60 npm run check`
+  - `timeout 60 npm test`
+- Next: split smoke verifier runtime/fixture/report helpers.
